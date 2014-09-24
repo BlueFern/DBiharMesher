@@ -1,0 +1,16 @@
+These routines were obtained from Petter Bjorstad, Veritas Research,
+Box 300 N-1322 Norway, in July 1984.  They call FFT routines from
+Swarztrauber, modified to use unique single and double precision names.
+For an index and user manual for the fft routines,
+send only fft.doc from bihar.
+
+
+From wmc Mon Nov 18 18:00 EST 1985
+To: ehg
+Subject: bihar
+
+   I thought I corrected a couple of routine in netlib/bihar before.
+In any case, I just changed [sd]bipl.f to remove a bug in the indefinite
+case.  I also modified [sd]biplr.f to make the storage requirements
+checked in the code correspond to the documentation in the comments.
+
