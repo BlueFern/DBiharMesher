@@ -107,13 +107,10 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request),
 	std::fill_n(bdd, this->MDim, 0.0);
 
 	// Allocate f;
-	double **f = new double*[this->NDim + 2];
-	for(int i = 0; i < this->NDim + 2; i++)
-	{
-		f[i] = new double[this->MDim + 2];
-	}
+	double *f = new double[(this->NDim + 2) * (this->MDim + 2)];
+	std::fill_n(f, (this->NDim + 2) * (this->MDim + 2), 0.0);
 
-	int idf = this->MDim + 2;
+	int idf = this->NDim + 2;
 
 	// From the description of Dbihar source code in Fortran.
 	int lw = std::max(3 * this->MDim, 4 * this->NDim) + 4 * this->NDim + 2 * this->MDim +0.5 * pow(this->MDim + 1, 2) + 19;
@@ -130,12 +127,12 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request),
 		{
 			// Get the coordinate value for this dimension and put it into f along the low boundary.
 			double *p1 = input->GetPoint(lowBorder->GetId(i));
-			f[0][i] = p1[dim];
-			std::cout << 0 << ":" << i << ", [" << p1[0] << "," << p1[1] << "," << p1[2] << "]" << std::endl;
+			f[i * (this->NDim + 2)] = p1[dim];
+			// std::cout << 0 << ":" << i << ", [" << p1[0] << "," << p1[1] << "," << p1[2] << "]" << std::endl;
 			// Get the coordinate value for this dimension and put it f along the high boundary.
 			double *p2 = input->GetPoint(highBorder->GetId(i));
-			f[this->NDim + 1][i] = p2[dim];
-			std::cout << this->NDim + 1 << ":" << i << ", [" << p2[0] << "," << p2[1] << "," << p2[2] << "]" << std::endl;
+			f[(i + 1) * (this->NDim + 2) - 1] = p2[dim];
+			// std::cout << this->NDim + 1 << ":" << i << ", [" << p2[0] << "," << p2[1] << "," << p2[2] << "]" << std::endl;
 		}
 
 		// Copy points coordinates (per current dimension) into f;
@@ -144,31 +141,44 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request),
 		{
 			// Get the coordinate value for this dimension and put it into f along the left boundary.
 			double *p1 = input->GetPoint(leftBorder->GetId(i));
-			f[i][0] = p1[dim];
-			std::cout << i << ":" << 0 << ", [" << p1[0] << "," << p1[1] << "," << p1[2] << "]" << std::endl;
+			f[i] = p1[dim];
+			// std::cout << i << ":" << 0 << ", [" << p1[0] << "," << p1[1] << "," << p1[2] << "]" << std::endl;
 			// Get the coordinate value for this dimension and put it f along the right boundary.
 			double *p2 = input->GetPoint(rightBorder->GetId(i));
-			f[i][this->MDim + 1] = p2[dim];
-			std::cout << i << ":" << this->MDim + 1 << ", [" << p2[0] << "," << p2[1] << "," << p2[2] << "]" << std::endl;
+			f[(this->NDim + 2) * (this->MDim + 1) + i] = p2[dim];
+			// std::cout << i << ":" << this->MDim + 1 << ", [" << p2[0] << "," << p2[1] << "," << p2[2] << "]" << std::endl;
 		}
 
-		for(int n = 0; n < this->NDim + 2; n++)
+		int ind = 0;
+		for(int n = 0; n < this->MDim + 2; n++)
 		{
-			for(int m = 0; m < this->MDim + 2; m++)
+			for(int m = 0; m < this->NDim + 2; m++, ind++)
 			{
-				std::cout << f[n][m] << " ";
+				std::cout << f[ind] << " ";
 			}
 			std::cout << std::endl;
 		}
-
+		std::cout << std::endl;
+/*
 		dbihar_(&a, &b, &(this->MDim),
 				bda, bdb, bdc, bdd,
 				&c, &d, &(this->NDim),
-				(double **)f, &idf,
+				(double *)f, &idf,
 				&(this->Alpha), &(this->Beta), &(this->IFlag), &(this->Tol), &(this->ITCG),
 				w, &lw);
 
 		std::cout << "Return IFlag: " << this->IFlag << std::endl;
+*/
+		ind = 0;
+		for(int n = 0; n < this->MDim + 2; n++)
+		{
+			for(int m = 0; m < this->NDim + 2; m++, ind++)
+			{
+				std::cout << f[ind] << " ";
+			}
+			std::cout << std::endl;
+		}
+		std::cout << std::endl;
 
 		// Save result.
 		vtkIdType pId = 0;
@@ -178,24 +188,20 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request),
 			{
 				outputPoints->GetPoint(pId, tmpPoint);
 				std::cout << pId << ", " << row << ":" << col << ", [" << tmpPoint[0] << "," << tmpPoint[1] << "," << tmpPoint[2] << "]" << std::endl;
-				tmpPoint[dim] = f[row][col];
-				std::cout << "[" << tmpPoint[0] << "," << tmpPoint[1] << "," << tmpPoint[2] << "]" << std::endl;
+				tmpPoint[dim] = f[col * (this->NDim + 2) + row];
+				std::cout << col * (this->NDim + 2) + row << ", [" << tmpPoint[0] << "," << tmpPoint[1] << "," << tmpPoint[2] << "]" << std::endl;
 				outputPoints->InsertPoint(pId, tmpPoint);
 			}
 		}
+		std::cout << std::endl;
 
 		// All done for this dimension.
 	}
 
-	//output->ShallowCopy(input);
 	output->SetPoints(outputPoints);
 	std::cout << output->GetPoints()->GetNumberOfPoints() << std::endl;
 
 	// Deallocate f;
-	for(int i = 0; i < this->NDim + 2; i++)
-	{
-		delete [] f[i];
-	}
 	delete [] f;
 
 	// Deallocated derivatives.

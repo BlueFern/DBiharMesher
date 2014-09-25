@@ -6,6 +6,7 @@
 #include <vtkPolyLine.h>
 #include <vtkCellArray.h>
 
+#include <vtkProperty.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkActor.h>
 #include <vtkRenderWindow.h>
@@ -95,7 +96,7 @@ int main(int argc, char* argv[]) {
 	inputPatch->GetLines()->GetCell(0, pts);
 	pts->Print(std::cout);
 
-	//showPolyData(inputPatch);
+	showPolyData(inputPatch);
 
 	patchFilter->SetInputData(inputPatch);
 
@@ -116,11 +117,22 @@ int main(int argc, char* argv[]) {
 
 void showPolyData(vtkPolyData *polyData)
 {
+	vtkSmartPointer<vtkIdList> idList = vtkSmartPointer<vtkIdList>::New();
+	for(int pId = 0; pId < polyData->GetNumberOfPoints(); pId++)
+	{
+		idList->InsertNextId(pId);
+	}
+
+	vtkSmartPointer<vtkCellArray> verts = vtkSmartPointer<vtkCellArray>::New();
+	verts->InsertNextCell(idList);
+
+	polyData->SetVerts(verts);
 	vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
 	mapper->SetInputData(polyData);
 
 	vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
 	actor->SetMapper(mapper);
+	actor->GetProperty()->SetPointSize(1);
 
 	vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
 	vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();

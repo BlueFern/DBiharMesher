@@ -37,6 +37,7 @@ target_link_libraries(vtkDbiharPatchFilter
   dbihar
   linpack
   blas
+  vtkIOXML
   vtkInteractionStyle
   vtkRenderingFreeTypeOpenGL
   vtkFiltersHybrid)

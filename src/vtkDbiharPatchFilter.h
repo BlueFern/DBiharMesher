@@ -7,7 +7,7 @@
 extern "C" {
 void dbihar_(double* a, double* b, int* m,
 		double bda[], double bdb[], double bdc[], double bdd[],
-		double* c, double* d, int* n, double **f, int* idf,
+		double* c, double* d, int* n, double *f, int* idf,
 		double* alpha, double* beta, int* iflag, double* tol, int* itcg,
 		double w[], int* lw);
 }
