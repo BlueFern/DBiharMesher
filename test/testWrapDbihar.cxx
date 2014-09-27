@@ -12,6 +12,7 @@
 #include <vtkRenderWindow.h>
 #include <vtkRenderer.h>
 #include <vtkRenderWindowInteractor.h>
+#include <vtkInteractorStyleSwitch.h>
 
 #include "vtkDbiharPatchFilter.h"
 
@@ -25,9 +26,9 @@ int main(int argc, char* argv[]) {
 	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
 
 	// Create the sides of a patch as 3D points.
-	double x = 10.0;
+	double x = -10.0;
 	double width = 20.0;
-	double y = 10.0;
+	double y = -15.0;
 	double height = 30;
 
 	int xQuads = 20; // m = 19. Num quads should be even, to make sure m is odd.
@@ -138,6 +139,8 @@ void showPolyData(vtkPolyData *polyData)
 	vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
 	renderWindow->AddRenderer(renderer);
 	vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
+	vtkInteractorStyleSwitch *iss = vtkInteractorStyleSwitch::SafeDownCast(renderWindowInteractor->GetInteractorStyle());
+	iss->SetCurrentStyleToTrackballCamera();
 	renderWindowInteractor->SetRenderWindow(renderWindow);
 	renderer->AddActor(actor);
 

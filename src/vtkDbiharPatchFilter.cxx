@@ -17,12 +17,12 @@ vtkDbiharPatchFilter::vtkDbiharPatchFilter()
 
 	this->MDim = 0.0;
 	this->NDim = 0.0;
-	this->IFlag = 0;
+	this->IFlag = 2;
 
 	this->Alpha = 0.0;
 	this->Beta = 0.0;
-	this->Tol = 0.0;
-	this->ITCG = 50;
+	this->Tol = 1e-7;
+	this->ITCG = 0;
 
 }
 
@@ -92,9 +92,9 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request),
 	// Translate the centre of the dataset to zero?
 
 	double a = 1.0;
-	double b = 3.0;
+	double b = 2.0;
 	double c = 1.0;
-	double d = 4.0;
+	double d = 2.0;
 
 	// Allocate derivatives. And initialise them to 0, at leas for now.
 	double *bda = new double[this->NDim];
@@ -110,10 +110,26 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request),
 	double *f = new double[(this->NDim + 2) * (this->MDim + 2)];
 	std::fill_n(f, (this->NDim + 2) * (this->MDim + 2), 0.0);
 
-	int idf = this->NDim + 2;
+	int idf = this->MDim + 2;
 
 	// From the description of Dbihar source code in Fortran.
-	int lw = std::max(3 * this->MDim, 4 * this->NDim) + 4 * this->NDim + 2 * this->MDim +0.5 * pow(this->MDim + 1, 2) + 19;
+	int lw;
+	if(this->IFlag == 2)
+	{
+		// p.lw = (int) (fmax(7 * p.n, 3 * p.m)) + 2 * (p.n + p.m) + 19;
+		lw = (int)(std::max(7 * this->NDim, 3 * this->MDim) + 2 * (this->NDim + this->MDim) + 19);
+	}
+	else if(this->IFlag == 4)
+	{
+		// p.lw = (int) (fmax(3 * p.m, 4 * p.n)) + 4 * p.n + 2 * p.m + 0.5 * ((p.n + 1) * (p.n + 1)) + 19;
+		lw = (int)(std::max(3 * this->MDim, 4 * this->NDim) + 4 * this->NDim + 2 * this->MDim +0.5 * pow(this->NDim + 1, 2) + 19);
+	}
+	else
+	{
+		// Other values for IFlag not supported.
+		std::cerr << "Unsupported value for IFlag: " << this->IFlag << std::endl;
+		exit(EXIT_FAILURE);
+	}
 
 	// Allocate workspace.
 	double *w = new double[lw];
@@ -159,7 +175,7 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request),
 			std::cout << std::endl;
 		}
 		std::cout << std::endl;
-/*
+
 		dbihar_(&a, &b, &(this->MDim),
 				bda, bdb, bdc, bdd,
 				&c, &d, &(this->NDim),
@@ -167,8 +183,10 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request),
 				&(this->Alpha), &(this->Beta), &(this->IFlag), &(this->Tol), &(this->ITCG),
 				w, &lw);
 
-		std::cout << "Return IFlag: " << this->IFlag << std::endl;
-*/
+		std::cout << "Returned IFlag: " << this->IFlag << std::endl;
+		std::cout << "Returned Tol: " << this->Tol << std::endl;
+		std::cout << "Returned ITCG: " << this->ITCG << std::endl;
+
 		ind = 0;
 		for(int n = 0; n < this->MDim + 2; n++)
 		{
