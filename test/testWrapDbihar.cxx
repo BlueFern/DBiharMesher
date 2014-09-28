@@ -16,12 +16,12 @@
 
 #include "vtkDbiharPatchFilter.h"
 
-void showPolyData(vtkPolyData *polyData);
+void showPolyData(vtkPolyData *polyData, vtkPolyData *original);
 
 int main(int argc, char* argv[]) {
 
 	vtkSmartPointer<vtkDbiharPatchFilter> patchFilter = vtkSmartPointer<vtkDbiharPatchFilter>::New();
-	patchFilter->SetITCG(4);
+	//patchFilter->SetITCG(4);
 
 	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
 
@@ -33,8 +33,6 @@ int main(int argc, char* argv[]) {
 
 	int xQuads = 20; // m = 19. Num quads should be even, to make sure m is odd.
 	int yQuads = 30; // n = 29. Num quads should be even, to make sure n is odd.
-
-	//points->SetNumberOfPoints((xQuads + 1) * 2 + (yQuads + 1) * 2);
 
 	vtkSmartPointer<vtkPolyLine> lowBorder = vtkSmartPointer<vtkPolyLine>::New();
 	vtkSmartPointer<vtkPolyLine> highBorder = vtkSmartPointer<vtkPolyLine>::New();
@@ -97,7 +95,15 @@ int main(int argc, char* argv[]) {
 	inputPatch->GetLines()->GetCell(0, pts);
 	pts->Print(std::cout);
 
-	showPolyData(inputPatch);
+	// showPolyData(inputPatch);
+
+
+	patchFilter->SetA(0.0);
+	patchFilter->SetB(2.0/3.0);
+	patchFilter->SetC(0.0);
+	patchFilter->SetD(1.0);
+
+	patchFilter->SetIFlag(2);
 
 	patchFilter->SetInputData(inputPatch);
 
@@ -107,7 +113,7 @@ int main(int argc, char* argv[]) {
 
 	std::cout << "Output points: " << patchFilter->GetOutput()->GetNumberOfPoints() << std::endl;
 
-	showPolyData(patchFilter->GetOutput());
+	showPolyData(patchFilter->GetOutput(), inputPatch);
 
 	patchFilter->Print(std::cout);
 
@@ -116,7 +122,7 @@ int main(int argc, char* argv[]) {
 	return EXIT_SUCCESS;
 }
 
-void showPolyData(vtkPolyData *polyData)
+void showPolyData(vtkPolyData *polyData, vtkPolyData *original)
 {
 	vtkSmartPointer<vtkIdList> idList = vtkSmartPointer<vtkIdList>::New();
 	for(int pId = 0; pId < polyData->GetNumberOfPoints(); pId++)
@@ -133,7 +139,8 @@ void showPolyData(vtkPolyData *polyData)
 
 	vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
 	actor->SetMapper(mapper);
-	actor->GetProperty()->SetPointSize(1);
+	actor->GetProperty()->SetPointSize(2);
+	actor->GetProperty()->SetColor(1,0,0);
 
 	vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
 	vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
@@ -143,6 +150,18 @@ void showPolyData(vtkPolyData *polyData)
 	iss->SetCurrentStyleToTrackballCamera();
 	renderWindowInteractor->SetRenderWindow(renderWindow);
 	renderer->AddActor(actor);
+
+	if(original != 0)
+	{
+		vtkSmartPointer<vtkPolyDataMapper> notherMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+		notherMapper->SetInputData(original);
+
+		vtkSmartPointer<vtkActor> notherActor = vtkSmartPointer<vtkActor>::New();
+		notherActor->SetMapper(notherMapper);
+		notherActor->GetProperty()->SetColor(0,1,0);
+
+		renderer->AddActor(notherActor);
+	}
 
 	renderWindow->Render();
 	renderWindowInteractor->Start();

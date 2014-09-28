@@ -20,10 +20,14 @@ public:
 
 	static vtkDbiharPatchFilter *New();
 
-	vtkSetMacro(MDim,int);
-	vtkSetMacro(NDim,int);
+	vtkSetMacro(A,double);
+	vtkSetMacro(B,double);
+	vtkSetMacro(C,double);
+	vtkSetMacro(D,double);
+	//vtkSetMacro(MDim,int);
+	//vtkSetMacro(NDim,int);
+	vtkSetMacro(Tol,double);
 	vtkSetMacro(IFlag, int);
-	vtkSetMacro(ITCG, int);
 
 	enum ErrorIds
 		: signed {
@@ -54,13 +58,10 @@ private:
 	vtkDbiharPatchFilter(const vtkDbiharPatchFilter&); // Not implemented.
 	void operator=(const vtkDbiharPatchFilter&); // Not implemented.
 
-	int MDim;
-	int NDim;
-
+	double A, B, C, D;
+	int MDim, NDim;
 	int IFlag;
-
-	double Alpha;
-	double Beta;
+	double Alpha, Beta;
 	double Tol;
 	int ITCG;
 
