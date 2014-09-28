@@ -7,9 +7,9 @@ include(${VTK_USE_FILE})
 message(STATUS ${VTK_USE_FILE})
 
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE RELEASE CACHE STRING
-    "Choose the type of build, options are: None Debug Release."
-    FORCE)
+	set(CMAKE_BUILD_TYPE RELEASE CACHE STRING
+		"Choose the type of build, options are: None Debug Release."
+		FORCE)
 endif(NOT CMAKE_BUILD_TYPE)
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -29,7 +29,7 @@ add_subdirectory(libFortran/linpack)
 add_subdirectory(libFortran/dbihar)
 
 foreach(vtkLib ${VTK_LIBRARIES})
-  message(STATUS ${vtkLib})
+	message(STATUS ${vtkLib})
 endforeach(vtkLib)
 
 add_library(vtkDbiharPatchFilter src/vtkDbiharPatchFilter.cxx)
@@ -42,9 +42,17 @@ target_link_libraries(vtkDbiharPatchFilter
   vtkRenderingFreeTypeOpenGL
   vtkFiltersHybrid)
 
-#   vtkRenderingCore
+include_directories(${PROJECT_SOURCE_DIR}/src)
+include_directories(${PROJECT_SOURCE_DIR}/test)
 
-include_directories (${PROJECT_SOURCE_DIR}/src)
-add_executable(testWrapDbihar test/testWrapDbihar.cxx)
-target_link_libraries(testWrapDbihar
+add_executable(testWrapDbihar1
+	test/showPolyData.cxx
+	test/testWrapDbihar2.cxx)
+target_link_libraries(testWrapDbihar1
   vtkDbiharPatchFilter)
+
+add_executable(testWrapDbihar2
+	test/showPolyData.cxx
+	test/testWrapDbihar2.cxx)
+target_link_libraries(testWrapDbihar2
+	vtkDbiharPatchFilter)

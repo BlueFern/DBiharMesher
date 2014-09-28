@@ -4,13 +4,15 @@
 #include <vtkPoints.h>
 #include <vtkPolyLine.h>
 #include <vtkCellArray.h>
-#include <vktPolyData.h>
+#include <vtkPolyData.h>
 
 #include "vtkDbiharPatchFilter.h"
 
 #include "showPolyData.h"
 
 int main(int argc, char* argv[]) {
+
+	std::cout << "Starting " << __FILE__ << std::endl;
 
 	vtkSmartPointer<vtkDbiharPatchFilter> patchFilter = vtkSmartPointer<vtkDbiharPatchFilter>::New();
 
