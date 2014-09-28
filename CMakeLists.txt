@@ -47,7 +47,7 @@ include_directories(${PROJECT_SOURCE_DIR}/test)
 
 add_executable(testWrapDbihar1
 	test/showPolyData.cxx
-	test/testWrapDbihar2.cxx)
+	test/testWrapDbihar1.cxx)
 target_link_libraries(testWrapDbihar1
   vtkDbiharPatchFilter)
 
