@@ -5,6 +5,7 @@
 #include <vtkPolyLine.h>
 #include <vtkCellArray.h>
 #include <vtkPolyData.h>
+#include <vtkMath.h>
 
 #include "vtkDbiharPatchFilter.h"
 
@@ -19,7 +20,7 @@ int main(int argc, char* argv[]) {
 	patchFilter->SetA(0.0);
 	patchFilter->SetB(2.0/3.0);
 	patchFilter->SetC(0.0);
-	patchFilter->SetD(1.0);
+	patchFilter->SetD(vtkMath::Pi());
 
 	patchFilter->SetIFlag(2);
 
@@ -27,30 +28,37 @@ int main(int argc, char* argv[]) {
 
 	// Create the sides of a patch as 3D points.
 	double x = -10.0;
-	double width = 20.0;
+	double arc = vtkMath::Pi();
+	double rad = 10.0;
 	double y = -15.0;
 	double height = 30;
 
-	int xQuads = 20; // m = 19. Num quads should be even, to make sure m is odd.
+	int cQuads = 26; // m = 25. Num quads should be even, to make sure m is odd.
 	int yQuads = 30; // n = 29. Num quads should be even, to make sure n is odd.
 
 	vtkSmartPointer<vtkPolyLine> lowBorder = vtkSmartPointer<vtkPolyLine>::New();
 	vtkSmartPointer<vtkPolyLine> highBorder = vtkSmartPointer<vtkPolyLine>::New();
 
 	// Inserting points for lines y and y + height.
-	double dX = width / xQuads;
-	for(int i = 0; i <= xQuads; i++)
+	for(int i = 0; i <= cQuads; i++)
 	{
-		double pX = x + i * dX;
-		vtkIdType pId = points->InsertNextPoint(pX, y, 0.0);
-		lowBorder->GetPointIds()->InsertNextId(pId);
-	}
-
-	for(int i = 0; i <= xQuads; i++)
-	{
-		double pX = x + i * dX;
-		vtkIdType pId = points->InsertNextPoint(pX, y + height, 0.0);
-		highBorder->GetPointIds()->InsertNextId(pId);
+		double dA = i / (double)cQuads;
+		if(dA < 0.5)
+		{
+			double angle = arc * dA;
+			double px = -(cos(angle) * rad);
+			double pz = sin(angle) * rad;
+			lowBorder->GetPointIds()->InsertNextId(points->InsertNextPoint(px, y, pz));
+			highBorder->GetPointIds()->InsertNextId(points->InsertNextPoint(px, y + height, pz));
+		}
+		else
+		{
+			double angle = arc * dA - vtkMath::Pi() / 2.0;
+			double px = sin(angle) * rad;
+			double pz = cos(angle) * rad;
+			lowBorder->GetPointIds()->InsertNextId(points->InsertNextPoint(px, y, pz));
+			highBorder->GetPointIds()->InsertNextId(points->InsertNextPoint(px, y + height, pz));
+		}
 	}
 
 	vtkSmartPointer<vtkPolyLine> leftBorder = vtkSmartPointer<vtkPolyLine>::New();
@@ -61,15 +69,8 @@ int main(int argc, char* argv[]) {
 	for(int i = 0; i <= yQuads; i++)
 	{
 		double pY = y + i * dY;
-		vtkIdType pId = points->InsertNextPoint(x, pY, 0.0);
-		leftBorder->GetPointIds()->InsertNextId(pId);
-	}
-
-	for(int i = 0; i <= yQuads; i++)
-	{
-		double pY = y + i * dY;
-		vtkIdType pId = points->InsertNextPoint(x + width, pY, 0.0);
-		rightBorder->GetPointIds()->InsertNextId(pId);
+		leftBorder->GetPointIds()->InsertNextId(points->InsertNextPoint(x, pY, 0.0));
+		rightBorder->GetPointIds()->InsertNextId(points->InsertNextPoint(x + rad * 2, pY, 0.0));
 	}
 
 	vtkSmartPointer<vtkCellArray> borders = vtkSmartPointer<vtkCellArray>::New();
@@ -82,6 +83,8 @@ int main(int argc, char* argv[]) {
 	vtkSmartPointer<vtkPolyData> inputPatch = vtkSmartPointer<vtkPolyData>::New();
 	inputPatch->SetPoints(points);
 	inputPatch->SetLines(borders);
+
+	// showPolyData(inputPatch, NULL);
 
 	patchFilter->SetInputData(inputPatch);
 
