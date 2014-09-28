@@ -27,7 +27,9 @@ public:
 	//vtkSetMacro(MDim,int);
 	//vtkSetMacro(NDim,int);
 	vtkSetMacro(Tol,double);
-	vtkSetMacro(IFlag, int);
+	vtkSetMacro(IFlag,int);
+	vtkSetMacro(Alpha,double);
+	vtkSetMacro(Beta,double);
 
 	enum ErrorIds
 		: signed {
@@ -60,7 +62,7 @@ private:
 
 	double A, B, C, D;
 	int MDim, NDim;
-	int IFlag;
+	int IFlag, OFlag;
 	double Alpha, Beta;
 	double Tol;
 	int ITCG;

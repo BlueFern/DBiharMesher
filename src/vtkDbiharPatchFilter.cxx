@@ -28,7 +28,7 @@ vtkDbiharPatchFilter::vtkDbiharPatchFilter()
 
 	this->Alpha = 0.0;
 	this->Beta = 0.0;
-	this->Tol = 1e-7;
+	this->Tol = 1e-3;
 	this->ITCG = 0;
 }
 
@@ -162,11 +162,21 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request),
 		}
 #endif
 
+		if(dim == 3)
+		{
+			std::fill_n(bda, this->NDim, 0.0);
+			std::fill_n(bdb, this->NDim, 0.0);
+			std::fill_n(bdc, this->MDim, 0.0);
+			std::fill_n(bdd, this->MDim, 0.0);
+		}
+
+		this->OFlag = this->IFlag;
+
 		dbihar_(&(this->A), &(this->B), &(this->MDim),
 				bda, bdb, bdc, bdd,
 				&(this->C), &(this->D), &(this->NDim),
 				(double *)f, &idf,
-				&(this->Alpha), &(this->Beta), &(this->IFlag), &(this->Tol), &(this->ITCG),
+				&(this->Alpha), &(this->Beta), &(this->OFlag), &(this->Tol), &(this->ITCG),
 				w, &lw);
 
 		std::cout << "Returned IFlag: " << this->IFlag << std::endl;
@@ -241,8 +251,11 @@ void vtkDbiharPatchFilter::PrintSelf(ostream &os, vtkIndent indent)
 	os << indent << "NDim: " << this->NDim << "\n";
 	os << indent << "IFlag: " << this->IFlag << "\n";
 
-	os << indent << "Input:" << "\n";
-	this->GetInput()->PrintSelf(os, indent.GetNextIndent());
-	os << indent << "Output:" << "\n";
-	this->GetOutput()->PrintSelf(os, indent.GetNextIndent());
+	os << indent << "Number of input points: " << vtkPolyData::SafeDownCast(this->GetInput())->GetNumberOfPoints() << "\n";
+	os << indent << "Number of output points: " << vtkPolyData::SafeDownCast(this->GetOutput())->GetNumberOfPoints() << "\n";
+
+	//os << indent << "Input:" << "\n";
+	//this->GetInput()->PrintSelf(os, indent.GetNextIndent());
+	//os << indent << "Output:" << "\n";
+	//this->GetOutput()->PrintSelf(os, indent.GetNextIndent());
 }
