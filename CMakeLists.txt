@@ -34,13 +34,10 @@ endforeach(vtkLib)
 
 add_library(vtkDbiharPatchFilter src/vtkDbiharPatchFilter.cxx)
 target_link_libraries(vtkDbiharPatchFilter
-  dbihar
-  linpack
-  blas
-  vtkIOXML
-  vtkInteractionStyle
-  vtkRenderingFreeTypeOpenGL
-  vtkFiltersHybrid)
+	dbihar
+	linpack
+	blas
+	vtkFiltersHybrid)
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/test)
@@ -49,10 +46,16 @@ add_executable(testWrapDbihar1
 	test/showPolyData.cxx
 	test/testWrapDbihar1.cxx)
 target_link_libraries(testWrapDbihar1
-  vtkDbiharPatchFilter)
+	vtkDbiharPatchFilter
+	vtkRenderingAnnotation
+	vtkRenderingFreeTypeOpenGL
+	vtkInteractionStyle)
 
 add_executable(testWrapDbihar2
 	test/showPolyData.cxx
 	test/testWrapDbihar2.cxx)
 target_link_libraries(testWrapDbihar2
-	vtkDbiharPatchFilter)
+	vtkDbiharPatchFilter
+	vtkRenderingAnnotation
+	vtkRenderingFreeTypeOpenGL
+	vtkInteractionStyle)

@@ -12,6 +12,8 @@
 #include <vtkRenderer.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkInteractorStyleSwitch.h>
+#include <vtkAxesActor.h>
+#include <vtkTransform.h>
 
 void showPolyData(vtkPolyData *input, vtkPolyData *output)
 {
@@ -69,6 +71,12 @@ void showPolyData(vtkPolyData *input, vtkPolyData *output)
 	{
 		renderer->AddActor(outputActor);
 	}
+
+	vtkSmartPointer<vtkAxesActor> axes = vtkSmartPointer<vtkAxesActor>::New();
+	vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
+	transform->Translate(-15.0, -20.0, 0.0);
+	axes->SetUserTransform(transform);
+	renderer->AddActor(axes);
 
 	renderWindow->Render();
 	renderWindowInteractor->Start();
