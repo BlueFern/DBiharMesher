@@ -23,9 +23,6 @@ int main(int argc, char* argv[]) {
 
 	patchFilter->SetIFlag(2);
 
-	patchFilter->SetAlpha(-30000.0);
-	patchFilter->SetBeta(1000.0);
-
 	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
 
 	// Create the sides of a patch as 3D points.

@@ -8,7 +8,7 @@
 
 #include "vtkDbiharPatchFilter.h"
 
-#define PRINT_DEBUG 0
+#define PRINT_DEBUG 1
 
 vtkStandardNewMacro(vtkDbiharPatchFilter);
 
@@ -25,11 +25,12 @@ vtkDbiharPatchFilter::vtkDbiharPatchFilter()
 	this->MDim = 0.0;
 	this->NDim = 0.0;
 	this->IFlag = 0;
+	this->OFlag = 0;
 
 	this->Alpha = 0.0;
 	this->Beta = 0.0;
 	this->Tol = 1e-3;
-	this->ITCG = 0;
+	this->ITCG = 10;
 }
 
 int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request),
@@ -147,7 +148,6 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request),
 
 #if PRINT_DEBUG
 		int ind = 0;
-		if(this->GetDebug())
 		{
 			std::cout << "f" << std::endl;
 			for(int n = 0; n < this->NDim + 2; n++)
@@ -162,10 +162,19 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request),
 		}
 #endif
 
-		if(dim == 3)
+
+		if(dim == 1)
 		{
 			std::fill_n(bda, this->NDim, 0.0);
 			std::fill_n(bdb, this->NDim, 0.0);
+			std::fill_n(bdc, this->MDim, -10.0);
+			std::fill_n(bdd, this->MDim, 10.0);
+		}
+
+		if(dim == 2)
+		{
+			std::fill_n(bda, this->NDim, -60.0);
+			std::fill_n(bdb, this->NDim, -60.0);
 			std::fill_n(bdc, this->MDim, 0.0);
 			std::fill_n(bdd, this->MDim, 0.0);
 		}
@@ -179,13 +188,13 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request),
 				&(this->Alpha), &(this->Beta), &(this->OFlag), &(this->Tol), &(this->ITCG),
 				w, &lw);
 
-		std::cout << "Returned IFlag: " << this->IFlag << std::endl;
+		std::cout << "Initial IFlag: " << this->IFlag << std::endl;
+		std::cout << "Returned OFlag: " << this->OFlag << std::endl;
 		std::cout << "Returned Tol: " << this->Tol << std::endl;
 		std::cout << "Returned ITCG: " << this->ITCG << std::endl;
 
 #if PRINT_DEBUG
 		ind = 0;
-		if(this->GetDebug())
 		{
 		std::cout << "f'" << std::endl;
 			for(int n = 0; n < this->NDim + 2; n++)
@@ -250,6 +259,7 @@ void vtkDbiharPatchFilter::PrintSelf(ostream &os, vtkIndent indent)
 	os << indent << "MDim: " << this->MDim << "\n";
 	os << indent << "NDim: " << this->NDim << "\n";
 	os << indent << "IFlag: " << this->IFlag << "\n";
+	os << indent << "OFlag: " << this-OFlag << "\n";
 
 	os << indent << "Number of input points: " << vtkPolyData::SafeDownCast(this->GetInput())->GetNumberOfPoints() << "\n";
 	os << indent << "Number of output points: " << vtkPolyData::SafeDownCast(this->GetOutput())->GetNumberOfPoints() << "\n";
