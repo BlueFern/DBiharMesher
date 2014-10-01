@@ -5,10 +5,14 @@
 #include <vtkObjectFactory.h>
 #include <vtkPolyLine.h>
 #include <vtkCellArray.h>
+#include <vtkDoubleArray.h>
+#include <vtkPointData.h>
 
 #include "vtkDbiharPatchFilter.h"
 
 #define PRINT_DEBUG 0
+
+const char *vtkDbiharPatchFilter::DERIV_ARR_NAME = {"derivatives"};
 
 vtkStandardNewMacro(vtkDbiharPatchFilter);
 
@@ -42,9 +46,11 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 
 	// Test the number of boundary points matches the expected number of
 	// points according to the passed values of MQuads and NQuads.
-	// TODO: Provide a helpful output message if this fails.
 	vtkIdType pIds = (this->MQuads + this->NQuads) * 2;
-	assert(input->GetNumberOfPoints() == pIds);
+	if(input->GetNumberOfPoints() != pIds)
+	{
+		vtkErrorWithObjectMacro(this, "Number of points in the input data (" << input->GetNumberOfPoints() << ") does not match the expected number of points (" << pIds << ").");
+	}
 
 	// TODO: Review whether MDim and NDim members can be removed.
 	this->MDim = this->MQuads - 1;
@@ -61,16 +67,29 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 		}
 	}
 
-	// TODO: Derivatives are to be set as parameters of this filter.
-	// Allocate derivatives. And initialise them to 0, at least for now.
+	// Allocate derivatives.
 	double *bda = new double[this->NDim];
-	std::fill_n(bda, this->NDim, 0.0);
+	//std::fill_n(bda, this->NDim, 0.0);
 	double *bdb = new double[this->NDim];
-	std::fill_n(bdb, this->NDim, 0.0);
+	//std::fill_n(bdb, this->NDim, 0.0);
 	double *bdc = new double[this->MDim];
-	std::fill_n(bdc, this->MDim, 0.0);
+	//std::fill_n(bdc, this->MDim, 0.0);
 	double *bdd = new double[this->MDim];
-	std::fill_n(bdd, this->MDim, 0.0);
+	//std::fill_n(bdd, this->MDim, 0.0);
+
+	vtkDataArray *derivatives = input->GetPointData()->GetVectors(DERIV_ARR_NAME);
+	if(derivatives == 0)
+	{
+		vtkWarningWithObjectMacro(this, "Boundary derivatives are not set in the input data. Setting derivatives to zero.");
+		std::fill_n(bda, this->NDim, 0.0);
+		std::fill_n(bdb, this->NDim, 0.0);
+		std::fill_n(bdc, this->MDim, 0.0);
+		std::fill_n(bdd, this->MDim, 0.0);
+	}
+	else if(derivatives->GetNumberOfTuples() != pIds)
+	{
+		vtkErrorWithObjectMacro(this, "Number of derivative vectors in the input data (" << derivatives->GetNumberOfTuples() << ") does not match the expected number of points (" << pIds << ").");
+	}
 
 	// Allocate f.
 	double *f = new double[(this->NDim + 2) * (this->MDim + 2)];
@@ -89,10 +108,8 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 	}
 	else
 	{
-		// TODO: Provide a better error reporting mechanism.
 		// Other values for IFlag not supported.
-		std::cerr << "Unsupported value for IFlag: " << this->IFlag << std::endl;
-		exit(EXIT_FAILURE);
+		vtkErrorWithObjectMacro(this, "Unsupported value for IFlag: " << this->IFlag << ".");
 	}
 
 	// Allocate workspace.
@@ -104,10 +121,9 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 		// Reset f.
 		std::fill_n(f, (this->NDim + 2) * (this->MDim + 2), 0.0);
 
-		// Copy points coordinates (per current dimension) into f;
+		// Copy points coordinates (per current dimension) into f.
 		for(vtkIdType pId = 0; pId < pIds; pId++)
 		{
-
 			double val = input->GetPoint(pId)[dim];
 			int fIdx = 0;
 			// Inserting from the y = y1 boundary segment.
@@ -151,23 +167,60 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 			std::cout << std::endl;
 		}
 #endif
-#if 1
-		if(dim == 1)
-		{
-			std::fill_n(bda, this->NDim, 0.0);
-			std::fill_n(bdb, this->NDim, 0.0);
-			std::fill_n(bdc, this->MDim, -10.0);
-			std::fill_n(bdd, this->MDim, 10.0);
-		}
 
-		if(dim == 2)
+		// Prepare derivatives arrays.
+		if(derivatives != 0)
 		{
-			std::fill_n(bda, this->NDim, -60.0);
-			std::fill_n(bdb, this->NDim, -60.0);
-			std::fill_n(bdc, this->MDim, 0.0);
-			std::fill_n(bdd, this->MDim, 0.0);
+			// Copy derivative values (per current dimension) into the appropriate derivative array.
+			for(vtkIdType pId = 0; pId < pIds; pId++)
+			{
+				double val = derivatives->GetComponent(pId, dim);
+
+				// Derivative arrays bda, bdb, bdc, bdd don't have space for the
+				// corner points, hence the corner point derivative values are skipped.
+
+				// Inserting derivatives from the y = y1 segment, skipping the corner point.
+				if(pId < this->MQuads)
+				{
+					if(pId != 0)
+					{
+						int locId = pId - 1;
+						assert(locId >= 0 && locId < this->MDim);
+						bdc[locId] = val;
+					}
+				}
+				// Inserting derivatives from the x = x2 segment, skipping the corner point.
+				else if(pId < this->MQuads + this->NQuads)
+				{
+					if(pId != this->MQuads)
+					{
+						int locId = pId - this->MQuads - 1;
+						assert(locId >= 0 && locId < this->NDim);
+						bdb[locId] = val;
+					}
+				}
+				// Inserting derivatives from the y = y2 segment, skipping the corner point.
+				else if(pId < this->MQuads * 2 + this->NQuads)
+				{
+					if(pId != this->MQuads + this->NQuads)
+					{
+						int locId = abs((pId - this->MQuads - this->NQuads) - this->MQuads) - 1;
+						assert(locId >= 0 && locId < this->MDim);
+						bdd[locId] = val;
+					}
+				}
+				// Inserting derivatives from the x = x1  segment, skipping the corner point.
+				else
+				{
+					if(pId != this->MQuads * 2 + this->NQuads)
+					{
+						int locId = abs((pId - this->MQuads * 2 - this->NQuads) - this->NQuads) - 1;
+						assert(locId >= 0 && locId < this->NDim);
+						bda[locId] = val;
+					}
+				}
+			}
 		}
-#endif
 
 		this->OFlag = this->IFlag;
 
