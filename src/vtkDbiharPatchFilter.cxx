@@ -1,3 +1,7 @@
+/*
+ * Program: vtkDbiharPatchFilter.
+ */
+
 #include <cmath>
 #include <algorithm>
 

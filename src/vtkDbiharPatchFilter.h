@@ -1,3 +1,7 @@
+/*
+ * Program: vtkDbiharPatchFilter.
+ */
+
 #ifndef __vtkDbiharPatchFilter_h
 #define __vtkDbiharPatchFilter_h
 
@@ -12,6 +16,11 @@ void dbihar_(double* a, double* b, int* m,
 		double w[], int* lw);
 }
 
+/*
+ * vtkDbiharPatchFilter is a wrapper for NetLib's biharmonic PDF equation solver.
+ * See <a href="http://www.netlib.org/bihar/dbihar.f">Dbihar on NetLib</a>.
+ * The wrapper is written as a VTK-style filter.
+ */
 class vtkDbiharPatchFilter : public vtkPolyDataAlgorithm
 {
 public:
