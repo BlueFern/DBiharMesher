@@ -15,76 +15,107 @@ int main(int argc, char* argv[]) {
 
 	std::cout << "Starting " << __FILE__ << std::endl;
 
-	vtkSmartPointer<vtkDbiharPatchFilter> patchFilter = vtkSmartPointer<vtkDbiharPatchFilter>::New();
-
-	patchFilter->SetA(0.0);
-	patchFilter->SetB(2.0/3.0);
-	patchFilter->SetC(0.0);
-	patchFilter->SetD(vtkMath::Pi());
-
-	patchFilter->SetIFlag(2);
-
-	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
-
 	// Create the sides of a patch as 3D points.
-	double x = -10.0;
+	double x1 = -10.0;
+	double x2 = 10.0;
+	double y1 = -15.0;
+	double y2 = 15.0;
+	double z = 0;
 	double arc = vtkMath::Pi();
-	double rad = 10.0;
-	double y = -15.0;
-	double height = 30;
 
 	int cQuads = 26; // m = 25. Num quads should be even, to make sure m is odd.
 	int yQuads = 30; // n = 29. Num quads should be even, to make sure n is odd.
 
-	vtkSmartPointer<vtkPolyLine> lowBorder = vtkSmartPointer<vtkPolyLine>::New();
-	vtkSmartPointer<vtkPolyLine> highBorder = vtkSmartPointer<vtkPolyLine>::New();
+	vtkIdType pIds = (cQuads + yQuads) * 2;
 
-	// Inserting points for lines y and y + height.
-	for(int i = 0; i <= cQuads; i++)
+	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+	vtkSmartPointer<vtkPolyLine> boundary = vtkSmartPointer<vtkPolyLine>::New();
+
+	// Insert boundary points. The boundary has four segments.
+	// The coordinates of the points are calculated specific to the current boundary segment.
+	double point[3] = {0.0, 0.0, 0.0};
+	double radius = (x2 - x1) / 2;
+	for(vtkIdType pId = 0; pId < pIds; pId++)
 	{
-		double dA = i / (double)cQuads;
-		if(dA < 0.5)
+		// Inserting along the y = y1 boundary segment.
+		if(pId < cQuads)
 		{
-			double angle = arc * dA;
-			double px = -(cos(angle) * rad);
-			double pz = sin(angle) * rad;
-			lowBorder->GetPointIds()->InsertNextId(points->InsertNextPoint(px, y, pz));
-			highBorder->GetPointIds()->InsertNextId(points->InsertNextPoint(px, y + height, pz));
+			double dA = pId / (double)cQuads;
+			if(dA < 0.5)
+			{
+				double angle = arc * dA;
+				point[0] = -cos(angle) * radius;
+				point[2] = sin(angle) * radius;
+			}
+			else
+			{
+				double angle = arc * dA - vtkMath::Pi() / 2.0;
+				point[0] = sin(angle) * radius;
+				point[2] = cos(angle) * radius;
+			}
+			point[1] = y1;
 		}
+		// Inserting along the x = x2 boundary segment.
+		else if(pId < cQuads + yQuads)
+		{
+			point[0] = x2;
+			point[1] = y1 + (pId - cQuads) * ((y2 - y1) / yQuads);
+			point[2] = z;
+		}
+		// Inserting along the y = y2 boundary segment.
+		else if(pId < cQuads * 2 + yQuads)
+		{
+			double dA = (pId - cQuads - yQuads) / (double)cQuads;
+			if(dA < 0.5)
+			{
+				double angle = arc * dA;
+				point[0] = cos(angle) * radius;
+				point[2] = sin(angle) * radius;
+			}
+			else
+			{
+				double angle = arc * dA - vtkMath::Pi() / 2.0;
+				point[0] = -sin(angle) * radius;
+				point[2] = cos(angle) * radius;
+			}
+			point[1] = y2;
+		}
+		// Inserting along the x = x1 boundary segment.
 		else
 		{
-			double angle = arc * dA - vtkMath::Pi() / 2.0;
-			double px = sin(angle) * rad;
-			double pz = cos(angle) * rad;
-			lowBorder->GetPointIds()->InsertNextId(points->InsertNextPoint(px, y, pz));
-			highBorder->GetPointIds()->InsertNextId(points->InsertNextPoint(px, y + height, pz));
+			point[0] = x1;
+			point[1] = y2 - (pId - cQuads - yQuads - cQuads ) * ((y2 - y1) / yQuads);
+			point[2] = z;
 		}
+
+		vtkIdType id = points->InsertNextPoint(point);
+		// Sanity check.
+		assert(id == pId);
+		boundary->GetPointIds()->InsertNextId(pId);
 	}
+	boundary->GetPointIds()->InsertNextId(0);
 
-	vtkSmartPointer<vtkPolyLine> leftBorder = vtkSmartPointer<vtkPolyLine>::New();
-	vtkSmartPointer<vtkPolyLine> rightBorder = vtkSmartPointer<vtkPolyLine>::New();
-
-	// Inserting points for lines x and x + width.
-	double dY = height / yQuads;
-	for(int i = 0; i <= yQuads; i++)
-	{
-		double pY = y + i * dY;
-		leftBorder->GetPointIds()->InsertNextId(points->InsertNextPoint(x, pY, 0.0));
-		rightBorder->GetPointIds()->InsertNextId(points->InsertNextPoint(x + rad * 2, pY, 0.0));
-	}
-
-	vtkSmartPointer<vtkCellArray> borders = vtkSmartPointer<vtkCellArray>::New();
-
-	borders->InsertNextCell(lowBorder);
-	borders->InsertNextCell(highBorder);
-	borders->InsertNextCell(leftBorder);
-	borders->InsertNextCell(rightBorder);
+	vtkSmartPointer<vtkCellArray> boundaries = vtkSmartPointer<vtkCellArray>::New();
+	boundaries->InsertNextCell(boundary);
 
 	vtkSmartPointer<vtkPolyData> inputPatch = vtkSmartPointer<vtkPolyData>::New();
 	inputPatch->SetPoints(points);
-	inputPatch->SetLines(borders);
+	inputPatch->SetLines(boundaries);
 
 	// showPolyData(inputPatch, NULL);
+
+	vtkSmartPointer<vtkDbiharPatchFilter> patchFilter = vtkSmartPointer<vtkDbiharPatchFilter>::New();
+
+	// Set the bounds of the UV space.
+	patchFilter->SetA(0.0);
+	patchFilter->SetB(2.0/3.0);
+	patchFilter->SetC(0.0);
+	patchFilter->SetD(vtkMath::Pi());
+	// Set the boundary conditions.
+	patchFilter->SetMQuads(cQuads);
+	patchFilter->SetNQuads(yQuads);
+	// Set solution method.
+	patchFilter->SetIFlag(2);
 
 	patchFilter->SetInputData(inputPatch);
 

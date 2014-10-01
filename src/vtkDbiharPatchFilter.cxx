@@ -8,7 +8,7 @@
 
 #include "vtkDbiharPatchFilter.h"
 
-#define PRINT_DEBUG 1
+#define PRINT_DEBUG 0
 
 vtkStandardNewMacro(vtkDbiharPatchFilter);
 
@@ -22,8 +22,10 @@ vtkDbiharPatchFilter::vtkDbiharPatchFilter()
 	this->C = 0.0;
 	this->D = 0.0;
 
-	this->MDim = 0.0;
-	this->NDim = 0.0;
+	this->MDim = 0;
+	this->NDim = 0;
+	this->MQuads = 0;
+	this->NQuads = 0;
 	this->IFlag = 0;
 	this->OFlag = 0;
 
@@ -33,49 +35,27 @@ vtkDbiharPatchFilter::vtkDbiharPatchFilter()
 	this->ITCG = 10;
 }
 
-int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request),
-		vtkInformationVector **inputVector,
-        vtkInformationVector *outputVector)
+int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
 	vtkPolyData* input = vtkPolyData::GetData(inputVector[0], 0);
 	vtkPolyData* output = vtkPolyData::GetData(outputVector, 0);
 
-	// Always expect 4 borders/lines.
-	assert(input->GetNumberOfLines() == 4);
+	// Test the number of boundary points matches the expected number of
+	// points according to the passed values of MQuads and NQuads.
+	// TODO: Provide a helpful output message if this fails.
+	vtkIdType pIds = (this->MQuads + this->NQuads) * 2;
+	assert(input->GetNumberOfPoints() == pIds);
 
-	input->GetLines()->InitTraversal();
-
-	vtkSmartPointer<vtkIdList> lowBorder = vtkIdList::New();
-	input->GetLines()->GetNextCell(lowBorder);
-
-	vtkSmartPointer<vtkIdList> highBorder = vtkIdList::New();
-	input->GetLines()->GetNextCell(highBorder);
-
-	vtkSmartPointer<vtkIdList> leftBorder = vtkIdList::New();
-	input->GetLines()->GetNextCell(leftBorder);
-
-	vtkSmartPointer<vtkIdList> rightBorder = vtkIdList::New();
-	input->GetLines()->GetNextCell(rightBorder);
-
-	// TODO: Implement better error reporting.
-	// Low and high borders must have the same number of points.
-	assert(lowBorder->GetNumberOfIds() > 5 && lowBorder->GetNumberOfIds() == highBorder->GetNumberOfIds());
-
-	// TODO: Implement better error reporting.
-	// Low and high borders must have the same number of points.
-	assert(leftBorder->GetNumberOfIds() > 5 && leftBorder->GetNumberOfIds() == rightBorder->GetNumberOfIds());
-
-	this->MDim = lowBorder->GetNumberOfIds() - 2;
-	this->NDim = leftBorder->GetNumberOfIds() - 2;
-
-	vtkPoints *outputPoints = vtkPoints::New();
-
-	double tmpPoint[3] = {0.0, 0.0, 0.0};
+	// TODO: Review whether MDim and NDim members can be removed.
+	this->MDim = this->MQuads - 1;
+	this->NDim = this->NQuads - 1;
 
 	// Prepare output points.
-	for(int row = 0; row < leftBorder->GetNumberOfIds(); row++)
+	vtkPoints *outputPoints = vtkPoints::New();
+	double tmpPoint[3] = {0.0, 0.0, 0.0};
+	for(int n = 0; n < (this->NQuads + 1); n++)
 	{
-		for(int col = 0; col < lowBorder->GetNumberOfIds(); col++)
+		for(int m = 0; m < (this->MQuads + 1); m++)
 		{
 			outputPoints->InsertNextPoint(tmpPoint);
 		}
@@ -125,25 +105,35 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request),
 		std::fill_n(f, (this->NDim + 2) * (this->MDim + 2), 0.0);
 
 		// Copy points coordinates (per current dimension) into f;
-		for(int i = 0; i < this->MDim + 2; i++)
+		for(vtkIdType pId = 0; pId < pIds; pId++)
 		{
-			// Get the coordinate value for this dimension and put it into f along the low boundary.
-			input->GetPoint(lowBorder->GetId(i), tmpPoint);
-			f[i] = tmpPoint[dim];
-			// Get the coordinate value for this dimension and put it f along the high boundary.
-			input->GetPoint(highBorder->GetId(i), tmpPoint);
-			f[(this->MDim + 2) * (this->NDim + 1) + i] = tmpPoint[dim];
-		}
 
-		// Copy points coordinates (per current dimension) into f;
-		for(int i = 0; i < this->NDim + 2; i++)
-		{
-			// Get the coordinate value for this dimension and put it into f along the left boundary.
-			input->GetPoint(leftBorder->GetId(i), tmpPoint);
-			f[i * (this->MDim + 2)] = tmpPoint[dim];
-			// Get the coordinate value for this dimension and put it f along the right boundary.
-			input->GetPoint(rightBorder->GetId(i), tmpPoint);
-			f[i * (this->MDim + 2) + this->MDim + 1] = tmpPoint[dim];
+			double val = input->GetPoint(pId)[dim];
+			int fIdx = 0;
+			// Inserting from the y = y1 boundary segment.
+			if(pId < this->MQuads)
+			{
+				fIdx = pId;
+			}
+			// Inserting from the x = x2 boundary segment.
+			else if(pId < this->MQuads + this->NQuads)
+			{
+				int locId = pId - this->MQuads;
+				fIdx = locId * (this->MQuads + 1) + this->MQuads;
+			}
+			// Inserting from the y = y2 boundary segment.
+			else if(pId < this->MQuads * 2 + this->NQuads)
+			{
+				int locId = abs((pId - this->MQuads - this->NQuads) - this->MQuads);
+				fIdx = locId + (this->NQuads * (this->MQuads + 1));
+			}
+			// Inserting from the x = x1 boundary segment.
+			else
+			{
+				int locId = abs((pId - this->MQuads * 2 - this->NQuads) - this->NQuads);
+				fIdx = locId * (this->MQuads + 1);
+			}
+			f[fIdx] = val;
 		}
 
 #if PRINT_DEBUG
@@ -161,8 +151,7 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request),
 			std::cout << std::endl;
 		}
 #endif
-
-
+#if 1
 		if(dim == 1)
 		{
 			std::fill_n(bda, this->NDim, 0.0);
@@ -178,6 +167,7 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request),
 			std::fill_n(bdc, this->MDim, 0.0);
 			std::fill_n(bdd, this->MDim, 0.0);
 		}
+#endif
 
 		this->OFlag = this->IFlag;
 
@@ -212,9 +202,9 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request),
 		// Save result.
 		vtkIdType pId = 0;
 		// For each element of f copy the value into the current dimension of the corresponding output point.
-		for(int row = 0; row < leftBorder->GetNumberOfIds(); row++)
+		for(int row = 0; row < this->NQuads + 1; row++)
 		{
-			for(int col = 0; col < lowBorder->GetNumberOfIds(); col++, pId++)
+			for(int col = 0; col < this->MQuads + 1; col++, pId++)
 			{
 				outputPoints->GetPoint(pId, tmpPoint);
 				tmpPoint[dim] = f[col * (this->NDim + 2) + row];
@@ -258,6 +248,9 @@ void vtkDbiharPatchFilter::PrintSelf(ostream &os, vtkIndent indent)
 
 	os << indent << "MDim: " << this->MDim << "\n";
 	os << indent << "NDim: " << this->NDim << "\n";
+	os << indent << "MQuads: " << this->MQuads << "\n";
+	os << indent << "NQuads: " << this->NQuads << "\n";
+
 	os << indent << "IFlag: " << this->IFlag << "\n";
 	os << indent << "OFlag: " << this-OFlag << "\n";
 

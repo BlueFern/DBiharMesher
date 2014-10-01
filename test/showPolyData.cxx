@@ -73,9 +73,15 @@ void showPolyData(vtkPolyData *input, vtkPolyData *output)
 	}
 
 	vtkSmartPointer<vtkAxesActor> axes = vtkSmartPointer<vtkAxesActor>::New();
-	vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
-	transform->Translate(-15.0, -20.0, 0.0);
-	axes->SetUserTransform(transform);
+	if(input != 0)
+	{
+		double bounds[6];
+		input->GetBounds(bounds);
+		vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
+		// Translate the axis to lower left corner.
+		transform->Translate(bounds[0] - (bounds[1] - bounds[0]) / 8.0, bounds[2] - (bounds[3] - bounds[2]) / 8.0, 0.0);
+		axes->SetUserTransform(transform);
+	}
 	renderer->AddActor(axes);
 
 	renderWindow->Render();

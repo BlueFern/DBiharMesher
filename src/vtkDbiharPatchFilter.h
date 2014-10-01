@@ -24,8 +24,8 @@ public:
 	vtkSetMacro(B,double);
 	vtkSetMacro(C,double);
 	vtkSetMacro(D,double);
-	//vtkSetMacro(MDim,int);
-	//vtkSetMacro(NDim,int);
+	vtkSetMacro(MQuads,int);
+	vtkSetMacro(NQuads,int);
 	vtkSetMacro(Tol,double);
 	vtkSetMacro(IFlag,int);
 	vtkSetMacro(Alpha,double);
@@ -62,6 +62,7 @@ private:
 
 	double A, B, C, D;
 	int MDim, NDim;
+	int MQuads, NQuads;
 	int IFlag, OFlag;
 	double Alpha, Beta;
 	double Tol;

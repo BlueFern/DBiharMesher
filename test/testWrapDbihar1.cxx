@@ -14,62 +14,82 @@ int main(int argc, char* argv[]) {
 
 	std::cout << "Starting " << __FILE__ << std::endl;
 
-	vtkSmartPointer<vtkDbiharPatchFilter> patchFilter = vtkSmartPointer<vtkDbiharPatchFilter>::New();
-
-	patchFilter->SetA(0.0);
-	patchFilter->SetB(2.0/3.0);
-	patchFilter->SetC(0.0);
-	patchFilter->SetD(1.0);
-
-	patchFilter->SetIFlag(2);
-
-	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
-
 	// Create the sides of a patch as 3D points.
-	double x = -10.0;
-	double width = 20.0;
-	double y = -15.0;
-	double height = 30;
+	double x1 = -10.0;
+	double x2 = 10.0;
+	double y1 = -15.0;
+	double y2 = 15.0;
+	double z = 0.0;
 
 	int xQuads = 20; // m = 19. Num quads should be even, to make sure m is odd.
 	int yQuads = 30; // n = 29. Num quads should be even, to make sure n is odd.
 
-	vtkSmartPointer<vtkPolyLine> lowBorder = vtkSmartPointer<vtkPolyLine>::New();
-	vtkSmartPointer<vtkPolyLine> highBorder = vtkSmartPointer<vtkPolyLine>::New();
+	vtkIdType pIds = (xQuads + yQuads) * 2;
 
-	// Inserting points for lines y and y + height.
-	double dX = width / xQuads;
-	for(int i = 0; i <= xQuads; i++)
+	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+	vtkSmartPointer<vtkPolyLine> boundary = vtkSmartPointer<vtkPolyLine>::New();
+
+	// Insert boundary points. The boundary has four segments.
+	// The coordinates of the points are calculated specific to the current boundary segment.
+	double point[3] = {0.0, 0.0, 0.0};
+	for(vtkIdType pId = 0; pId < pIds; pId++)
 	{
-		double pX = x + i * dX;
-		lowBorder->GetPointIds()->InsertNextId(points->InsertNextPoint(pX, y, 0.0));
-		highBorder->GetPointIds()->InsertNextId(points->InsertNextPoint(pX, y + height, 0.0));
+		// Inserting along the y = y1 boundary segment.
+		if(pId < xQuads)
+		{
+			point[0] = x1 + pId * ((x2 - x1) / xQuads);
+			point[1] = y1;
+		}
+		// Inserting along the x = x2 boundary segment.
+		else if(pId < xQuads + yQuads)
+		{
+			point[0] = x2;
+			point[1] = y1 + (pId - xQuads) * ((y2 - y1) / yQuads);
+		}
+		// Inserting along the y = y2 boundary segment.
+		else if(pId < xQuads * 2 + yQuads)
+		{
+			point[0] = x2 - (pId - xQuads - yQuads) * ((x2 - x1) / xQuads);
+			point[1] = y2;
+		}
+		// Inserting along the x = x1 boundary segment.
+		else
+		{
+			point[0] = x1;
+			point[1] = y2 - (pId - xQuads - yQuads - xQuads ) * ((y2 - y1) / yQuads);
+		}
+
+		// Z coordinate does not change in this case.
+		point[2] = z;
+
+		vtkIdType id = points->InsertNextPoint(point);
+		// Sanity check.
+		assert(id == pId);
+		boundary->GetPointIds()->InsertNextId(pId);
 	}
+	boundary->GetPointIds()->InsertNextId(0);
 
-	vtkSmartPointer<vtkPolyLine> leftBorder = vtkSmartPointer<vtkPolyLine>::New();
-	vtkSmartPointer<vtkPolyLine> rightBorder = vtkSmartPointer<vtkPolyLine>::New();
-
-	// Inserting points for lines x and x + width.
-	double dY = height / yQuads;
-	for(int i = 0; i <= yQuads; i++)
-	{
-		double pY = y + i * dY;
-		leftBorder->GetPointIds()->InsertNextId(points->InsertNextPoint(x, pY, 0.0));
-		rightBorder->GetPointIds()->InsertNextId(points->InsertNextPoint(x + width, pY, 0.0));
-	}
-
-	vtkSmartPointer<vtkCellArray> borders = vtkSmartPointer<vtkCellArray>::New();
-
-	borders->InsertNextCell(lowBorder);
-	borders->InsertNextCell(highBorder);
-	borders->InsertNextCell(leftBorder);
-	borders->InsertNextCell(rightBorder);
+	vtkSmartPointer<vtkCellArray> boundaries = vtkSmartPointer<vtkCellArray>::New();
+	boundaries->InsertNextCell(boundary);
 
 	vtkSmartPointer<vtkPolyData> inputPatch = vtkSmartPointer<vtkPolyData>::New();
 	inputPatch->SetPoints(points);
-	inputPatch->SetLines(borders);
+	inputPatch->SetLines(boundaries);
 
 	// showPolyData(inputPatch, NULL);
+
+	vtkSmartPointer<vtkDbiharPatchFilter> patchFilter = vtkSmartPointer<vtkDbiharPatchFilter>::New();
+
+	// Set the bounds of the UV space.
+	patchFilter->SetA(0.0);
+	patchFilter->SetB(2.0/3.0);
+	patchFilter->SetC(0.0);
+	patchFilter->SetD(1.0);
+	// Set the boundary conditions.
+	patchFilter->SetMQuads(xQuads);
+	patchFilter->SetNQuads(yQuads);
+	// Set solution method.
+	patchFilter->SetIFlag(2);
 
 	patchFilter->SetInputData(inputPatch);
 
