@@ -1,0 +1,212 @@
+#include <stdlib.h>
+
+#include <vtkSmartPointer.h>
+#include <vtkPoints.h>
+#include <vtkPolyLine.h>
+#include <vtkCellArray.h>
+#include <vtkPolyData.h>
+#include <vtkDoubleArray.h>
+#include <vtkPointData.h>
+#include <vtkMath.h>
+
+#include "vtkDbiharPatchFilter.h"
+
+#include "showPolyData.h"
+
+int main(int argc, char* argv[]) {
+
+	std::cout << "Starting " << __FILE__ << std::endl;
+
+	// Create the sides of a patch as 3D points.
+	double alpha = vtkMath::Pi() / 4.0;
+	double x = 0.0;
+	double y = 0.0;
+	double z1 = -10.0;
+	double z2 = 10.0;
+	double Len = 80.0;
+	double arc = vtkMath::Pi();
+
+	int cQuads = 26; // m = 25. Num quads should be even, to make sure m is odd.
+	int yQuads = 30; // n = 29. Num quads should be even, to make sure n is odd.
+
+	vtkIdType pIds = (cQuads + yQuads) * 2;
+
+	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+	vtkSmartPointer<vtkPolyLine> boundary = vtkSmartPointer<vtkPolyLine>::New();
+
+	// Insert boundary points. The boundary has four segments.
+	// The coordinates of the points are calculated specific to the current boundary segment.
+	double point[3] = {0.0};
+	double radius = (z2 - z1) / 2;
+	for(vtkIdType pId = 0; pId < pIds; pId++)
+	{
+		// Bifurcation arc.
+		// Inserting points along the y = y1 boundary segment.
+		if(pId < cQuads)
+		{
+			double dA = pId / (double)cQuads;
+			if(dA < 0.5)
+			{
+				double angle = arc * dA;
+				point[1] = sin(angle) * radius;
+				point[2] = -cos(angle) * radius;
+			}
+			else
+			{
+				double angle = arc * dA - vtkMath::Pi() / 2.0;
+				point[1] = cos(angle) * radius;
+				point[2] = sin(angle) * radius;
+			}
+			point[0] = x;
+		}
+		// Line parallel to the centreline.
+		// Inserting points along the x = x2 boundary segment.
+		else if(pId < cQuads + yQuads)
+		{
+			double l = (pId - cQuads) * (Len / (double)yQuads);
+			point[0] = x + l * cos(alpha);
+			point[1] = y + l * sin(alpha);
+			point[2] = z2;
+		}
+		// Terminal arc.
+		// Inserting points along the y = y2 boundary segment.
+		else if(pId < cQuads * 2 + yQuads)
+		{
+			// First, local rotation.
+			double dA = (pId - cQuads - yQuads) / (double)cQuads;
+			double tmpPoint[3] = {0.0};
+			if(dA < 0.5)
+			{
+				double angle = arc * dA;
+				tmpPoint[0] = 0.0;
+				tmpPoint[1] = sin(angle) * radius;
+				tmpPoint[2] = cos(angle) * radius;
+			}
+			else
+			{
+				double angle = arc * dA - vtkMath::Pi() / 2.0;
+				tmpPoint[0] = 0.0;
+				tmpPoint[1] = cos(angle) * radius;
+				tmpPoint[2] = -sin(angle) * radius;
+			}
+			// Then rotation into the plane of the terminal arc.
+			point[0] = cos(alpha) * Len - cos(alpha) * tmpPoint[1];
+			point[1] = sin(alpha) * Len + sin(alpha) * tmpPoint[1];
+			point[2] = tmpPoint[2];
+		}
+		// Line parallel to the centreline.
+		// Inserting points along the x = x1 boundary segment.
+		else
+		{
+			double l = (pId - cQuads - yQuads - cQuads) * (Len / (double)yQuads);
+			point[0] = cos(alpha) * Len - l * cos(alpha);
+			point[1] = sin(alpha) * Len - l * sin(alpha);
+			point[2] = z1;
+		}
+
+		vtkIdType id = points->InsertNextPoint(point);
+		// Sanity check.
+		assert(id == pId);
+		boundary->GetPointIds()->InsertNextId(pId);
+	}
+	boundary->GetPointIds()->InsertNextId(0);
+
+	vtkSmartPointer<vtkCellArray> boundaries = vtkSmartPointer<vtkCellArray>::New();
+	boundaries->InsertNextCell(boundary);
+
+	vtkSmartPointer<vtkPolyData> inputPatch = vtkSmartPointer<vtkPolyData>::New();
+	inputPatch->SetPoints(points);
+	inputPatch->SetLines(boundaries);
+
+	// These derivatives are from testDriver 2.
+#if 0
+	vtkSmartPointer<vtkDoubleArray> derivatives = vtkSmartPointer<vtkDoubleArray>::New();
+	derivatives->SetName(vtkDbiharPatchFilter::DERIV_ARR_NAME);
+	derivatives->SetNumberOfComponents(3);
+
+	double deriv[3] = {0.0};
+	for(vtkIdType pId = 0; pId < pIds; pId++)
+	{
+		// Null them for the corner cases.
+		deriv[0] = 0.0;
+		deriv[1] = 0.0;
+		deriv[2] = 0.0;
+
+		// Inserting derivatives along the y = y1 boundary segment, skipping the corner case.
+		if(pId < cQuads)
+		{
+			if(pId != 0)
+			{
+				deriv[0] = 0.0;
+				deriv[1] = -10.0;
+				deriv[2] = 0.0;
+			}
+		}
+		// Inserting derivatives along the x = x2 boundary segment, skipping the corner case.
+		else if(pId < cQuads + yQuads)
+		{
+			if(pId != cQuads)
+			{
+				deriv[0] = 0.0;
+				deriv[1] = 0.0;
+				deriv[2] = -60.0;
+			}
+		}
+		// Inserting derivatives along the y = y2 boundary segment, skipping the corner case.
+		else if(pId < cQuads * 2 + yQuads)
+		{
+			if(pId != cQuads + yQuads)
+			{
+				deriv[0] = 0.0;
+				deriv[1] = 10.0;
+				deriv[2] = 0.0;
+			}
+		}
+		// Inserting derivatives along the x = x1 boundary segment, skipping the corner case.
+		else
+		{
+			if(pId != cQuads * 2 + yQuads)
+			{
+				deriv[0] = 0.0;
+				deriv[1] = 0.0;
+				deriv[2] = -60.0;
+			}
+		}
+		derivatives->InsertNextTuple(deriv);
+	}
+	derivatives->Print(std::cout);
+
+	inputPatch->GetPointData()->SetVectors(derivatives);
+#endif
+
+	// showPolyData(inputPatch, NULL);
+
+	vtkSmartPointer<vtkDbiharPatchFilter> patchFilter = vtkSmartPointer<vtkDbiharPatchFilter>::New();
+
+	// Set the bounds of the UV space.
+	patchFilter->SetA(0.0);
+	patchFilter->SetB(2.0/3.0);
+	patchFilter->SetC(0.0);
+	patchFilter->SetD(vtkMath::Pi());
+	// Set the boundary conditions.
+	patchFilter->SetMQuads(cQuads);
+	patchFilter->SetNQuads(yQuads);
+	// Set solution method.
+	patchFilter->SetIFlag(2);
+
+	patchFilter->SetInputData(inputPatch);
+
+	patchFilter->Print(std::cout);
+
+	patchFilter->Update();
+
+	patchFilter->Print(std::cout);
+
+	vtkPolyData *outputPatch = patchFilter->GetOutput();
+
+	showPolyData(inputPatch, outputPatch);
+
+	std::cout << "Exiting " << __FILE__ << std::endl;
+
+	return EXIT_SUCCESS;
+}

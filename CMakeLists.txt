@@ -59,3 +59,12 @@ target_link_libraries(testWrapDbihar2
 	vtkRenderingAnnotation
 	vtkRenderingFreeTypeOpenGL
 	vtkInteractionStyle)
+
+add_executable(testWrapDbihar3
+	test/showPolyData.cxx
+	test/testWrapDbihar3.cxx)
+target_link_libraries(testWrapDbihar3
+	vtkDbiharPatchFilter
+	vtkRenderingAnnotation
+	vtkRenderingFreeTypeOpenGL
+	vtkInteractionStyle)
