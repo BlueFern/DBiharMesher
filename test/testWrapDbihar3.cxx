@@ -23,10 +23,10 @@ int main(int argc, char* argv[]) {
 	double y = 0.0;
 	double z1 = -10.0;
 	double z2 = 10.0;
-	double Len = 80.0;
+	double Len = 60.0;
 	double arc = vtkMath::Pi();
 
-	int cQuads = 26; // m = 25. Num quads should be even, to make sure m is odd.
+	int cQuads = 18; // m = 17. Num quads should be even, to make sure m is odd.
 	int yQuads = 30; // n = 29. Num quads should be even, to make sure n is odd.
 
 	vtkIdType pIds = (cQuads + yQuads) * 2;
@@ -48,13 +48,13 @@ int main(int argc, char* argv[]) {
 			if(dA < 0.5)
 			{
 				double angle = arc * dA;
-				point[1] = sin(angle) * radius;
+				point[1] = (sin(angle) * radius) * vtkMath::Pi() / 2.0;
 				point[2] = -cos(angle) * radius;
 			}
 			else
 			{
 				double angle = arc * dA - vtkMath::Pi() / 2.0;
-				point[1] = cos(angle) * radius;
+				point[1] = (cos(angle) * radius) * vtkMath::Pi() / 2.0;
 				point[2] = sin(angle) * radius;
 			}
 			point[0] = x;
@@ -118,8 +118,7 @@ int main(int argc, char* argv[]) {
 	inputPatch->SetPoints(points);
 	inputPatch->SetLines(boundaries);
 
-	// These derivatives are from testDriver 2.
-#if 0
+	// Derivatives.
 	vtkSmartPointer<vtkDoubleArray> derivatives = vtkSmartPointer<vtkDoubleArray>::New();
 	derivatives->SetName(vtkDbiharPatchFilter::DERIV_ARR_NAME);
 	derivatives->SetNumberOfComponents(3);
@@ -137,19 +136,21 @@ int main(int argc, char* argv[]) {
 		{
 			if(pId != 0)
 			{
-				deriv[0] = 0.0;
-				deriv[1] = -10.0;
+				deriv[0] = -cos(alpha) * 10.0;
+				deriv[1] = -sin(alpha) * 10.0;
 				deriv[2] = 0.0;
 			}
 		}
 		// Inserting derivatives along the x = x2 boundary segment, skipping the corner case.
 		else if(pId < cQuads + yQuads)
 		{
+			double dL = (pId - cQuads) / double(yQuads);
+			double derivAlpha = alpha - (-0.8 * dL + 0.8) * alpha;
 			if(pId != cQuads)
 			{
-				deriv[0] = 0.0;
-				deriv[1] = 0.0;
-				deriv[2] = -60.0;
+				deriv[0] = sin(derivAlpha) * 60.0;
+				deriv[1] = -cos(derivAlpha) * 60.0;
+				deriv[2] = 0.0;
 			}
 		}
 		// Inserting derivatives along the y = y2 boundary segment, skipping the corner case.
@@ -157,19 +158,21 @@ int main(int argc, char* argv[]) {
 		{
 			if(pId != cQuads + yQuads)
 			{
-				deriv[0] = 0.0;
-				deriv[1] = 10.0;
+				deriv[0] = cos(alpha) * 15.0;
+				deriv[1] = sin(alpha) * 15.0;
 				deriv[2] = 0.0;
 			}
 		}
 		// Inserting derivatives along the x = x1 boundary segment, skipping the corner case.
 		else
 		{
+			double dL = (pId - (cQuads * 2 + yQuads)) / double(yQuads);
+			double derivAlpha = alpha - 0.8 * dL * alpha;
 			if(pId != cQuads * 2 + yQuads)
 			{
-				deriv[0] = 0.0;
-				deriv[1] = 0.0;
-				deriv[2] = -60.0;
+				deriv[0] = sin(derivAlpha) * 60.0;
+				deriv[1] = -cos(derivAlpha) * 60.0;
+				deriv[2] = 0.0;
 			}
 		}
 		derivatives->InsertNextTuple(deriv);
@@ -177,7 +180,6 @@ int main(int argc, char* argv[]) {
 	derivatives->Print(std::cout);
 
 	inputPatch->GetPointData()->SetVectors(derivatives);
-#endif
 
 	// showPolyData(inputPatch, NULL);
 
