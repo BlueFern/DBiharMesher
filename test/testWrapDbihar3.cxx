@@ -177,7 +177,7 @@ int main(int argc, char* argv[]) {
 		}
 		derivatives->InsertNextTuple(deriv);
 	}
-	derivatives->Print(std::cout);
+	//derivatives->Print(std::cout);
 
 	inputPatch->GetPointData()->SetVectors(derivatives);
 

@@ -49,7 +49,8 @@ target_link_libraries(testWrapDbihar1
 	vtkDbiharPatchFilter
 	vtkRenderingAnnotation
 	vtkRenderingFreeTypeOpenGL
-	vtkInteractionStyle)
+	vtkInteractionStyle
+	vtkFiltersSources)
 
 add_executable(testWrapDbihar2
 	test/showPolyData.cxx
@@ -58,7 +59,8 @@ target_link_libraries(testWrapDbihar2
 	vtkDbiharPatchFilter
 	vtkRenderingAnnotation
 	vtkRenderingFreeTypeOpenGL
-	vtkInteractionStyle)
+	vtkInteractionStyle
+	vtkFiltersSources)
 
 add_executable(testWrapDbihar3
 	test/showPolyData.cxx
@@ -67,4 +69,5 @@ target_link_libraries(testWrapDbihar3
 	vtkDbiharPatchFilter
 	vtkRenderingAnnotation
 	vtkRenderingFreeTypeOpenGL
-	vtkInteractionStyle)
+	vtkInteractionStyle
+	vtkFiltersSources)

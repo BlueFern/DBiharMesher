@@ -15,20 +15,76 @@
 #include <vtkAxesActor.h>
 #include <vtkTransform.h>
 
+#include <vtkGlyph3D.h>
+#include <vtkArrowSource.h>
+#include <vtkPointData.h>
+
+#include <vtkCallbackCommand.h>
+#include <vtkCommand.h>
+
+#include "vtkDbiharPatchFilter.h"
+
+void KeypressCallbackFunction(vtkObject* caller, long unsigned int vtkNotUsed(eventId), void *clientData, void* vtkNotUsed(callData))
+{
+	std::cout << "Keypress callback" << std::endl;
+
+	vtkRenderWindowInteractor *iren = static_cast<vtkRenderWindowInteractor*>(caller);
+
+	std::cout << "Pressed: " << iren->GetKeySym() << std::endl;
+
+	vtkSmartPointer<vtkActor> derivativesActor = reinterpret_cast<vtkActor*>(clientData);
+
+	if(derivativesActor != 0 && std::string(iren->GetKeySym()) == "v")
+	{
+		derivativesActor->SetVisibility(!derivativesActor->GetVisibility());
+		iren->Render();
+	}
+}
+
 void showPolyData(vtkPolyData *input, vtkPolyData *output)
 {
 	// At least one should be not zero.
 	assert(input != 0 || output != 0);
 
 	vtkSmartPointer<vtkActor> inputActor;
+	vtkSmartPointer<vtkActor> derivativesActor;
+
+	bool derivativesPresent = false;
+
 	if(input != NULL)
 	{
 		vtkSmartPointer<vtkPolyDataMapper> inputMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
 		inputMapper->SetInputData(input);
 
-		inputActor = vtkSmartPointer<vtkActor>::New();
-		inputActor->SetMapper(inputMapper);
-		inputActor->GetProperty()->SetColor(0,1,0);
+		vtkDataArray *derivatives = input->GetPointData()->GetVectors(vtkDbiharPatchFilter::DERIV_ARR_NAME);
+		if(derivatives != 0)
+		{
+			derivativesPresent = true;
+
+			input->GetPointData()->SetActiveVectors(vtkDbiharPatchFilter::DERIV_ARR_NAME);
+
+			inputActor = vtkSmartPointer<vtkActor>::New();
+			inputActor->SetMapper(inputMapper);
+			inputActor->GetProperty()->SetColor(0,1,0);
+
+			vtkSmartPointer<vtkArrowSource> arrowSource = vtkSmartPointer<vtkArrowSource>::New();
+			arrowSource->Update();
+
+			vtkSmartPointer<vtkGlyph3D> derivativesFilter = vtkSmartPointer<vtkGlyph3D>::New();
+			derivativesFilter->SetInputData(input);
+			derivativesFilter->SetScaleFactor(0.1);
+			derivativesFilter->SetSourceConnection(arrowSource->GetOutputPort());
+			derivativesFilter->SetScaleModeToScaleByVector();
+			derivativesFilter->SetVectorModeToUseVector();
+			derivativesFilter->OrientOn();
+			derivativesFilter->Update();
+
+			vtkSmartPointer<vtkPolyDataMapper> derivativesMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+			derivativesMapper->SetInputConnection(derivativesFilter->GetOutputPort());
+
+			derivativesActor = vtkSmartPointer<vtkActor>::New();
+			derivativesActor->SetMapper(derivativesMapper);
+		}
 	}
 
 	vtkSmartPointer<vtkActor> outputActor;
@@ -65,6 +121,7 @@ void showPolyData(vtkPolyData *input, vtkPolyData *output)
 	{
 
 		renderer->AddActor(inputActor);
+		renderer->AddActor(derivativesActor);
 	}
 
 	if(outputActor != 0)
@@ -83,6 +140,15 @@ void showPolyData(vtkPolyData *input, vtkPolyData *output)
 		axes->SetUserTransform(transform);
 	}
 	renderer->AddActor(axes);
+
+
+	if(derivativesPresent)
+	{
+		vtkSmartPointer<vtkCallbackCommand> keypressCallback = vtkSmartPointer<vtkCallbackCommand>::New();
+		keypressCallback->SetCallback(KeypressCallbackFunction);
+		keypressCallback->SetClientData(derivativesActor);
+		renderWindowInteractor->AddObserver(vtkCommand::KeyPressEvent, keypressCallback);
+	}
 
 	renderWindow->Render();
 	renderWindowInteractor->Start();
