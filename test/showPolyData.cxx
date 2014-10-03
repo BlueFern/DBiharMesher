@@ -56,16 +56,16 @@ void showPolyData(vtkPolyData *input, vtkPolyData *output)
 		vtkSmartPointer<vtkPolyDataMapper> inputMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
 		inputMapper->SetInputData(input);
 
+		inputActor = vtkSmartPointer<vtkActor>::New();
+		inputActor->SetMapper(inputMapper);
+		inputActor->GetProperty()->SetColor(0,1,0);
+
 		vtkDataArray *derivatives = input->GetPointData()->GetVectors(vtkDbiharPatchFilter::DERIV_ARR_NAME);
 		if(derivatives != 0)
 		{
 			derivativesPresent = true;
 
 			input->GetPointData()->SetActiveVectors(vtkDbiharPatchFilter::DERIV_ARR_NAME);
-
-			inputActor = vtkSmartPointer<vtkActor>::New();
-			inputActor->SetMapper(inputMapper);
-			inputActor->GetProperty()->SetColor(0,1,0);
 
 			vtkSmartPointer<vtkArrowSource> arrowSource = vtkSmartPointer<vtkArrowSource>::New();
 			arrowSource->Update();
