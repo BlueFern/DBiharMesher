@@ -67,6 +67,8 @@ protected:
 
 	int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
 
+	static void ProgressFunction(vtkObject* caller, long unsigned int eventId, void* clientData, void* callData);
+
 private:
 	vtkDbiharPatchFilter(const vtkDbiharPatchFilter&); // Not implemented.
 	void operator=(const vtkDbiharPatchFilter&); // Not implemented.

@@ -198,11 +198,11 @@ int main(int argc, char* argv[]) {
 
 	patchFilter->SetInputData(inputPatch);
 
-	patchFilter->Print(std::cout);
+	//patchFilter->Print(std::cout);
 
 	patchFilter->Update();
 
-	patchFilter->Print(std::cout);
+	//patchFilter->Print(std::cout);
 
 	vtkPolyData *outputPatch = patchFilter->GetOutput();
 

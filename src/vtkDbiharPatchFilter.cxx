@@ -11,6 +11,7 @@
 #include <vtkCellArray.h>
 #include <vtkDoubleArray.h>
 #include <vtkPointData.h>
+#include <vtkCallbackCommand.h>
 
 #include "vtkDbiharPatchFilter.h"
 
@@ -41,6 +42,10 @@ vtkDbiharPatchFilter::vtkDbiharPatchFilter()
 	this->Beta = 0.0;
 	this->Tol = 1e-3;
 	this->ITCG = 10;
+
+	vtkSmartPointer<vtkCallbackCommand> progressCallback = vtkSmartPointer<vtkCallbackCommand>::New();
+	progressCallback->SetCallback(this->ProgressFunction);
+	this->AddObserver(vtkCommand::ProgressEvent, progressCallback);
 }
 
 int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkInformationVector **inputVector, vtkInformationVector *outputVector)
@@ -119,8 +124,9 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 	// Allocate workspace.
 	double *w = new double[lw];
 
+	int numDims = 3;
 	// Do this once for each dimension, X, Y, Z.
-	for(int dim = 0; dim < 3; dim++)
+	for(int dim = 0; dim < numDims; dim++)
 	{
 		// Reset f.
 		std::fill_n(f, (this->NDim + 2) * (this->MDim + 2), 0.0);
@@ -235,10 +241,10 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 				&(this->Alpha), &(this->Beta), &(this->OFlag), &(this->Tol), &(this->ITCG),
 				w, &lw);
 
-		std::cout << "Initial IFlag: " << this->IFlag << std::endl;
-		std::cout << "Returned OFlag: " << this->OFlag << std::endl;
-		std::cout << "Returned Tol: " << this->Tol << std::endl;
-		std::cout << "Returned ITCG: " << this->ITCG << std::endl;
+		// std::cout << "Initial IFlag: " << this->IFlag << std::endl;
+		// std::cout << "Returned OFlag: " << this->OFlag << std::endl;
+		// std::cout << "Returned Tol: " << this->Tol << std::endl;
+		// std::cout << "Returned ITCG: " << this->ITCG << std::endl;
 
 #if PRINT_DEBUG
 		ind = 0;
@@ -268,6 +274,9 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 				outputPoints->InsertPoint(pId, tmpPoint);
 			}
 		}
+
+		this->UpdateProgress(static_cast<double>(dim)/static_cast<double>(numDims));
+
 		// All done for this dimension.
 	}
 
@@ -318,4 +327,10 @@ void vtkDbiharPatchFilter::PrintSelf(ostream &os, vtkIndent indent)
 	//this->GetInput()->PrintSelf(os, indent.GetNextIndent());
 	//os << indent << "Output:" << "\n";
 	//this->GetOutput()->PrintSelf(os, indent.GetNextIndent());
+}
+
+void vtkDbiharPatchFilter::ProgressFunction(vtkObject* caller, long unsigned int eventId, void* clientData, void* callData)
+{
+	vtkDbiharPatchFilter* filter = static_cast<vtkDbiharPatchFilter *>(caller);
+	cout << filter->GetClassName() << " progress: " << std::fixed << std::setprecision(3) << filter->GetProgress() << endl;
 }
