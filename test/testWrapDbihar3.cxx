@@ -13,6 +13,15 @@
 
 #include "showPolyData.h"
 
+double quadraticFunction(double x)
+{
+	// A and B calculator from three points: http://www.softschools.com/math/algebra/quadratic_functions/quadratic_function_with_three_points/
+	// Points [0,1], [0.5,0.8], [1,1].
+	double a = 0.7999;
+	double b = -0.7999;
+	return a * x * x + b * x + 1;
+}
+
 int main(int argc, char* argv[]) {
 
 	std::cout << "Starting " << __FILE__ << std::endl;
@@ -48,13 +57,13 @@ int main(int argc, char* argv[]) {
 			if(dA < 0.5)
 			{
 				double angle = arc * dA;
-				point[1] = (sin(angle) * radius) * vtkMath::Pi() / 2.0;
+				point[1] = (sin(angle) * radius) * vtkMath::Pi() / 1.75;
 				point[2] = -cos(angle) * radius;
 			}
 			else
 			{
 				double angle = arc * dA - vtkMath::Pi() / 2.0;
-				point[1] = (cos(angle) * radius) * vtkMath::Pi() / 2.0;
+				point[1] = (cos(angle) * radius) * vtkMath::Pi() / 1.75;
 				point[2] = sin(angle) * radius;
 			}
 			point[0] = x;
@@ -123,6 +132,12 @@ int main(int argc, char* argv[]) {
 	derivatives->SetName(vtkDbiharPatchFilter::DERIV_ARR_NAME);
 	derivatives->SetNumberOfComponents(3);
 
+	// Base magnitude of derivatives on straight edges.
+	double mag = 60.0; // Should be calculated from radius.
+	// Additional scaling for derivatives on straight edges.
+	double dMag = 0.70; // Should be calculated from magnitude.
+	// Rotational scaling for derivatives.
+	double dAlpha = 1.2;
 	double deriv[3] = {0.0};
 	for(vtkIdType pId = 0; pId < pIds; pId++)
 	{
@@ -144,12 +159,15 @@ int main(int argc, char* argv[]) {
 		// Inserting derivatives along the x = x2 boundary segment, skipping the corner case.
 		else if(pId < cQuads + yQuads)
 		{
+			// Parametric position along this edge: (0, 1).
 			double dL = (pId - cQuads) / double(yQuads);
-			double derivAlpha = alpha - (-0.8 * dL + 0.8) * alpha;
+			// Close to 0 the angle of derivative is nearly alpha; close to 1 the angle of derivative is 2 * alpha.
+			double derivAlpha = alpha - (-dAlpha * dL + dAlpha) * alpha;
+			std::cout << alpha << ", " << derivAlpha << std::endl;
 			if(pId != cQuads)
 			{
-				deriv[0] = sin(derivAlpha) * 60.0;
-				deriv[1] = -cos(derivAlpha) * 60.0;
+				deriv[0] = (sin(derivAlpha) * mag) * (1 + (-dMag * dL + dMag)) * quadraticFunction(dL);
+				deriv[1] = (-cos(derivAlpha) * mag) * (1 + (-dMag * dL + dMag)) * quadraticFunction(dL);
 				deriv[2] = 0.0;
 			}
 		}
@@ -166,12 +184,14 @@ int main(int argc, char* argv[]) {
 		// Inserting derivatives along the x = x1 boundary segment, skipping the corner case.
 		else
 		{
+			// Parametric position along this edge: (0, 1).
 			double dL = (pId - (cQuads * 2 + yQuads)) / double(yQuads);
-			double derivAlpha = alpha - 0.8 * dL * alpha;
+			// Close to 0 the angle of derivative is nearly alpha; close to 1 the angle of derivative is 2 * alpha.
+			double derivAlpha = alpha + (-dAlpha * dL) * alpha;
 			if(pId != cQuads * 2 + yQuads)
 			{
-				deriv[0] = sin(derivAlpha) * 60.0;
-				deriv[1] = -cos(derivAlpha) * 60.0;
+				deriv[0] = (sin(derivAlpha) * mag) * (1 + (dMag * dL)) * quadraticFunction(dL);
+				deriv[1] = (-cos(derivAlpha) * mag) * (1 + (dMag * dL)) * quadraticFunction(dL);
 				deriv[2] = 0.0;
 			}
 		}
