@@ -42,25 +42,6 @@ public:
 	vtkSetMacro(Alpha,double);
 	vtkSetMacro(Beta,double);
 
-	enum ErrorIds
-		: signed {
-			NoError = 0,
-			InvalidMN = -1, ///< n and/or m was even or less than 3.
-			InvalidABCDE = -2, ///< a.ge.b and/or c.ge.d .
-			InvalidIdf = -3, ///< idf.lt.m+2 or lw is too small.
-			LinpackFail = -4, ///< linpack failure in cholesky-factorization.
-							  ///< this should not occur,check input carefully.
-			LinpackSingular = -5, ///< linpack detected a computationally singular
-								  ///< system using the symmetric indefinite
-							  	  ///< factorization.
-			ConvergeFail = -6, ///< the conjugate gradient iteration failed to
-							   ///< converge in 30 iterations. the probable
-							   ///< cause is an indefinite or near singular
-							   ///< system. try using iflag=4. note that tol
-							   ///< returns an estimate of the residual in
-							   ///< the current conjugate gradient iteration.
-	};
-
 protected:
 	vtkDbiharPatchFilter();
 	~vtkDbiharPatchFilter() {};
@@ -81,6 +62,7 @@ private:
 	double Tol;
 	int ITCG;
 
+	void CheckError();
 };
 
 #endif

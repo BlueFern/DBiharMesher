@@ -241,6 +241,8 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 				&(this->Alpha), &(this->Beta), &(this->OFlag), &(this->Tol), &(this->ITCG),
 				w, &lw);
 
+		CheckError();
+
 		// std::cout << "Initial IFlag: " << this->IFlag << std::endl;
 		// std::cout << "Returned OFlag: " << this->OFlag << std::endl;
 		// std::cout << "Returned Tol: " << this->Tol << std::endl;
@@ -333,4 +335,34 @@ void vtkDbiharPatchFilter::ProgressFunction(vtkObject* caller, long unsigned int
 {
 	vtkDbiharPatchFilter* filter = static_cast<vtkDbiharPatchFilter *>(caller);
 	cout << filter->GetClassName() << " progress: " << std::fixed << std::setprecision(3) << filter->GetProgress() << endl;
+}
+
+void vtkDbiharPatchFilter::CheckError()
+{
+	switch(this->OFlag)
+	{
+		case 0:
+			vtkErrorWithObjectMacro(this, "Something is rotten in the state of Denmark, because zero return from dbihar is undefined.");
+			return;
+		case -1:
+			vtkErrorWithObjectMacro(this, "n and/or m is even or less than 3.");
+			return;
+		case -2:
+			vtkErrorWithObjectMacro(this, "a >= b and/or c >= d.");
+			return;
+		case -3:
+			vtkErrorWithObjectMacro(this, "idf < m+2 or lw is too small.");
+			return;
+		case -4:
+			vtkErrorWithObjectMacro(this, "linpack failure in cholesky-factorization. This should not occur,check input carefully.");
+			return;
+		case -5:
+			vtkErrorWithObjectMacro(this, "linpack detected a computationally singular system using the symmetric indefinite factorization.");
+			return;
+		case -6:
+			vtkErrorWithObjectMacro(this, "The conjugate gradient iteration failed to converge in 30 iterations. The probable cause is an indefinite or near singular system. Try using iflag=4. Note that tol returns an estimate of the residual in the current conjugate gradient iteration.");
+			return;
+		default:
+			;
+	}
 }
