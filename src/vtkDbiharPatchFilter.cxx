@@ -251,7 +251,7 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 #if PRINT_DEBUG
 		ind = 0;
 		{
-		std::cout << "f'" << std::endl;
+			std::cout << "f'" << std::endl;
 			for(int n = 0; n < this->NDim + 2; n++)
 			{
 				for(int m = 0; m < this->MDim + 2; m++, ind++)
@@ -272,7 +272,7 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 			for(int col = 0; col < this->MQuads + 1; col++, pId++)
 			{
 				outputPoints->GetPoint(pId, tmpPoint);
-				tmpPoint[dim] = f[col * (this->NDim + 2) + row];
+				tmpPoint[dim] = f[pId];
 				outputPoints->InsertPoint(pId, tmpPoint);
 			}
 		}
