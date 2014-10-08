@@ -24,8 +24,6 @@ else()
   message(FATAL_ERROR "No Fortran support. Unable to continue")
 endif()
 
-add_subdirectory(libFortran/blas)
-add_subdirectory(libFortran/linpack)
 add_subdirectory(libFortran/dbihar)
 
 foreach(vtkLib ${VTK_LIBRARIES})
@@ -35,8 +33,6 @@ endforeach(vtkLib)
 add_library(vtkDbiharPatchFilter src/vtkDbiharPatchFilter.cxx)
 target_link_libraries(vtkDbiharPatchFilter
 	dbihar
-	linpack
-	blas
 	vtkFiltersHybrid)
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
