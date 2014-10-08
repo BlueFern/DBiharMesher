@@ -35,14 +35,11 @@ void PrintPoint(double *point)
 
 void KeypressCallbackFunction(vtkObject* caller, long unsigned int vtkNotUsed(eventId), void *clientData, void* vtkNotUsed(callData))
 {
-	std::cout << "Keypress callback" << std::endl;
-
 	vtkRenderWindowInteractor *iren = static_cast<vtkRenderWindowInteractor*>(caller);
 
-	std::cout << "Pressed: " << iren->GetKeySym() << std::endl;
+	std::cout << "Key pressed: " << iren->GetKeySym() << std::endl;
 
 	vtkSmartPointer<vtkActor> derivativesActor = reinterpret_cast<vtkActor*>(clientData);
-
 	if(derivativesActor != 0 && std::string(iren->GetKeySym()) == "v")
 	{
 		derivativesActor->SetVisibility(!derivativesActor->GetVisibility());
@@ -67,7 +64,8 @@ void showPolyData(vtkPolyData *input, vtkStructuredGrid *output)
 
 		inputActor = vtkSmartPointer<vtkActor>::New();
 		inputActor->SetMapper(inputMapper);
-		inputActor->GetProperty()->SetColor(0,1,0);
+		inputActor->GetProperty()->SetColor(1,0,0);
+		inputActor->GetProperty()->SetLineWidth(1.5);
 
 		vtkDataArray *derivatives = input->GetPointData()->GetVectors(vtkDbiharPatchFilter::DERIV_ARR_NAME);
 		if(derivatives != 0)
@@ -99,26 +97,6 @@ void showPolyData(vtkPolyData *input, vtkStructuredGrid *output)
 	vtkSmartPointer<vtkActor> gridActor;
 	if(output != 0)
 	{
-#if 0
-		vtkSmartPointer<vtkIdList> idList = vtkSmartPointer<vtkIdList>::New();
-		for(int pId = 0; pId < output->GetNumberOfPoints(); pId++)
-		{
-			idList->InsertNextId(pId);
-		}
-
-		vtkSmartPointer<vtkCellArray> verts = vtkSmartPointer<vtkCellArray>::New();
-		verts->InsertNextCell(idList);
-		output->SetVerts(verts);
-
-		vtkSmartPointer<vtkPolyDataMapper> outputMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-		outputMapper->SetInputData(output);
-
-		outputActor = vtkSmartPointer<vtkActor>::New();
-		outputActor->SetMapper(outputMapper);
-		outputActor->GetProperty()->SetPointSize(2);
-		outputActor->GetProperty()->SetColor(1,0,0);
-#endif
-
 		vtkSmartPointer<vtkDataSetMapper> gridMapper = vtkSmartPointer<vtkDataSetMapper>::New();
 		gridMapper->SetInputData(output);
 
@@ -144,7 +122,6 @@ void showPolyData(vtkPolyData *input, vtkStructuredGrid *output)
 	{
 
 		renderer->AddActor(inputActor);
-		renderer->AddActor(derivativesActor);
 	}
 
 	if(gridActor != 0)
@@ -164,9 +141,10 @@ void showPolyData(vtkPolyData *input, vtkStructuredGrid *output)
 	}
 	renderer->AddActor(axes);
 
-
 	if(derivativesPresent)
 	{
+		renderer->AddActor(derivativesActor);
+
 		vtkSmartPointer<vtkCallbackCommand> keypressCallback = vtkSmartPointer<vtkCallbackCommand>::New();
 		keypressCallback->SetCallback(KeypressCallbackFunction);
 		keypressCallback->SetClientData(derivativesActor);
