@@ -5,6 +5,7 @@
 #include <vtkPolyLine.h>
 #include <vtkCellArray.h>
 #include <vtkPolyData.h>
+#include <vtkStructuredGrid.h>
 #include <vtkDoubleArray.h>
 #include <vtkPointData.h>
 #include <vtkMath.h>
@@ -163,7 +164,6 @@ int main(int argc, char* argv[]) {
 			double dL = (pId - cQuads) / double(yQuads);
 			// Close to 0 the angle of derivative is nearly alpha; close to 1 the angle of derivative is 2 * alpha.
 			double derivAlpha = alpha - (-dAlpha * dL + dAlpha) * alpha;
-			std::cout << alpha << ", " << derivAlpha << std::endl;
 			if(pId != cQuads)
 			{
 				deriv[0] = (sin(derivAlpha) * mag) * (1 + (-dMag * dL + dMag)) * quadraticFunction(dL);
@@ -197,7 +197,6 @@ int main(int argc, char* argv[]) {
 		}
 		derivatives->InsertNextTuple(deriv);
 	}
-	//derivatives->Print(std::cout);
 
 	inputPatch->GetPointData()->SetVectors(derivatives);
 
@@ -218,15 +217,19 @@ int main(int argc, char* argv[]) {
 
 	patchFilter->SetInputData(inputPatch);
 
-	//patchFilter->Print(std::cout);
+	// patchFilter->Print(std::cout);
 
 	patchFilter->Update();
 
-	//patchFilter->Print(std::cout);
+	// patchFilter->Print(std::cout);
 
 	vtkPolyData *outputPatch = patchFilter->GetOutput();
 
-	showPolyData(inputPatch, outputPatch);
+	vtkSmartPointer<vtkStructuredGrid> structuredGrid = vtkSmartPointer<vtkStructuredGrid>::New();
+	structuredGrid->SetDimensions(cQuads + 1, yQuads + 1, 1);
+	structuredGrid->SetPoints(outputPatch->GetPoints());
+
+	showPolyData(inputPatch, structuredGrid);
 
 	std::cout << "Exiting " << __FILE__ << std::endl;
 

@@ -5,6 +5,7 @@
 #include <vtkPolyLine.h>
 #include <vtkCellArray.h>
 #include <vtkPolyData.h>
+#include <vtkStructuredGrid.h>
 #include <vtkDoubleArray.h>
 #include <vtkPointData.h>
 #include <vtkMath.h>
@@ -179,15 +180,19 @@ int main(int argc, char* argv[]) {
 
 	patchFilter->SetInputData(inputPatch);
 
-	patchFilter->Print(std::cout);
+	// patchFilter->Print(std::cout);
 
 	patchFilter->Update();
 
-	patchFilter->Print(std::cout);
+	// patchFilter->Print(std::cout);
 
 	vtkPolyData *outputPatch = patchFilter->GetOutput();
 
-	showPolyData(inputPatch, outputPatch);
+	vtkSmartPointer<vtkStructuredGrid> structuredGrid = vtkSmartPointer<vtkStructuredGrid>::New();
+	structuredGrid->SetDimensions(cQuads + 1, yQuads + 1, 1);
+	structuredGrid->SetPoints(outputPatch->GetPoints());
+
+	showPolyData(inputPatch, structuredGrid);
 
 	std::cout << "Exiting " << __FILE__ << std::endl;
 
