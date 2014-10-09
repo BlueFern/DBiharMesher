@@ -65,4 +65,10 @@ add_executable(testWrapDbihar4
 	test/testWrapDbihar4.cxx)
 target_link_libraries(testWrapDbihar4
 	${testLibs})
+
+add_executable(testWrapDbihar5
+	test/showPolyData.cxx
+	test/testWrapDbihar5.cxx)
+target_link_libraries(testWrapDbihar5
+	${testLibs})
 	
