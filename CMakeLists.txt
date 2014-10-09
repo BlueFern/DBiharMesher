@@ -38,32 +38,31 @@ target_link_libraries(vtkDbiharPatchFilter
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/test)
 
+message(STATUS ${VTK_LIBRARIES})
+
+set(testLibs vtkDbiharPatchFilter vtkRenderingAnnotation vtkRenderingFreeTypeOpenGL vtkInteractionStyle vtkFiltersSources)
+
 add_executable(testWrapDbihar1
 	test/showPolyData.cxx
 	test/testWrapDbihar1.cxx)
 target_link_libraries(testWrapDbihar1
-	vtkDbiharPatchFilter
-	vtkRenderingAnnotation
-	vtkRenderingFreeTypeOpenGL
-	vtkInteractionStyle
-	vtkFiltersSources)
+	${testLibs})
 
 add_executable(testWrapDbihar2
 	test/showPolyData.cxx
 	test/testWrapDbihar2.cxx)
 target_link_libraries(testWrapDbihar2
-	vtkDbiharPatchFilter
-	vtkRenderingAnnotation
-	vtkRenderingFreeTypeOpenGL
-	vtkInteractionStyle
-	vtkFiltersSources)
+	${testLibs})
 
 add_executable(testWrapDbihar3
 	test/showPolyData.cxx
 	test/testWrapDbihar3.cxx)
 target_link_libraries(testWrapDbihar3
-	vtkDbiharPatchFilter
-	vtkRenderingAnnotation
-	vtkRenderingFreeTypeOpenGL
-	vtkInteractionStyle
-	vtkFiltersSources)
+	${testLibs})
+
+add_executable(testWrapDbihar4
+	test/showPolyData.cxx
+	test/testWrapDbihar4.cxx)
+target_link_libraries(testWrapDbihar4
+	${testLibs})
+	

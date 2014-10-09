@@ -111,6 +111,7 @@ void showPolyData(vtkPolyData *input, vtkStructuredGrid *output)
 	renderer->SetBackground(0.3, 0.6, 0.3); // Background color green
 
 	vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
+	renderWindow->SetSize(600, 600);
 	renderWindow->AddRenderer(renderer);
 
 	vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
