@@ -143,8 +143,6 @@ int main(int argc, char* argv[]) {
 			}
 			point[2] = z1;
 		}
-
-		std::cout << "Inserting: "; PrintPoint(point); std::cout << std::endl;
 		vtkIdType id = points->InsertNextPoint(point);
 		// Sanity check.
 		assert(id == pId);
@@ -167,11 +165,10 @@ int main(int argc, char* argv[]) {
 	// Base magnitude of derivatives on axial boundaries.
 	double magAx = 60.0; // Should be calculated from radius.
 	// Base magnitude of derivatives on terminal boundaries.
-	double magTerm = 40; // Should be calculated from radius.
+	double magTerm = 35; // Should be calculated from radius.
 	// Additional scaling for derivatives on axial boundaries.
-	double dMag = 0.80;
-
-
+	double dMag = 0.8;
+	double dAlpha = 0.15;
 	// Rotational scaling for derivatives.
 	//double dAlpha = 1.5;
 	double deriv[3] = {0.0};
@@ -204,7 +201,7 @@ int main(int argc, char* argv[]) {
 				{
 					// Close to 0 the angle of the derivative is nearly pi - alpha; close to 0.5 the angle is -2 * alpha.
 					// It is simpler to calculate the derivative from alpha to pi / 2 and the flip the vector.
-					double derivAlpha = alpha + (vtkMath::Pi() - 2.0 * alpha) * dL;
+					double derivAlpha = alpha + (vtkMath::Pi() - 2.0 * alpha) * dL + dAlpha * 2.0 * dL;
 					// Scaling is from 1 to 1 + dMag.
 					deriv[0] = (-cos(derivAlpha) * magAx) * (1.0 + dMag * dL * 2.0) * quadraticFunction(dL);
 					deriv[1] = (-sin(derivAlpha) * magAx) * (1.0 + dMag * dL * 2.0) * quadraticFunction(dL);
@@ -214,6 +211,10 @@ int main(int argc, char* argv[]) {
 					// Close to 0.5 the angle of the derivative is nearly -2 * alpha; close to 1 the angle is -alpha.
 					// It is simpler to calculate the derivative from pi / 2 to alpha and then flip the y component of the vector.
 					double derivAlpha = vtkMath::Pi() / 2.0 - (alpha * 2.0 * (dL - 0.5));
+					if(dL > 0.5)
+					{
+						derivAlpha += dAlpha * 2.0 * std::fabs(dL - 1.0);
+					}
 					// Scaling is from 1 + dMag to 1.
 					deriv[0] = (cos(derivAlpha) * magAx) * (1.0 + dMag * std::fabs(dL - 1.0) * 2.0) * quadraticFunction(dL - 0.5);
 					deriv[1] = (-sin(derivAlpha) * magAx) * (1.0 + dMag * std::fabs(dL - 1.0) * 2.0) * quadraticFunction(dL - 0.5);
@@ -241,7 +242,7 @@ int main(int argc, char* argv[]) {
 				{
 					// Close to 0 the angle of the derivative is nearly -alpha; close to 0.5 the angle is -pi / 2.
 					// It is simpler to calculate the derivative from alpha to pi / 2 and flip the the x component of the vector.
-					double derivAlpha = alpha + (vtkMath::Pi() - 2.0 * alpha) * dL;
+					double derivAlpha = alpha + (vtkMath::Pi() - 2.0 * alpha) * dL + dAlpha * 2.0 * dL;
 					// Scaling is from 1 to 1 + dMag.
 					deriv[0] = (cos(derivAlpha) * magAx) * (1.0 + dMag * dL * 2.0) * quadraticFunction(dL);
 					deriv[1] = (-sin(derivAlpha) * magAx) * (1.0 + dMag * dL * 2.0) * quadraticFunction(dL);
@@ -251,6 +252,10 @@ int main(int argc, char* argv[]) {
 					// Close to 0.5 the angle of derivative is nearly -pi / 2; close to 1 the angle is pi - alpha.
 					// It is simpler to calculate the derivative from pi / 2 to alpha and then flip the the vector.
 					double derivAlpha = vtkMath::Pi() / 2.0 - (alpha * 2.0 * (dL - 0.5));
+					if(dL > 0.5)
+					{
+						derivAlpha += dAlpha * 2.0 * std::fabs(dL - 1.0);
+					}
 					// Scaling is from 1 + dMag to 1.
 					deriv[0] = (-cos(derivAlpha) * magAx) * (1.0 + dMag * std::fabs(dL - 1.0) * 2.0) * quadraticFunction(dL - 0.5);
 					deriv[1] = (-sin(derivAlpha) * magAx) * (1.0 + dMag * std::fabs(dL - 1.0) * 2.0) * quadraticFunction(dL - 0.5);
@@ -262,7 +267,7 @@ int main(int argc, char* argv[]) {
 
 	inputPatch->GetPointData()->SetVectors(derivatives);
 
-	showPolyData(inputPatch, NULL);
+	// showPolyData(inputPatch, NULL);
 
 	vtkSmartPointer<vtkDbiharPatchFilter> patchFilter = vtkSmartPointer<vtkDbiharPatchFilter>::New();
 
