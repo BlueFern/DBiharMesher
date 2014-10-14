@@ -10,7 +10,6 @@
 #include <vtkProperty.h>
 
 #include <vtkIdList.h>
-//#include <vtkCellArray.h>
 #include <vtkActor.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderer.h>
