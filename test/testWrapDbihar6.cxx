@@ -44,6 +44,16 @@ double AngleBetweenVectors(const double v1[3], const double v2[3])
   return atan2(vtkMath::Norm(cross), vtkMath::Dot(v1, v2));
 }
 
+// A, B and C calculator from three points: http://www.softschools.com/math/algebra/quadratic_functions/quadratic_function_with_three_points/
+// or use
+// http://www.wolframalpha.com/ and type in "quadratic through " and point list.
+double abcFullLen[] = {-1.2, 1.2, 0.0}; // Points [0, 0], [0.5, 0.3], [1, 0].
+double abcHalfLen[] = {2.4, -1.2, 0.0}; // Points [0, 0], [0.25, -0.15], [0.5, 0].
+double quadraticFunction(double x, double *abc)
+{
+	return abc[0] * x * x + abc[1] * x + abc[2];
+}
+
 int main(int argc, char* argv[]) {
 
 	std::cout << "Starting " << __FILE__ << std::endl;
@@ -152,11 +162,13 @@ int main(int argc, char* argv[]) {
 	double p1[3]; // Tmp storage.
 
 	// TODO: This value should be proportional to the length of the trunk/branch.
-	double y1EdgeDerivScaling = 100.0;
+	double y1EdgeDerivScaling = 180.0;
 	// TODO: This value should be proportional to the length of the trunk/branch.
-	double y2EdgeDerivScaling = 100.0;
+	double y2EdgeDerivScaling = 180.0;
 	// TODO: This value should be proportional to the current radius.
-	double xEdgeDerivScaling = 220.0;
+	double xEdgeDerivScaling = 240.0;
+	// TODO: This value should be proportional to what?
+	double derivAngleScaling = 0.8;
 
 	// TODO: This should be provided with the centreline; it should be the point number where the bifurcation starts.
 	// Perhaps it can be associated with the centreline as a vtkInformation object.
@@ -282,12 +294,10 @@ int main(int argc, char* argv[]) {
 					NegateVector(deriv, deriv);
 
 					// Scale vector magnitude.
-					vtkMath::MultiplyScalar(deriv, xEdgeDerivScaling);
+					vtkMath::MultiplyScalar(deriv, xEdgeDerivScaling * (1 + quadraticFunction(0.5, abcFullLen)));
 				}
 				else
 				{
-					double derivAngleScaling = 1.2;
-
 					// Parametric coordinate along this edge: [0,1].
 					double dL = (pId - cQuads) / (double)yQuads;
 
@@ -295,20 +305,24 @@ int main(int argc, char* argv[]) {
 					// In this case it would be parallel to the cross product of the stepDirection and the radiusDirection vectors.
 					vtkMath::Cross(NegateVector(stepDirection), radiusDirection, deriv);
 
-					// Scale vector magnitude.
-					vtkMath::MultiplyScalar(deriv, xEdgeDerivScaling);
-
-					// TODO: The angle should be gradually leaning towards the derivative at the bifurcation point.
+					// The angle is gradually leaning towards the derivative at the bifurcation point.
+					double derivAngleInc;
 					if(centrelinePId < bifuractionPointId)
 					{
-						double derivAngleInc = dL * ((vtkMath::DegreesFromRadians(angleAtBifurcation) / -2.0) * derivAngleScaling);
-						std::cout << "--- derivAngleInc: " << derivAngleInc << std::endl;
+						derivAngleInc = dL * ((vtkMath::DegreesFromRadians(angleAtBifurcation) / -2.0) * derivAngleScaling);
 					}
 					else if(centrelinePId > bifuractionPointId)
 					{
-						double derivAngleInc = (-dL + 1) * ((vtkMath::DegreesFromRadians(angleAtBifurcation) / -2.0) * derivAngleScaling);
-						std::cout << "+++ derivAngleInc: " << derivAngleInc << std::endl;
+						derivAngleInc = (dL - 1) * ((vtkMath::DegreesFromRadians(angleAtBifurcation) / -2.0) * derivAngleScaling);
 					}
+
+					// Rotate the derivative vector
+					localDerivTransform->RotateWXYZ(derivAngleInc, radiusDirection);
+					localDerivTransform->TransformPoint(deriv, deriv);
+
+					// Scale vector magnitude.
+					vtkMath::MultiplyScalar(deriv, xEdgeDerivScaling * (1 + quadraticFunction(dL, abcFullLen) +
+							quadraticFunction(dL < 0.5 ? dL : std::fabs(dL - 1.0), abcHalfLen)));
 				}
 			}
 		}
@@ -352,9 +366,10 @@ int main(int argc, char* argv[]) {
 
 			if(pId != cQuads * 2 + yQuads)
 			{
+				vtkSmartPointer<vtkTransform> localDerivTransform = vtkSmartPointer<vtkTransform>::New();
+
 				if(centrelinePId == bifuractionPointId)
 				{
-					vtkSmartPointer<vtkTransform> localDerivTransform = vtkSmartPointer<vtkTransform>::New();
 					localDerivTransform->RotateWXYZ(vtkMath::DegreesFromRadians(angleAtBifurcation) / -2.0, radiusVector);
 
 					localDerivTransform->TransformPoint(stepDirection, deriv);
@@ -363,18 +378,35 @@ int main(int argc, char* argv[]) {
 					NegateVector(deriv, deriv);
 
 					// Scale vector magnitude.
-					vtkMath::MultiplyScalar(deriv, xEdgeDerivScaling);
+					vtkMath::MultiplyScalar(deriv, xEdgeDerivScaling * (1 + quadraticFunction(0.5, abcFullLen)));
 				}
 				else
 				{
+					// Parametric coordinate along this edge: [0,1].
+					double dL = (pId - (cQuads * 2 + yQuads)) / double(yQuads);
+
 					// If not at the corner point, we need to insert a derivative.
 					// In this case it would be parallel to the cross product of the stepDirection and the radiusDirection vectors.
 					vtkMath::Cross(NegateVector(stepDirection), radiusDirection, deriv);
 
-					// Scale vector magnitude.
-					vtkMath::MultiplyScalar(deriv, xEdgeDerivScaling);
+					// The angle is gradually leaning towards the derivative at the bifurcation point.
+					double derivAngleInc;
+					if(centrelinePId > bifuractionPointId)
+					{
+						derivAngleInc = dL * ((vtkMath::DegreesFromRadians(angleAtBifurcation) / 2.0) * derivAngleScaling);
+					}
+					else if(centrelinePId < bifuractionPointId)
+					{
+						derivAngleInc = (dL - 1) * ((vtkMath::DegreesFromRadians(angleAtBifurcation) / 2.0) * derivAngleScaling);
+					}
 
-					// TODO: The angle should be gradually leaning towards the derivative at the bifurcation point.
+					// Rotate the derivative vector
+					localDerivTransform->RotateWXYZ(derivAngleInc, radiusDirection);
+					localDerivTransform->TransformPoint(deriv, deriv);
+
+					// Scale vector magnitude.
+					vtkMath::MultiplyScalar(deriv, xEdgeDerivScaling * (1 + quadraticFunction(dL, abcFullLen) +
+							quadraticFunction(dL < 0.5 ? dL : std::fabs(dL - 1.0), abcHalfLen)));
 				}
 			}
 		}
@@ -397,7 +429,7 @@ int main(int argc, char* argv[]) {
 	inputPatch->SetLines(boundaries);
 	inputPatch->GetPointData()->SetVectors(derivatives);
 
-	showPolyData(inputPatch, NULL, 1.0);
+	// showPolyData(inputPatch, NULL, 1.0);
 
 	vtkSmartPointer<vtkDbiharPatchFilter> patchFilter = vtkSmartPointer<vtkDbiharPatchFilter>::New();
 
