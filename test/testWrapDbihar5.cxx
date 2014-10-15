@@ -233,7 +233,7 @@ int main(int argc, char* argv[]) {
 		// Inserting derivatives along the x = x1 boundary segment, skipping the corner case.
 		else
 		{
-			// Skipping the first paint.
+			// Skipping the first point.
 			if(pId != cQuads * 2 + yQuads)
 			{
 				// Parametric position along this edge: (0, 1).
@@ -267,7 +267,7 @@ int main(int argc, char* argv[]) {
 
 	inputPatch->GetPointData()->SetVectors(derivatives);
 
-	// showPolyData(inputPatch, NULL);
+	showPolyData(inputPatch, NULL);
 
 	vtkSmartPointer<vtkDbiharPatchFilter> patchFilter = vtkSmartPointer<vtkDbiharPatchFilter>::New();
 

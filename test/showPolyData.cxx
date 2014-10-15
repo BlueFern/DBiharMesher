@@ -46,7 +46,7 @@ void KeypressCallbackFunction(vtkObject* caller, long unsigned int vtkNotUsed(ev
 	}
 }
 
-void showPolyData(vtkPolyData *input, vtkStructuredGrid *output)
+void showPolyData(vtkPolyData *input, vtkStructuredGrid *output, double derivateScaling)
 {
 	// At least one should be not zero.
 	assert(input != 0 || output != 0);
@@ -78,7 +78,7 @@ void showPolyData(vtkPolyData *input, vtkStructuredGrid *output)
 
 			vtkSmartPointer<vtkGlyph3D> derivativesFilter = vtkSmartPointer<vtkGlyph3D>::New();
 			derivativesFilter->SetInputData(input);
-			derivativesFilter->SetScaleFactor(0.1);
+			derivativesFilter->SetScaleFactor(derivateScaling);
 			derivativesFilter->SetSourceConnection(arrowSource->GetOutputPort());
 			derivativesFilter->SetScaleModeToScaleByVector();
 			derivativesFilter->SetVectorModeToUseVector();
@@ -107,7 +107,7 @@ void showPolyData(vtkPolyData *input, vtkStructuredGrid *output)
 	}
 
 	vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
-	renderer->SetBackground(0.3, 0.6, 0.3); // Background color green
+	renderer->SetBackground(0.3, 0.6, 0.3); // Green background.
 
 	vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
 	renderWindow->SetSize(600, 600);

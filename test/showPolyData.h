@@ -9,4 +9,4 @@ void PrintPoint(double *point);
 /**
  * Show input and output polydata.
  */
-void showPolyData(vtkPolyData *input, vtkStructuredGrid *output);
+void showPolyData(vtkPolyData *input, vtkStructuredGrid *output, double derivateScaling = 0.1);

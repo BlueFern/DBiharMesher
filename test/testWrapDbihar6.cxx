@@ -137,6 +137,11 @@ int main(int argc, char* argv[]) {
 	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
 	vtkSmartPointer<vtkPolyLine> boundary = vtkSmartPointer<vtkPolyLine>::New();
 
+	// Derivatives.
+	vtkSmartPointer<vtkDoubleArray> derivatives = vtkSmartPointer<vtkDoubleArray>::New();
+	derivatives->SetName(vtkDbiharPatchFilter::DERIV_ARR_NAME);
+	derivatives->SetNumberOfComponents(3);
+
 	int cQuads = 18; // m = 17. Num quads should be even, to make sure m is odd.
 	int yQuads = polySpine->GetNumberOfPoints() - 1; // n = 59. Num quads should be even, to make sure n is odd.
 
@@ -146,42 +151,87 @@ int main(int argc, char* argv[]) {
 	double p0[3]; // Tmp storage.
 	double p1[3]; // Tmp storage.
 
-	// TODO: Assuming the polySpline has at least two points. Actually it should have at least 4, as dictated by dbihar.
-	double inletDirection[3];
-	polySpine->GetPoint(0, p0);
-	polySpine->GetPoint(1, p1);
-	vtkMath::Subtract(p1, p0, inletDirection);
+	// TODO: This value should be proportional to the length of the trunk/branch.
+	double y1EdgeDerivScaling = 100.0;
+	// TODO: This value should be proportional to the length of the trunk/branch.
+	double y2EdgeDerivScaling = 100.0;
+	// TODO: This value should be proportional to the current radius.
+	double xEdgeDerivScaling = 220.0;
 
-	// TODO: Assuming the polySpline has at least two points. Actually it should have at least 4, as dictated by dbihar.
-	double outletDirection[3];
-	polySpine->GetPoint(polySpine->GetNumberOfPoints() - 1, p0);
-	polySpine->GetPoint(polySpine->GetNumberOfPoints() - 2, p1);
-	vtkMath::Subtract(p1, p0, outletDirection);
+	// TODO: This should be provided with the centreline; it should be the point number where the bifurcation starts.
+	// Perhaps it can be associated with the centreline as a vtkInformation object.
+	int bifuractionPointId = 30;
 
 	// TODO: This should be provided with the centreline; it should be calculated to match the angle of the cross product
-	// of the bifurcation vectors. Perhaps it can be associated with the centreline as vtkInformation object.
-	double radiusDirection[3] = {0.0, 0.0, 1.0};
+	// of the bifurcation vectors. Perhaps it can be associated with the centreline as a vtkInformation object.
+	double inletRadiusDirection[3] = {0.0, 0.0, 1.0};
 
 	vtkSmartPointer<vtkTransform> radiusSpinTransform = vtkSmartPointer<vtkTransform>::New();
 	vtkSmartPointer<vtkTransform> radiusTranslationTransform = vtkSmartPointer<vtkTransform>::New();
 
-	double outletRotationAngle;
-	double outletRotationAxis[3];
+	// Calculate the angle at bifurcation.
+	polySpine->GetPoint(bifuractionPointId - 1, p0);
+	polySpine->GetPoint(bifuractionPointId, p1);
+	double tmp0[3];
+	vtkMath::Subtract(p1, p0, tmp0);
+
+	polySpine->GetPoint(bifuractionPointId, p0);
+	polySpine->GetPoint(bifuractionPointId + 1, p1);
+	double tmp1[3];
+	vtkMath::Subtract(p1, p0, tmp1);
+
+	double angleAtBifurcation = AngleBetweenVectors(NegateVector(tmp0), tmp1);
+
+	double stepDirection[3];
+	double radiusDirection[3];
 
 	for(vtkIdType pId = 0; pId < pIds; pId++)
 	{
-		// This point is declared inside the loop to make sure it is (0,0,0) at the start of every iteration.
+		// Point is declared inside the loop to make sure it is (0,0,0) at the start of every iteration.
 		double point[3] = {0.0};
+		// Derivative is declared inside the loop to make sure it is (0,0,0) at the start of every interation.
+		double deriv[3] = {0.0};
 
-		// Terminal arc.
-		// Inserting points along the y = y1 boundary segment (in theory).
-		double localRadius = polySpine->GetPointData()->GetScalars()->GetComponent(0, 0);
-		// TODO: Use vtkMaths::MultiplyScalar(...).
+		int centrelinePId = 0;
+		// Map our current pId along the boundary to the centreline point.
+		if(pId < cQuads)
+		{
+			centrelinePId = 0;
+		}
+		else if(pId < cQuads + yQuads)
+		{
+			centrelinePId = pId - cQuads;
+		}
+		else if(pId < cQuads * 2 + yQuads)
+		{
+			centrelinePId = polySpine->GetNumberOfPoints() - 1;
+		}
+		else
+		{
+			centrelinePId = -(pId - cQuads - yQuads - cQuads) + (polySpine->GetNumberOfPoints() - 1);
+		}
+
+		// Direction of the current segment of the centreline.
+		// Should it be normalised? Will it be helpful?
+		// TODO: This only needs to be computed when centrelinePId value changes.
+		if(centrelinePId < polySpine->GetNumberOfPoints() - 1)
+		{
+			polySpine->GetPoint(centrelinePId + 1, p1);
+			polySpine->GetPoint(centrelinePId, p0);
+			vtkMath::Subtract(p1, p0, stepDirection);
+			vtkMath::Normalize(stepDirection);
+		}
+
+		// TODO: Radius direction needs to be recalculated for every step, based on the change of stepDirection.
+		memcpy(radiusDirection, inletRadiusDirection, sizeof(double) * 3);
 
 		double radiusVector[3];
 		memcpy(radiusVector, radiusDirection, sizeof(double) * 3);
-		vtkMath::MultiplyScalar(radiusVector, localRadius);
+		// Magnitude of radius is obtained from the appropriate point attibute in the polySpine.
+		vtkMath::MultiplyScalar(radiusVector, polySpine->GetPointData()->GetScalars()->GetComponent(0, 0));
 
+		// Inlet arc.
+		// Inserting points along the y = y1 boundary segment (in theory).
 		if(pId < cQuads)
 		{
 			// Parametric angle.
@@ -192,62 +242,150 @@ int main(int argc, char* argv[]) {
 			// Working around the first point (inlet) of the spine.
 			radiusSpinTransform->Translate(polySpine->GetPoint(0));
 			// Rotate around the vector pointing from the first spine point to the second.
-			radiusSpinTransform->RotateWXYZ(vtkMath::DegreesFromRadians(vtkMath::Pi() * dA), inletDirection);
+			radiusSpinTransform->RotateWXYZ(vtkMath::DegreesFromRadians(vtkMath::Pi() * dA), stepDirection);
 
 			// Turn the radius vector.
 			radiusSpinTransform->TransformPoint(radiusVector, point);
+
+			if(pId != 0)
+			{
+				// If not at the patch corner point, we need to insert a derivative.
+				// In this case it would be opposite to the stepDirection vector.
+				memcpy(deriv, NegateVector(stepDirection), sizeof(double) * 3);
+
+				// Scale vector magnitude.
+				vtkMath::MultiplyScalar(deriv, y1EdgeDerivScaling);
+			}
 		}
 		// Line parallel to the centreline.
 		// Inserting points along the x = x2 boundary segment (in theory).
 		else if(pId < cQuads + yQuads)
 		{
-			// Point id along the centreline.
-			int lId = pId - cQuads;
-
 			// Get the point from the centreline, update the transform.
 			radiusTranslationTransform->Identity();
-			radiusTranslationTransform->Translate(polySpine->GetPoint(lId));
+			radiusTranslationTransform->Translate(polySpine->GetPoint(centrelinePId));
 
 			// Translate the radius vector.
 			radiusTranslationTransform->TransformPoint(NegateVector(radiusVector), point);
+
+			if(pId != cQuads)
+			{
+				vtkSmartPointer<vtkTransform> localDerivTransform = vtkSmartPointer<vtkTransform>::New();
+
+				if(centrelinePId == bifuractionPointId)
+				{
+					localDerivTransform->RotateWXYZ(vtkMath::DegreesFromRadians(angleAtBifurcation) / -2.0, radiusVector);
+
+					localDerivTransform->TransformPoint(stepDirection, deriv);
+
+					// Flip it the other way.
+					NegateVector(deriv, deriv);
+
+					// Scale vector magnitude.
+					vtkMath::MultiplyScalar(deriv, xEdgeDerivScaling);
+				}
+				else
+				{
+					double derivAngleScaling = 1.2;
+
+					// Parametric coordinate along this edge: [0,1].
+					double dL = (pId - cQuads) / (double)yQuads;
+
+					// If not at the corner point, we need to insert a derivative.
+					// In this case it would be parallel to the cross product of the stepDirection and the radiusDirection vectors.
+					vtkMath::Cross(NegateVector(stepDirection), radiusDirection, deriv);
+
+					// Scale vector magnitude.
+					vtkMath::MultiplyScalar(deriv, xEdgeDerivScaling);
+
+					// TODO: The angle should be gradually leaning towards the derivative at the bifurcation point.
+					if(centrelinePId < bifuractionPointId)
+					{
+						double derivAngleInc = dL * ((vtkMath::DegreesFromRadians(angleAtBifurcation) / -2.0) * derivAngleScaling);
+						std::cout << "--- derivAngleInc: " << derivAngleInc << std::endl;
+					}
+					else if(centrelinePId > bifuractionPointId)
+					{
+						double derivAngleInc = (-dL + 1) * ((vtkMath::DegreesFromRadians(angleAtBifurcation) / -2.0) * derivAngleScaling);
+						std::cout << "+++ derivAngleInc: " << derivAngleInc << std::endl;
+					}
+				}
+			}
 		}
-		// Terminal arc.
+		// Outlet arc.
 		// Inserting points along the y = y2 boundary segment.
 		else if(pId < cQuads * 2 + yQuads)
 		{
-			// Local point id.
-			int lId = pId - cQuads - yQuads;
 			// Parametric angle.
-			double dA = lId / (double)cQuads;
+			double dA = (pId - cQuads - yQuads) / (double)cQuads;
 
 			// Set up the transform.
 			radiusSpinTransform->Identity();
 			// Working around the last point (outlet) of the spine.
-			radiusSpinTransform->Translate(polySpine->GetPoint(polySpine->GetNumberOfPoints() - 1));
+			radiusSpinTransform->Translate(polySpine->GetPoint(centrelinePId));
 			// Rotate around the vector pointing from the last spine point to the one before that.
-			radiusSpinTransform->RotateWXYZ(vtkMath::DegreesFromRadians(vtkMath::Pi() * dA), outletDirection);
+			radiusSpinTransform->RotateWXYZ(vtkMath::DegreesFromRadians(vtkMath::Pi() * dA), NegateVector(stepDirection));
 
 			// Turn the radius vector.
 			radiusSpinTransform->TransformPoint(NegateVector(radiusVector), point);
+
+			if(pId != cQuads + yQuads)
+			{
+				// If not at the patch corner point, we need to insert a derivative.
+				// In this case it would be opposite to the stepDirection vector.
+				memcpy(deriv, stepDirection, sizeof(double) * 3);
+
+				// Scale vector magnitude.
+				vtkMath::MultiplyScalar(deriv, y2EdgeDerivScaling);
+			}
 		}
 		// Line parallel to the centreline.
 		// Inserting points along the x = x1 boundary segment.
 		else
 		{
-			int lId = -1 * (pId - cQuads - yQuads - cQuads) + (polySpine->GetNumberOfPoints() - 1);
-
 			// Get the point from the centreline, update the transform.
 			radiusTranslationTransform->Identity();
-			radiusTranslationTransform->Translate(polySpine->GetPoint(lId));
+			radiusTranslationTransform->Translate(polySpine->GetPoint(centrelinePId));
 
 			// Translate the radius vector.
 			radiusTranslationTransform->TransformPoint(radiusVector, point);
+
+			if(pId != cQuads * 2 + yQuads)
+			{
+				if(centrelinePId == bifuractionPointId)
+				{
+					vtkSmartPointer<vtkTransform> localDerivTransform = vtkSmartPointer<vtkTransform>::New();
+					localDerivTransform->RotateWXYZ(vtkMath::DegreesFromRadians(angleAtBifurcation) / -2.0, radiusVector);
+
+					localDerivTransform->TransformPoint(stepDirection, deriv);
+
+					// Flip it the other way.
+					NegateVector(deriv, deriv);
+
+					// Scale vector magnitude.
+					vtkMath::MultiplyScalar(deriv, xEdgeDerivScaling);
+				}
+				else
+				{
+					// If not at the corner point, we need to insert a derivative.
+					// In this case it would be parallel to the cross product of the stepDirection and the radiusDirection vectors.
+					vtkMath::Cross(NegateVector(stepDirection), radiusDirection, deriv);
+
+					// Scale vector magnitude.
+					vtkMath::MultiplyScalar(deriv, xEdgeDerivScaling);
+
+					// TODO: The angle should be gradually leaning towards the derivative at the bifurcation point.
+				}
+			}
 		}
-		std::cout << "Ineserting point: "; PrintPoint(point); std::cout << std::endl;
+
+		// std::cout << "Ineserting point: "; PrintPoint(point); std::cout << std::endl;
+
 		vtkIdType id = points->InsertNextPoint(point);
 		// Sanity check.
 		assert(id == pId);
 		boundary->GetPointIds()->InsertNextId(pId);
+		derivatives->InsertNextTuple(deriv);
 	}
 	boundary->GetPointIds()->InsertNextId(0);
 
@@ -257,8 +395,9 @@ int main(int argc, char* argv[]) {
 	vtkSmartPointer<vtkPolyData> inputPatch = vtkSmartPointer<vtkPolyData>::New();
 	inputPatch->SetPoints(points);
 	inputPatch->SetLines(boundaries);
+	inputPatch->GetPointData()->SetVectors(derivatives);
 
-	showPolyData(inputPatch, NULL);
+	showPolyData(inputPatch, NULL, 1.0);
 
 	vtkSmartPointer<vtkDbiharPatchFilter> patchFilter = vtkSmartPointer<vtkDbiharPatchFilter>::New();
 
