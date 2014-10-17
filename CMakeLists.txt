@@ -82,10 +82,12 @@ add_executable(testWrapDbihar6
 target_link_libraries(testWrapDbihar6
 	${testLibs})
 
-#add_executable(testVesselPatch1
-#	test/testVesselPatch1.cxx)
-#target_link_libraries(testVesselPatch1
-#	${testLibs})
+add_executable(testCentrelineData1
+	src/vtkCentrelineData.cxx
+	test/testCentrelineData1.cxx)
+target_link_libraries(testCentrelineData1
+	${testLibs}
+	vtkIOLegacy)
 
 #add_executable(scratch
 #	test/showPolyData.cxx
