@@ -2,6 +2,12 @@ cmake_minimum_required(VERSION 2.6)
 
 project(WrapDbihar)
 
+set(TEST_DATA_DIR ${PROJECT_SOURCE_DIR}/data CACHE PATH "Location of input data for the test drivers.")
+configure_file(
+	${PROJECT_SOURCE_DIR}/wrapDbiharConfig.h.in
+	${PROJECT_BINARY_DIR}/wrapDbiharConfig.h)
+include_directories(${PROJECT_BINARY_DIR})
+
 find_package(VTK REQUIRED)
 include(${VTK_USE_FILE})
 message(STATUS ${VTK_USE_FILE})
@@ -75,6 +81,11 @@ add_executable(testWrapDbihar6
 	test/testWrapDbihar6.cxx)
 target_link_libraries(testWrapDbihar6
 	${testLibs})
+
+#add_executable(testVesselPatch1
+#	test/testVesselPatch1.cxx)
+#target_link_libraries(testVesselPatch1
+#	${testLibs})
 
 #add_executable(scratch
 #	test/showPolyData.cxx

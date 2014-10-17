@@ -460,9 +460,9 @@ int main(int argc, char* argv[]) {
 
 	showPolyData(inputPatch, structuredGrid);
 
-	std::cout << "Exiting " << __FILE__ << std::endl;
-
 	delete [] radiiValues;
+
+	std::cout << "Exiting " << __FILE__ << std::endl;
 
 	return EXIT_SUCCESS;
 }
