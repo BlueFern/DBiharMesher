@@ -1,17 +1,8 @@
 #include <stdlib.h>
 
 #include <vtkSmartPointer.h>
-#include <vtkPoints.h>
-#include <vtkPointData.h>
-#include <vtkIdList.h>
-#include <vtkPolyLine.h>
-#include <vtkDoubleArray.h>
-#include <vtkCellArray.h>
 #include <vtkPolyData.h>
-#include <vtkDataObject.h>
-
-#include <vtkParametricSpline.h>
-#include <vtkParametricFunctionSource.h>
+#include <vtkGenericDataObjectReader.h>
 
 #include <vtkPolyDataMapper.h>
 #include <vtkActor.h>
@@ -19,9 +10,8 @@
 #include <vtkRenderer.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkInteractorStyleSwitch.h>
-#include <vtkMath.h>
 
-#include <vtkGenericDataObjectReader.h>
+#include <vtkXMLPolyDataWriter.h>
 
 #include "wrapDbiharConfig.h"
 #include "vtkCentrelineData.h"
@@ -36,26 +26,25 @@ int main(int argc, char* argv[]) {
 
 	vtkPolyData *vesselCentreline = vtkPolyData::SafeDownCast(vesselCentrelineReader->GetOutput());
 
-	vtkSmartPointer<vtkParametricSpline> splineFilter = vtkSmartPointer<vtkParametricSpline>::New();
-	splineFilter->SetPoints(vesselCentreline->GetPoints());
-
-	vtkSmartPointer<vtkParametricFunctionSource> functionSource = vtkSmartPointer<vtkParametricFunctionSource>::New();
-	functionSource->SetParametricFunction(splineFilter);
-	 // TODO: Verify this is the right mode for this case.
-	functionSource->SetScalarModeToU();
-	functionSource->SetUResolution(1000);
-	functionSource->Update();
-
 	vtkSmartPointer<vtkCentrelineData> centrelineSegmentSource = vtkSmartPointer<vtkCentrelineData>::New();
-	std::cout << centrelineSegmentSource->GetNumberOfPoints() << std::endl;
-	centrelineSegmentSource->DeepCopy(functionSource->GetOutput());
-	std::cout << centrelineSegmentSource->GetNumberOfPoints() << std::endl;
+	centrelineSegmentSource->SetCentrelineData(vesselCentreline);
 
-	exit(EXIT_SUCCESS);
+	vtkPolyData *resampledVesselCentreline = centrelineSegmentSource->GetOutput();
+
+	std::cout << "Number of input points: " << vesselCentreline->GetNumberOfPoints() << std::endl;
+	std::cout << "Number of output points: " << resampledVesselCentreline->GetNumberOfPoints() << std::endl;
+
+#if 0
+	vtkSmartPointer<vtkXMLPolyDataWriter> tmpWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+	tmpWriter->SetInputData(resampledVesselCentreline);
+	tmpWriter->SetFileName("resampledCentreline.vtp");
+	tmpWriter->Write();
+#endif
 
 #if 1
 	vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-	mapper->SetInputData(functionSource->GetOutput());
+	mapper->SetInputData(resampledVesselCentreline);
+	//mapper->SetInputData(vesselCentreline);
 
 	vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
 	actor->SetMapper(mapper);
