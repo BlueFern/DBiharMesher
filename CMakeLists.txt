@@ -87,6 +87,7 @@ add_executable(testCentrelineData1
 	test/testCentrelineData1.cxx)
 target_link_libraries(testCentrelineData1
 	${testLibs}
+	vtkIOXML
 	vtkIOLegacy)
 
 #add_executable(scratch

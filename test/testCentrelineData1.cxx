@@ -11,7 +11,10 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkInteractorStyleSwitch.h>
 
+#include <vtkCellArray.h>
+
 #include <vtkXMLPolyDataWriter.h>
+#include <vtkGenericDataObjectWriter.h>
 
 #include "wrapDbiharConfig.h"
 #include "vtkCentrelineData.h"
@@ -32,13 +35,43 @@ int main(int argc, char* argv[]) {
 	vtkPolyData *resampledVesselCentreline = centrelineSegmentSource->GetOutput();
 
 	std::cout << "Number of input points: " << vesselCentreline->GetNumberOfPoints() << std::endl;
-	std::cout << "Number of output points: " << resampledVesselCentreline->GetNumberOfPoints() << std::endl;
+	std::cout << "Number of input lines: " << vesselCentreline->GetNumberOfLines() << std::endl;
 
-#if 0
+	std::cout << "Number of output points: " << resampledVesselCentreline->GetNumberOfPoints() << std::endl;
+	std::cout << "Number of output lines: " << resampledVesselCentreline->GetNumberOfLines() << std::endl;
+
+	vtkSmartPointer<vtkCellArray> lines = resampledVesselCentreline->GetLines();
+	lines->InitTraversal();
+
+	for(vtkIdType lineId = 0; lineId < lines->GetNumberOfCells(); lineId++)
+	{
+		vtkSmartPointer<vtkIdList> lineIds = vtkSmartPointer<vtkIdList>::New();
+		lines->GetNextCell(lineIds);
+		vtkSmartPointer<vtkIdList> lastId = vtkSmartPointer<vtkIdList>::New();
+		lastId->InsertNextId(lineIds->GetId(lineIds->GetNumberOfIds() - 1));
+
+		// WARNING: The code in the GetCellNeighbors method changes the traversal location in the vtkCellArray. In my view it is utterly retarded.
+		vtkIdType traverseLocation = resampledVesselCentreline->GetLines()->GetTraversalLocation();
+
+		vtkSmartPointer<vtkIdList> neighbourCellIds = vtkSmartPointer<vtkIdList>::New();
+		resampledVesselCentreline->GetCellNeighbors(lineId, lastId, neighbourCellIds);
+
+		// Restore traversal location.
+		resampledVesselCentreline->GetLines()->SetTraversalLocation(traverseLocation);
+
+		std::cout << "Line " << lineId << " shares last point with " << neighbourCellIds->GetNumberOfIds() << " cells." << std::endl;
+	}
+
+#if 1
 	vtkSmartPointer<vtkXMLPolyDataWriter> tmpWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
 	tmpWriter->SetInputData(resampledVesselCentreline);
 	tmpWriter->SetFileName("resampledCentreline.vtp");
 	tmpWriter->Write();
+
+	vtkSmartPointer<vtkGenericDataObjectWriter> writer = vtkSmartPointer<vtkGenericDataObjectWriter>::New();
+	writer->SetFileName("resampledCentreline.vtk");
+	writer->SetInputData(resampledVesselCentreline);
+	writer->Write();
 #endif
 
 #if 1
