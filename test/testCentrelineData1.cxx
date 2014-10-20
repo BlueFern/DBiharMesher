@@ -1,4 +1,5 @@
-#include <stdlib.h>
+
+#include <map>
 
 #include <vtkSmartPointer.h>
 #include <vtkPolyData.h>
@@ -24,7 +25,8 @@ int main(int argc, char* argv[]) {
 	std::cout << "Starting " << __FILE__ << std::endl;
 
 	vtkSmartPointer<vtkGenericDataObjectReader> vesselCentrelineReader = vtkSmartPointer<vtkGenericDataObjectReader>::New();
-	vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/721A_Centreline.vtk").c_str());
+	vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/227A_Centreline.vtk").c_str());
+	//vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/721A_Centreline.vtk").c_str());
 	vesselCentrelineReader->Update();
 
 	vtkPolyData *vesselCentreline = vtkPolyData::SafeDownCast(vesselCentrelineReader->GetOutput());
@@ -43,6 +45,9 @@ int main(int argc, char* argv[]) {
 	vtkSmartPointer<vtkCellArray> lines = resampledVesselCentreline->GetLines();
 	lines->InitTraversal();
 
+	// Obtain bifurcations from the centreline tree.
+	std::map<vtkIdType, std::vector<vtkIdType> > bifurcations;
+
 	for(vtkIdType lineId = 0; lineId < lines->GetNumberOfCells(); lineId++)
 	{
 		vtkSmartPointer<vtkIdList> lineIds = vtkSmartPointer<vtkIdList>::New();
@@ -60,6 +65,34 @@ int main(int argc, char* argv[]) {
 		resampledVesselCentreline->GetLines()->SetTraversalLocation(traverseLocation);
 
 		std::cout << "Line " << lineId << " shares last point with " << neighbourCellIds->GetNumberOfIds() << " cells." << std::endl;
+
+		if(neighbourCellIds->GetNumberOfIds() > 0)
+		{
+			std::vector<vtkIdType> idList;
+
+			// The assumption is that non-bifurcating segments are not divided in segments.
+			if(neighbourCellIds->GetNumberOfIds() == 1)
+			{
+				// vtkWarningMacro("Found a point shared between only two cells, which breaks the assumption of non-bifurcating segments integrity.");
+			}
+
+			for(vtkIdType pId = 0; pId < neighbourCellIds->GetNumberOfIds(); pId++)
+			{
+				idList.push_back(neighbourCellIds->GetId(pId));
+			}
+			bifurcations[lineId] = idList;
+		}
+	}
+
+	for(std::map<vtkIdType, std::vector<vtkIdType> >::iterator it = bifurcations.begin(); it != bifurcations.end(); ++it)
+	{
+		std::vector<vtkIdType> v = it->second;
+		std::cout << it->first << " => ";
+		for(std::vector<vtkIdType>::iterator i = v.begin(); i != v.end(); ++i)
+		{
+			std::cout << *i << " ";
+		}
+		std::cout << endl;
 	}
 
 #if 1

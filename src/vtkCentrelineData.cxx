@@ -76,8 +76,6 @@ void vtkCentrelineData::SetCentrelineData(vtkPolyData *centrelineData)
 	centrelineData->GetLines()->InitTraversal();
 	while(centrelineData->GetLines()->GetNextCell(cellIds))
 	{
-		std::cout << centrelineData->GetLines()->GetTraversalLocation() << std::endl;
-
 		// 1.
 		vtkSmartPointer<vtkPoints> splineInputPoints = vtkSmartPointer<vtkPoints>::New();
 
