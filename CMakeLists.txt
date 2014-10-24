@@ -84,6 +84,7 @@ target_link_libraries(testWrapDbihar6
 
 add_executable(testCentrelineData1
 	src/vtkCentrelineData.cxx
+	test/showPolyData.cxx
 	test/testCentrelineData1.cxx)
 target_link_libraries(testCentrelineData1
 	${testLibs}
