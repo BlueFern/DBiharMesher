@@ -41,7 +41,7 @@ double* NegateVector(const double v[3])
 
 typedef enum {d_start = 0, d_end = 1} direction_loc;
 
-// Get line ids.
+// Get line ids for a given line.
 vtkSmartPointer<vtkIdList> GetLineIds(vtkPolyData *polyData, vtkIdType lineId)
 {
 	bool lineFound = false;
@@ -66,6 +66,7 @@ vtkSmartPointer<vtkIdList> GetLineIds(vtkPolyData *polyData, vtkIdType lineId)
 	return line;
 }
 
+// Get global point id.
 vtkIdType GetPointIdFromLine(vtkPolyData *polyData, vtkIdType lineId, direction_loc location)
 {
 	vtkSmartPointer<vtkIdList> line = GetLineIds(polyData, lineId);
@@ -88,6 +89,7 @@ vtkIdType GetPointIdFromLine(vtkPolyData *polyData, vtkIdType lineId, direction_
 	return pId;
 }
 
+// Get global point id.
 vtkIdType GetPointIdFromLine(vtkPolyData *polyData, vtkIdType lineId, vtkIdType pointId)
 {
 	vtkSmartPointer<vtkIdList> line = GetLineIds(polyData, lineId);
@@ -103,47 +105,56 @@ vtkIdType GetPointIdFromLine(vtkPolyData *polyData, vtkIdType lineId, vtkIdType 
 	return pId;
 }
 
+// Get the vector indicating the direction of the centreline at this location.
 void GetLineDirection(vtkPolyData *polyData, vtkIdType lineId, double *vector, direction_loc location)
 {
-	std::cout << __FUNCTION__ << std::endl;
-
 	vtkSmartPointer<vtkIdList> line = GetLineIds(polyData, lineId);
 
 	double p0[3];
 	double p1[3];
-	// TODO: Use error macro to check there are enough points for this.
+
+	// TODO: Use VTK error macro to check there are enough points for this.
 	assert(line->GetNumberOfIds() > 0);
+
 	if(location == d_start)
 	{
 		std::cout << "Getting (S) point with id " << line->GetId(1) << std::endl;
-		polyData->GetPoint(line->GetId(0), p0);
-		polyData->GetPoint(line->GetId(1), p1);
+		polyData->GetPoint(line->GetId(1), p0);
+		polyData->GetPoint(line->GetId(0), p1);
 	}
 	else if(location == d_end)
 	{
 		std::cout << "Getting (E) point with id " << line->GetId(line->GetNumberOfIds() - 2) << std::endl;
-		polyData->GetPoint(line->GetId(line->GetNumberOfIds() - 2), p0);
-		polyData->GetPoint(line->GetId(line->GetNumberOfIds() - 1), p1);
+		polyData->GetPoint(line->GetId(line->GetNumberOfIds() - 1), p0);
+		polyData->GetPoint(line->GetId(line->GetNumberOfIds() - 2), p1);
 	}
 	vtkMath::Subtract(p1, p0, vector);
 }
 
+// Get the vector indicating the direction of the centreline at this location.
 void GetLineDirection(vtkPolyData *polyData, vtkIdType lineId, vtkIdType pointId, double *vector)
 {
 	vtkSmartPointer<vtkIdList> line = GetLineIds(polyData, lineId);
 
 	// TODO: Use error macro to check there are enough points for this.
-	assert(pointId - 1 >= 0);
+	assert(pointId >= 0);
 	assert(line->GetNumberOfIds() > pointId);
 
 	double p0[3];
 	double p1[3];
 
 	// Mapping from a local id in the line to polydata global point id.
-	polyData->GetPoint(line->GetId(pointId - 1), p0);
-	polyData->GetPoint(line->GetId(pointId), p1);
-
-	vtkMath::Subtract(p1, p0, vector);
+	if(pointId != 0)
+	{
+		polyData->GetPoint(line->GetId(pointId), p0);
+		polyData->GetPoint(line->GetId(pointId - 1), p1);
+		vtkMath::Subtract(p1, p0, vector);
+	}
+	else
+	{
+		// This is a bit fishy, because the direction at the fist point is calculated an the direction at the next point.
+		GetLineDirection(polyData, lineId, pointId + 1, vector);
+	}
 }
 
 // This is taken from vtkMath class in VTK Nightly in October 2014.
@@ -156,10 +167,8 @@ double AngleBetweenVectors(const double v1[3], const double v2[3])
 
 void DoubleCross(const double v0[3], const double c0[3], const double v1[3], double c1[3])
 {
-	//double tmp[3];
 	vtkMath::Cross(c0, v0, c1);
 	vtkMath::Cross(v1, c1, c1);
-	// vtkMath::Normalize(c1);
 }
 
 int main(int argc, char* argv[]) {
@@ -188,10 +197,9 @@ int main(int argc, char* argv[]) {
 	lines->InitTraversal();
 
 	// Obtain bifurcations from the centreline tree.
-	std::map<vtkIdType, std::vector<vtkIdType> > bifurcations;
-	// Remember the vessel segments not ending in bifurcations.
-	vtkSmartPointer<vtkIdList> terminals = vtkSmartPointer<vtkIdList>::New();
+	std::map<vtkIdType, std::vector<vtkIdType> > bifurcations; // TODO: This needs a more appropriate name.
 
+	// Find bifurcations and terminals.
 	for(vtkIdType lineId = 0; lineId < lines->GetNumberOfCells(); lineId++)
 	{
 		vtkSmartPointer<vtkIdList> lineIds = vtkSmartPointer<vtkIdList>::New();
@@ -210,28 +218,22 @@ int main(int argc, char* argv[]) {
 
 		std::cout << "Line " << lineId << " shares last point with " << neighbourCellIds->GetNumberOfIds() << " cells." << std::endl;
 
-		if(neighbourCellIds->GetNumberOfIds() > 0)
-		{
-			std::vector<vtkIdType> idList;
+		std::vector<vtkIdType> idList;
 
-			// The assumption is that non-bifurcating segments are not divided in segments.
-			if(neighbourCellIds->GetNumberOfIds() == 1)
-			{
-				// vtkWarningMacro("Found a point shared between only two cells, which breaks the assumption of non-bifurcating segments integrity.");
-			}
-
-			for(vtkIdType pId = 0; pId < neighbourCellIds->GetNumberOfIds(); pId++)
-			{
-				idList.push_back(neighbourCellIds->GetId(pId));
-			}
-			bifurcations[lineId] = idList;
-		}
-		else
+		// The assumption is that non-bifurcating segments are not divided in segments.
+		if(neighbourCellIds->GetNumberOfIds() == 1)
 		{
-			terminals->InsertNextId(lineId);
+			// vtkWarningMacro("Found a point shared between only two cells, which breaks the assumption of non-bifurcating segments integrity.");
 		}
+
+		for(vtkIdType pId = 0; pId < neighbourCellIds->GetNumberOfIds(); pId++)
+		{
+			idList.push_back(neighbourCellIds->GetId(pId));
+		}
+		bifurcations[lineId] = idList;
 	}
 
+	// Print the map.
 	for(std::map<vtkIdType, std::vector<vtkIdType> >::iterator it = bifurcations.begin(); it != bifurcations.end(); ++it)
 	{
 		std::vector<vtkIdType> v = it->second;
@@ -275,10 +277,20 @@ int main(int argc, char* argv[]) {
 	vtkSmartPointer<vtkDoubleArray> bifurcationVectors = vtkSmartPointer<vtkDoubleArray>::New();
 	bifurcationVectors->SetNumberOfComponents(3);
 
+	// Process the bifurcations.
 	for(std::map<vtkIdType, std::vector<vtkIdType> >::iterator it = bifurcations.begin(); it != bifurcations.end(); ++it)
 	{
+		// Skip all terminals
+		if(it->second.size() == 0)
+		{
+			continue;
+		}
+
+		// Find radius vector c0 at this bifurcation.
 		GetLineDirection(resampledVesselCentreline, it->second[0], v0, d_start);
+		NegateVector(v0, v0);
 		GetLineDirection(resampledVesselCentreline, it->second[1], v1, d_start);
+		NegateVector(v1, v1);
 
 		// c0 orthogonal to v0 and v1.
 		vtkMath::Cross(v0, v1, c0);
@@ -290,18 +302,14 @@ int main(int argc, char* argv[]) {
 		// Set the length of c0 to the radius value at this point.
 		vtkMath::MultiplyScalar(c0, resampledVesselCentreline->GetPointData()->GetScalars()->GetTuple1(bifId));
 
-		// Store c0.
+		// Store bifurcation vector c0.
 		radiiVectors0->SetTuple(bifId, c0);
-
-		// Process the rest of the line.
-		vtkSmartPointer<vtkIdList> lineIds = GetLineIds(resampledVesselCentreline, it->first);
-		vtkMath::Normalize(c0);
 
 		// v0 here is an average of the two vectors.
 		vtkMath::Add(v0, v1, v0);
 		vtkMath::MultiplyScalar(v0, 0.5);
 
-		// Remember the average vector at the start of this bifurcation.
+		// Store the average vector at the start of this bifurcation.
 		lineIdToAverageVectorMap[it->second[0]] = bifurcationVectors->InsertNextTuple(v0);
 		lineIdToAverageVectorMap[it->second[1]] = bifurcationVectors->InsertNextTuple(v0);
 
@@ -311,6 +319,7 @@ int main(int argc, char* argv[]) {
 		double twistDirection = 1;
 
 		// Figure out the twist angle between bifurcations.
+		// Skip the first bifurcation.
 		if(it->first > bifurcations.begin()->first)
 		{
 			vtkIdType parentBifId = GetPointIdFromLine(resampledVesselCentreline, it->first, d_start);
@@ -338,10 +347,28 @@ int main(int argc, char* argv[]) {
 			}
 		}
 
+		// Process the rest of the line.
+		vtkSmartPointer<vtkIdList> lineIds = GetLineIds(resampledVesselCentreline, it->first);
+		vtkMath::Normalize(c0);
+
 		// Insert radii for the rest of the line.
-		for(vtkIdType pId = lineIds->GetNumberOfIds() - 2; pId >= 1; pId--)
+		// Traversing the centreline in reverse direction.
+		for(vtkIdType pId = lineIds->GetNumberOfIds() - 2; pId >= 0; pId--)
 		{
+			// Skipping start of the bifurcation unless at the first bifurcation.
+			if(it->first > bifurcations.begin()->first && pId == 0)
+			{
+				continue;
+			}
+
+			if(it->first == 0 && pId == 0)
+			{
+				std::cout << "fp" << std::endl;
+			}
+
 			GetLineDirection(resampledVesselCentreline, it->first, pId, v1);
+			PrintPoint(v1); std::cout << std::endl;
+			NegateVector(v1, v1); // Reverse direction traversal.
 
 			DoubleCross(v0, c0, v1, c1);
 			vtkMath::Normalize(c1);
@@ -359,7 +386,9 @@ int main(int argc, char* argv[]) {
 				twistAngle -= angleInc;
 			}
 
-			// Store at point pId vector data.
+			// TODO: Interpolate between c0 and c1.
+
+			// Store radius vector at point pId.
 			radiiVectors0->SetTuple(globalPointId, c1);
 
 			// Save v1 as v0 for next iteration.
@@ -368,9 +397,9 @@ int main(int argc, char* argv[]) {
 			// Save c1 as c0 for next iteration.
 			vtkMath::Add(c1, zero, c0);
 		}
-		// TODO: Need to insert first point for root trunk.
 	}
 
+	// Print the map.
 	for(std::map<vtkIdType, vtkIdType>::iterator it = lineIdToAverageVectorMap.begin(); it != lineIdToAverageVectorMap.end(); ++it)
 	{
 		std::cout << it->first << " => " << it->second << std::endl;
@@ -379,35 +408,40 @@ int main(int argc, char* argv[]) {
 		PrintPoint(tuple); std::cout << std::endl;
 	}
 
-
-
-	for(vtkIdType id = 0; id < terminals->GetNumberOfIds(); id++)
+	// Process the teminals.
+	for(std::map<vtkIdType, std::vector<vtkIdType> >::iterator it = bifurcations.begin(); it != bifurcations.end(); ++it)
 	{
-		vtkIdType lId = terminals->GetId(id);
+		// Skip all bifurcations.
+		if(it->second.size() > 0)
+		{
+			continue;
+		}
 
 		// Process the rest of the line.
-		vtkSmartPointer<vtkIdList> lineIds = GetLineIds(resampledVesselCentreline, lId);
+		vtkSmartPointer<vtkIdList> lineIds = GetLineIds(resampledVesselCentreline, it->first);
 
-		vtkIdType parentBifId = GetPointIdFromLine(resampledVesselCentreline, lId, d_start);
-		std::cout << parentBifId << std::endl;
+		vtkIdType parentBifId = GetPointIdFromLine(resampledVesselCentreline, it->first, d_start);
+		// std::cout << parentBifId << std::endl;
 
-		GetLineDirection(resampledVesselCentreline, lId, 1, v0);
+		GetLineDirection(resampledVesselCentreline, it->first, 1, v0);
 		NegateVector(v0, v0);
+
 		// c0 from parent bifurcation.
 		radiiVectors0->GetTuple(parentBifId, c0);
 
-		for(vtkIdType pId = 2; pId < lineIds->GetNumberOfIds() - 1; pId++)
+		// Traversing forward.
+		for(vtkIdType pId = 1; pId < lineIds->GetNumberOfIds(); pId++)
 		{
-			GetLineDirection(resampledVesselCentreline, lId, pId + 1, v1);
+			GetLineDirection(resampledVesselCentreline, it->first, pId, v1);
 			NegateVector(v1, v1);
 
 			DoubleCross(v0, c0, v1, c1);
 			vtkMath::Normalize(c1);
 
-			vtkIdType globalPointId = GetPointIdFromLine(resampledVesselCentreline, lId, pId);
+			vtkIdType globalPointId = GetPointIdFromLine(resampledVesselCentreline, it->first, pId);
 			vtkMath::MultiplyScalar(c1, resampledVesselCentreline->GetPointData()->GetScalars()->GetTuple1(globalPointId));
 
-			// Store at point pId vector data.
+			// Store radius vector at point pId.
 			radiiVectors0->SetTuple(globalPointId, c1);
 
 			// Save v1 as v0 for next iteration.
@@ -418,6 +452,7 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
+	// Associate the raddii vectors with the centreline.
 	resampledVesselCentreline->GetPointData()->SetVectors(radiiVectors0);
 	resampledVesselCentreline->GetPointData()->SetActiveVectors("radii_vectors");
 
