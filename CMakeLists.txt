@@ -41,45 +41,55 @@ target_link_libraries(vtkDbiharPatchFilter
 	dbihar
 	vtkFiltersHybrid)
 
+add_library(vtkScalarRadiiToVectorsFilter src/vtkScalarRadiiToVectorsFilter.cxx)
+target_link_libraries(vtkScalarRadiiToVectorsFilter
+	vtkFiltersHybrid)
+
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/test)
 
-set(testLibs vtkDbiharPatchFilter vtkRenderingAnnotation vtkRenderingFreeTypeOpenGL vtkInteractionStyle vtkFiltersSources)
+set(testLibs vtkIOXML vtkIOLegacy vtkRenderingAnnotation vtkRenderingFreeTypeOpenGL vtkInteractionStyle vtkFiltersSources)
 
 add_executable(testWrapDbihar1
 	test/showPolyData.cxx
 	test/testWrapDbihar1.cxx)
 target_link_libraries(testWrapDbihar1
+	vtkDbiharPatchFilter
 	${testLibs})
 
 add_executable(testWrapDbihar2
 	test/showPolyData.cxx
 	test/testWrapDbihar2.cxx)
 target_link_libraries(testWrapDbihar2
+	vtkDbiharPatchFilter
 	${testLibs})
 
 add_executable(testWrapDbihar3
 	test/showPolyData.cxx
 	test/testWrapDbihar3.cxx)
 target_link_libraries(testWrapDbihar3
+	vtkDbiharPatchFilter
 	${testLibs})
 
 add_executable(testWrapDbihar4
 	test/showPolyData.cxx
 	test/testWrapDbihar4.cxx)
 target_link_libraries(testWrapDbihar4
+	vtkDbiharPatchFilter
 	${testLibs})
 
 add_executable(testWrapDbihar5
 	test/showPolyData.cxx
 	test/testWrapDbihar5.cxx)
 target_link_libraries(testWrapDbihar5
+	vtkDbiharPatchFilter
 	${testLibs})
 
 add_executable(testWrapDbihar6
 	test/showPolyData.cxx
 	test/testWrapDbihar6.cxx)
 target_link_libraries(testWrapDbihar6
+	vtkDbiharPatchFilter
 	${testLibs})
 
 add_executable(testCentrelineData1
@@ -87,9 +97,17 @@ add_executable(testCentrelineData1
 	test/showPolyData.cxx
 	test/testCentrelineData1.cxx)
 target_link_libraries(testCentrelineData1
-	${testLibs}
-	vtkIOXML
-	vtkIOLegacy)
+	vtkDbiharPatchFilter
+	${testLibs})
+
+add_executable(testvtkScalarRadiiToVectorsFilter1
+	src/vtkCentrelineData.cxx
+	test/showPolyData.cxx
+	test/testvtkScalarRadiiToVectorsFilter1.cxx)
+target_link_libraries(testvtkScalarRadiiToVectorsFilter1
+	vtkDbiharPatchFilter
+	vtkScalarRadiiToVectorsFilter
+	${testLibs})
 
 #add_executable(scratch
 #	test/showPolyData.cxx
