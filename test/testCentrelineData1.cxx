@@ -118,13 +118,13 @@ void GetLineDirection(vtkPolyData *polyData, vtkIdType lineId, double *vector, d
 
 	if(location == d_start)
 	{
-		std::cout << "Getting (S) point with id " << line->GetId(1) << std::endl;
+		//std::cout << "Getting (S) point with id " << line->GetId(1) << std::endl;
 		polyData->GetPoint(line->GetId(1), p0);
 		polyData->GetPoint(line->GetId(0), p1);
 	}
 	else if(location == d_end)
 	{
-		std::cout << "Getting (E) point with id " << line->GetId(line->GetNumberOfIds() - 2) << std::endl;
+		//std::cout << "Getting (E) point with id " << line->GetId(line->GetNumberOfIds() - 2) << std::endl;
 		polyData->GetPoint(line->GetId(line->GetNumberOfIds() - 1), p0);
 		polyData->GetPoint(line->GetId(line->GetNumberOfIds() - 2), p1);
 	}
@@ -149,6 +149,7 @@ void GetLineDirection(vtkPolyData *polyData, vtkIdType lineId, vtkIdType pointId
 		polyData->GetPoint(line->GetId(pointId), p0);
 		polyData->GetPoint(line->GetId(pointId - 1), p1);
 		vtkMath::Subtract(p1, p0, vector);
+		//GetLineDirection(polyData, line->GetId(pointId), vector);
 	}
 	else
 	{
@@ -265,12 +266,8 @@ int main(int argc, char* argv[]) {
 	double zero[3] = {0};
 	double v0[3];
 	double v1[3];
-	//double v2[3];
 	double c0[3];
 	double c1[3];
-	//double c2[3];
-
-	double r[3];
 
 	// Keeping track of the average vectors at bifurcations.
 	// This is a somewhat clunky way of doing so, which a map from
@@ -302,7 +299,7 @@ int main(int argc, char* argv[]) {
 		vtkIdType bifId = GetPointIdFromLine(resampledVesselCentreline, it->first, d_end);
 
 		// Set the length of c0 to the radius value at this point.
-		vtkMath::MultiplyScalar(c0, resampledVesselCentreline->GetPointData()->GetScalars()->GetTuple1(bifId));
+		// ==> vtkMath::MultiplyScalar(c0, resampledVesselCentreline->GetPointData()->GetScalars()->GetTuple1(bifId));
 
 		// Store bifurcation vector c0.
 		radiiVectors0->SetTuple(bifId, c0);
@@ -371,7 +368,9 @@ int main(int argc, char* argv[]) {
 			vtkMath::Normalize(c1);
 
 			vtkIdType globalPointId = GetPointIdFromLine(resampledVesselCentreline, it->first, pId);
-			vtkMath::MultiplyScalar(c1, resampledVesselCentreline->GetPointData()->GetScalars()->GetTuple1(globalPointId));
+
+			// Set the length of c1 to the radius value at this point.
+			// ==> vtkMath::MultiplyScalar(c1, resampledVesselCentreline->GetPointData()->GetScalars()->GetTuple1(globalPointId));
 
 			// Add the twist.
 			if(it->first > bifurcations.begin()->first)
@@ -403,7 +402,7 @@ int main(int argc, char* argv[]) {
 		PrintPoint(tuple); std::cout << std::endl;
 	}
 
-	// Process the teminals.
+	// Process the terminals.
 	for(std::map<vtkIdType, std::vector<vtkIdType> >::iterator it = bifurcations.begin(); it != bifurcations.end(); ++it)
 	{
 		// Skip all bifurcations.
@@ -417,7 +416,7 @@ int main(int argc, char* argv[]) {
 
 		vtkIdType parentBifId = GetPointIdFromLine(resampledVesselCentreline, it->first, d_start);
 
-		GetLineDirection(resampledVesselCentreline, it->first, 1, v0);
+		GetLineDirection(resampledVesselCentreline, it->first, d_start, v0);
 		NegateVector(v0, v0);
 
 		// c0 from parent bifurcation.
@@ -431,11 +430,13 @@ int main(int argc, char* argv[]) {
 			GetLineDirection(resampledVesselCentreline, it->first, pId, v1);
 			NegateVector(v1, v1);
 
+			vtkIdType globalPointId = GetPointIdFromLine(resampledVesselCentreline, it->first, pId);
+
 			DoubleCross(v0, c0, v1, c1);
 			vtkMath::Normalize(c1);
 
-			vtkIdType globalPointId = GetPointIdFromLine(resampledVesselCentreline, it->first, pId);
-			vtkMath::MultiplyScalar(c1, resampledVesselCentreline->GetPointData()->GetScalars()->GetTuple1(globalPointId));
+			// Set the length of c1 to the radius value at this point.
+			// ==> vtkMath::MultiplyScalar(c1, resampledVesselCentreline->GetPointData()->GetScalars()->GetTuple1(globalPointId));
 
 			// Store radius vector at point pId.
 			radiiVectors0->SetTuple(globalPointId, c1);
@@ -445,6 +446,47 @@ int main(int argc, char* argv[]) {
 
 			// Save c1 as c0 for next iteration.
 			vtkMath::Add(c1, zero, c0);
+		}
+	}
+
+	// Set radii vectors from normalised vectors to correct magnitude.
+
+	// Root point.
+	radiiVectors0->GetTuple(0, c0);
+	vtkMath::MultiplyScalar(c0, resampledVesselCentreline->GetPointData()->GetScalars()->GetTuple1(0));
+	radiiVectors0->SetTuple(0, c0);
+
+	lines->InitTraversal();
+
+	vtkSmartPointer<vtkIdList> line = vtkSmartPointer<vtkIdList>::New();
+
+	for(vtkIdType id = 0; id < lines->GetNumberOfCells(); id++)
+	{
+		lines->GetNextCell(line);
+
+		for(vtkIdType posInLine = 1; posInLine < line->GetNumberOfIds(); posInLine++)
+		{
+			vtkIdType pId = line->GetId(posInLine);
+
+			radiiVectors0->GetTuple(pId, c0);
+
+			// Interpolation of radii vectors.
+			if(posInLine < line->GetNumberOfIds() - 1)
+			{
+				GetLineDirection(resampledVesselCentreline, id, posInLine, v0);
+				GetLineDirection(resampledVesselCentreline, id, posInLine + 1, v1);
+
+				DoubleCross(v0, c0, v1, c1);
+
+				vtkMath::Normalize(c1);
+				vtkMath::Add(c0, c1, c0);
+				vtkMath::MultiplyScalar(c0, 0.5);
+
+				vtkMath::Normalize(c0);
+			}
+
+			vtkMath::MultiplyScalar(c0, resampledVesselCentreline->GetPointData()->GetScalars()->GetTuple1(pId));
+			radiiVectors0->SetTuple(pId, c0);
 		}
 	}
 
