@@ -270,6 +270,8 @@ int main(int argc, char* argv[]) {
 	double c1[3];
 	//double c2[3];
 
+	double r[3];
+
 	// Keeping track of the average vectors at bifurcations.
 	// This is a somewhat clunky way of doing so, which a map from
 	// bifurcation point ids to indices in the bifurcation vectors array.
@@ -341,7 +343,7 @@ int main(int argc, char* argv[]) {
 			transform->RotateWXYZ(twistAngle, v1);
 			transform->TransformPoint(tmp, tmp);
 
-			if(vtkMath::DegreesFromRadians(AngleBetweenVectors(tmp, c1)) < 1.0e-3)
+			if(vtkMath::DegreesFromRadians(AngleBetweenVectors(tmp, c1)) < 1.0e-5)
 			{
 				twistDirection = -1;
 			}
@@ -349,26 +351,21 @@ int main(int argc, char* argv[]) {
 
 		// Process the rest of the line.
 		vtkSmartPointer<vtkIdList> lineIds = GetLineIds(resampledVesselCentreline, it->first);
-		vtkMath::Normalize(c0);
 
 		// Insert radii for the rest of the line.
 		// Traversing the centreline in reverse direction.
 		for(vtkIdType pId = lineIds->GetNumberOfIds() - 2; pId >= 0; pId--)
 		{
-			// Skipping start of the bifurcation unless at the first bifurcation.
+			// Skip the start of the bifurcation unless at the first bifurcation.
 			if(it->first > bifurcations.begin()->first && pId == 0)
 			{
 				continue;
 			}
 
-			if(it->first == 0 && pId == 0)
-			{
-				std::cout << "fp" << std::endl;
-			}
+			vtkMath::Normalize(c0);
 
 			GetLineDirection(resampledVesselCentreline, it->first, pId, v1);
-			PrintPoint(v1); std::cout << std::endl;
-			NegateVector(v1, v1); // Reverse direction traversal.
+			NegateVector(v1, v1);
 
 			DoubleCross(v0, c0, v1, c1);
 			vtkMath::Normalize(c1);
@@ -385,8 +382,6 @@ int main(int argc, char* argv[]) {
 				transform->TransformPoint(c1, c1);
 				twistAngle -= angleInc;
 			}
-
-			// TODO: Interpolate between c0 and c1.
 
 			// Store radius vector at point pId.
 			radiiVectors0->SetTuple(globalPointId, c1);
@@ -421,7 +416,6 @@ int main(int argc, char* argv[]) {
 		vtkSmartPointer<vtkIdList> lineIds = GetLineIds(resampledVesselCentreline, it->first);
 
 		vtkIdType parentBifId = GetPointIdFromLine(resampledVesselCentreline, it->first, d_start);
-		// std::cout << parentBifId << std::endl;
 
 		GetLineDirection(resampledVesselCentreline, it->first, 1, v0);
 		NegateVector(v0, v0);
@@ -432,6 +426,8 @@ int main(int argc, char* argv[]) {
 		// Traversing forward.
 		for(vtkIdType pId = 1; pId < lineIds->GetNumberOfIds(); pId++)
 		{
+			vtkMath::Normalize(c0);
+
 			GetLineDirection(resampledVesselCentreline, it->first, pId, v1);
 			NegateVector(v1, v1);
 
