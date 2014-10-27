@@ -22,9 +22,9 @@
 
 #define PRINT_DEBUG 0
 
-const char *vtkDbiharPatchFilter::DERIV_ARR_NAME = {"derivatives"};
-
 vtkStandardNewMacro(vtkDbiharPatchFilter);
+
+const char *vtkDbiharPatchFilter::DERIV_ARR_NAME = {"derivatives"};
 
 vtkDbiharPatchFilter::vtkDbiharPatchFilter()
 {
@@ -55,6 +55,7 @@ vtkDbiharPatchFilter::vtkDbiharPatchFilter()
 
 int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
+	// Get the input and output.
 	vtkPolyData* input = vtkPolyData::GetData(inputVector[0], 0);
 	vtkPolyData* output = vtkPolyData::GetData(outputVector, 0);
 
@@ -94,7 +95,7 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 	vtkDataArray *derivatives = input->GetPointData()->GetVectors(DERIV_ARR_NAME);
 	if(derivatives == 0)
 	{
-		vtkWarningWithObjectMacro(this, "Boundary derivatives are not set in the input data. Setting derivatives to zero.");
+		vtkWarningMacro("Boundary derivatives are not set in the input data. Setting derivatives to zero.");
 		std::fill_n(bda, this->NDim, 0.0);
 		std::fill_n(bdb, this->NDim, 0.0);
 		std::fill_n(bdc, this->MDim, 0.0);

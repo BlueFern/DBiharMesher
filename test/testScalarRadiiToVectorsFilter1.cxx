@@ -18,10 +18,11 @@
 #include <vtkXMLPolyDataWriter.h>
 #include <vtkGenericDataObjectWriter.h>
 
-#include "wrapDbiharConfig.h"
 #include "vtkCentrelineData.h"
 #include "vtkScalarRadiiToVectorsFilter.h"
 #include "showPolyData.h"
+
+#include "wrapDbiharConfig.h"
 
 int main(int argc, char* argv[]) {
 

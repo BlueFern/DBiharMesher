@@ -100,11 +100,11 @@ target_link_libraries(testCentrelineData1
 	vtkDbiharPatchFilter
 	${testLibs})
 
-add_executable(testvtkScalarRadiiToVectorsFilter1
+add_executable(testScalarRadiiToVectorsFilter1
 	src/vtkCentrelineData.cxx
 	test/showPolyData.cxx
-	test/testvtkScalarRadiiToVectorsFilter1.cxx)
-target_link_libraries(testvtkScalarRadiiToVectorsFilter1
+	test/testScalarRadiiToVectorsFilter1.cxx)
+target_link_libraries(testScalarRadiiToVectorsFilter1
 	vtkDbiharPatchFilter
 	vtkScalarRadiiToVectorsFilter
 	${testLibs})

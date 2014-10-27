@@ -29,8 +29,6 @@ public:
 
 	static vtkDbiharPatchFilter *New();
 
-	static const char *DERIV_ARR_NAME;
-
 	vtkSetMacro(A,double);
 	vtkSetMacro(B,double);
 	vtkSetMacro(C,double);
@@ -41,6 +39,8 @@ public:
 	vtkSetMacro(IFlag,int);
 	vtkSetMacro(Alpha,double);
 	vtkSetMacro(Beta,double);
+
+	static const char *DERIV_ARR_NAME;
 
 protected:
 	vtkDbiharPatchFilter();

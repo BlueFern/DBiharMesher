@@ -1,1 +1,6 @@
+#ifndef __wrapDbiharConfig_h
+#define __wrapDbiharConfig_h
+
 #define TEST_DATA_DIR "@TEST_DATA_DIR@"
+
+#endif

@@ -11,8 +11,9 @@
 #include <vtkMath.h>
 
 #include "vtkDbiharPatchFilter.h"
-
 #include "showPolyData.h"
+
+#include "wrapDbiharConfig.h"
 
 double radToDeg(double angleInRad)
 {

@@ -20,8 +20,9 @@
 #include <vtkMath.h>
 
 #include "vtkDbiharPatchFilter.h"
-
 #include "showPolyData.h"
+
+#include "wrapDbiharConfig.h"
 
 double returnPoint[3] = {0.0};
 void NegateVector(const double v[3], double nV[3])

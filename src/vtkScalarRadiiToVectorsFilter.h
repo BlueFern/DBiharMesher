@@ -5,7 +5,13 @@
 #ifndef __vtkScalarRadiiToVectorsFilter_h
 #define __vtkScalarRadiiToVectorsFilter_h
 
-#include "vtkPolyDataAlgorithm.h"
+#include <vtkAlgorithm.h>
+#include <vtkPolyDataAlgorithm.h>
+
+class vtkIdList;
+
+// TODO: Declare this within the class.
+typedef enum {d_start = 0, d_end = 1} LocationType;
 
 class vtkScalarRadiiToVectorsFilter: public vtkPolyDataAlgorithm {
 public:
@@ -13,6 +19,8 @@ public:
 	void PrintSelf(ostream& os, vtkIndent indent);
 
 	static vtkScalarRadiiToVectorsFilter *New();
+
+	static const char *RADII_ARR_NAME;
 
 protected:
 	vtkScalarRadiiToVectorsFilter();
@@ -25,6 +33,18 @@ protected:
 private:
 	vtkScalarRadiiToVectorsFilter(const vtkScalarRadiiToVectorsFilter&); // Not implemented.
 	void operator=(const vtkScalarRadiiToVectorsFilter&); // Not implemented.
+
+	double angleTolerance;
+
+	vtkPolyData* input;
+
+	void GetDirectionVector(vtkIdType lineId, LocationType location, double *vector);
+	void GetDirectionVector(vtkIdType lineId, vtkIdType pointId, double *vector);
+
+	vtkIdType GetGlobalPointId(vtkIdType lineId, LocationType location);
+	vtkIdType GetGlobalPointId(vtkIdType lineId, vtkIdType pointId);
+
+	vtkSmartPointer<vtkIdList> GetLineIds(vtkIdType lineId);
 
 };
 

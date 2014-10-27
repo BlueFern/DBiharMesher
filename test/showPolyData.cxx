@@ -25,8 +25,6 @@
 #include <vtkCallbackCommand.h>
 #include <vtkCommand.h>
 
-#include "vtkDbiharPatchFilter.h"
-
 #include "showPolyData.h"
 
 void PrintPoint(double *point)
@@ -68,12 +66,12 @@ void showPolyData(vtkPolyData *input, vtkStructuredGrid *output, double derivate
 		inputActor->GetProperty()->SetColor(1,0,0);
 		inputActor->GetProperty()->SetLineWidth(1.5);
 
-		vtkDataArray *derivatives = input->GetPointData()->GetVectors(vtkDbiharPatchFilter::DERIV_ARR_NAME);
+		vtkDataArray *derivatives = input->GetPointData()->GetVectors("derivatives");
 		if(derivatives != 0)
 		{
 			derivativesPresent = true;
 
-			input->GetPointData()->SetActiveVectors(vtkDbiharPatchFilter::DERIV_ARR_NAME);
+			input->GetPointData()->SetActiveVectors("derivatives");
 
 			vtkSmartPointer<vtkArrowSource> arrowSource = vtkSmartPointer<vtkArrowSource>::New();
 			arrowSource->Update();
