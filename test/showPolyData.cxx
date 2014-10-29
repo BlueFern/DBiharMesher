@@ -169,6 +169,7 @@ void showPolyData1(vtkPolyData *input, double vectorScaling)
 	inputActor->SetMapper(inputMapper);
 	inputActor->GetProperty()->SetColor(1,0,0);
 	inputActor->GetProperty()->SetLineWidth(1.5);
+	inputActor->GetProperty()->SetPointSize(5);
 
 	vtkDataArray *vectors = input->GetPointData()->GetVectors();
 	if(vectors != 0)
