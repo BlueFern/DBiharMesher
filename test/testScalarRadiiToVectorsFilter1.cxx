@@ -46,6 +46,7 @@ int main(int argc, char* argv[]) {
 	std::cout << "Number of output points: " << resampledVesselCentreline->GetNumberOfPoints() << std::endl;
 	std::cout << "Number of output lines: " << resampledVesselCentreline->GetNumberOfLines() << std::endl;
 
+#if 0
 	vtkSmartPointer<vtkCellArray> lines = resampledVesselCentreline->GetLines();
 	lines->InitTraversal();
 
@@ -98,11 +99,15 @@ int main(int argc, char* argv[]) {
 		std::cout << endl;
 	}
 
+	showPolyData1(resampledVesselCentreline, 0.5);
+#endif
+
 	vtkSmartPointer<vtkScalarRadiiToVectorsFilter> scalarRadiiToVectorsFilter = vtkSmartPointer<vtkScalarRadiiToVectorsFilter>::New();
 	scalarRadiiToVectorsFilter->SetInputData(resampledVesselCentreline);
 	scalarRadiiToVectorsFilter->Update();
 
-	showPolyData1(resampledVesselCentreline, 0.5);
+	vtkSmartPointer<vtkPolyData> pd = scalarRadiiToVectorsFilter->GetOutput();
+	showPolyData1(pd, 0.5);
 
 #if 1
 	vtkSmartPointer<vtkXMLPolyDataWriter> tmpWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();

@@ -2,8 +2,6 @@
  * Program: vtkScalarRadiiToVectorsFilter.
  */
 
-#include <map>
-
 #include <vtkObjectFactory.h>
 #include <vtkCallbackCommand.h>
 #include <vtkStreamingDemandDrivenPipeline.h>
@@ -48,6 +46,8 @@ vtkScalarRadiiToVectorsFilter::vtkScalarRadiiToVectorsFilter()
 
 	angleTolerance = 1.0e-5;
 
+	// input = GetInput();
+
 	// TODO: Implement progress updates in RequestData.
 	vtkSmartPointer<vtkCallbackCommand> progressCallback = vtkSmartPointer<vtkCallbackCommand>::New();
 	progressCallback->SetCallback(this->ProgressFunction);
@@ -63,14 +63,14 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 	vtkSmartPointer<vtkCellArray> lines = input->GetLines();
 	lines->InitTraversal();
 
-	// Obtain tree structure (bifurcations and terminals) from the centreline tree.
-	std::map<vtkIdType, std::vector<vtkIdType> > treeInfo;
-
-	// Find treeInfo and terminals.
+	// Obtain tree structure (bifurcations and terminals) from the centreline points, lines.
 	for(vtkIdType lineId = 0; lineId < lines->GetNumberOfCells(); lineId++)
 	{
-		vtkSmartPointer<vtkIdList> lineIds = vtkSmartPointer<vtkIdList>::New();
+		vtkSmartPointer<vtkIdList> lineIds = vtkSmartPointer<vtkIdList>::New(); // TODO: Take this out of the loop.
+
 		lines->GetNextCell(lineIds);
+		std::cout << lineId << ": " << lineIds->GetNumberOfIds() << std::endl;
+
 		vtkSmartPointer<vtkIdList> lastId = vtkSmartPointer<vtkIdList>::New();
 		lastId->InsertNextId(lineIds->GetId(lineIds->GetNumberOfIds() - 1));
 
@@ -83,7 +83,7 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 		// Restore traversal location.
 		input->GetLines()->SetTraversalLocation(traverseLocation);
 
-		std::cout << "Line " << lineId << " shares last point with " << neighbourCellIds->GetNumberOfIds() << " cells." << std::endl;
+		//std::cout << "Line " << lineId << " shares last point with " << neighbourCellIds->GetNumberOfIds() << " cells." << std::endl;
 
 		std::vector<vtkIdType> idList;
 
@@ -119,6 +119,9 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 	radiiVectors->SetNumberOfComponents(3);
 	radiiVectors->SetNumberOfTuples(input->GetNumberOfPoints());
 	radiiVectors->SetName(RADII_ARR_NAME);
+
+	// TODO: Check this can be removed safely.
+	// For now, populate it just in case some tuples get missed.
 	for(int i = 0; i < radiiVectors->GetNumberOfTuples(); i++)
 	{
 		radiiVectors->SetTuple3(i, 0, 0, 0);
@@ -130,14 +133,7 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 	double c0[3];
 	double c1[3];
 
-	// Keeping track of the average vectors at bifurcations.
-	// This is a somewhat clunky way of doing so, which a map from
-	// bifurcation point ids to indices in the bifurcation vectors array.
-	std::map<vtkIdType, vtkIdType> lineIdToAverageVectorMap;
-	vtkSmartPointer<vtkDoubleArray> bifurcationVectors = vtkSmartPointer<vtkDoubleArray>::New();
-	bifurcationVectors->SetNumberOfComponents(3);
-
-	// Process the bifurcations.
+	// Process the bifurcations to find c0 at each bifurcation point.
 	for(std::map<vtkIdType, std::vector<vtkIdType> >::iterator it = treeInfo.begin(); it != treeInfo.end(); ++it)
 	{
 		// Skip all terminals
@@ -147,9 +143,9 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 		}
 
 		// Find radius vector c0 at this bifurcation.
-		GetDirectionVector(it->second[0], d_start, v0);
+		GetDirectionVector(it->second[0], 0, v0);
 		vtkMath::MultiplyScalar(v0, -1);
-		GetDirectionVector(it->second[1], d_start, v1);
+		GetDirectionVector(it->second[1], 0, v1);
 		vtkMath::MultiplyScalar(v1, -1);
 
 		// c0 orthogonal to v0 and v1.
@@ -157,67 +153,118 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 		vtkMath::Normalize(c0);
 
 		// Global point id.
-		vtkIdType bifId = GetGlobalPointId(it->first, d_end);
+		vtkSmartPointer<vtkIdList> lineIds = GetLineIds(it->first);
 
 		// Store bifurcation vector c0.
-		radiiVectors->SetTuple(bifId, c0);
+		radiiVectors->SetTuple(lineIds->GetId(lineIds->GetNumberOfIds() - 1), c0);
 
 		// v0 here is an average of the two vectors.
 		vtkMath::Add(v0, v1, v0);
 		vtkMath::MultiplyScalar(v0, 0.5);
+		vtkMath::Normalize(v0);
+		avrgVectors[it->first] = vtkVector3d(v0);
+	}
 
-		// Store the average vector at the start of this bifurcation.
-		lineIdToAverageVectorMap[it->second[0]] = bifurcationVectors->InsertNextTuple(v0);
-		lineIdToAverageVectorMap[it->second[1]] = bifurcationVectors->InsertNextTuple(v0);
-
-		// Rotation angle for radius at every point, to make sure there is a
-		// gradual twist between start and end radius vector for each segment.
-		double twistAngle = 0.0;
-		double twistDirection = 1;
-
-		// Figure out the twist angle between bifurcations.
-		// Skip the first bifurcation.
-		if(it->first > treeInfo.begin()->first)
+	// First pass to calculate twist angles.
+	std::map<vtkIdType, double> twistAngles;
+	for(std::map<vtkIdType, std::vector<vtkIdType> >::iterator it = treeInfo.begin(); it != treeInfo.end(); ++it)
+	{
+		// Skip all terminals
+		if(it->second.size() == 0)
 		{
-			vtkIdType parentBifId = GetGlobalPointId(it->first, d_start);
-			bifurcationVectors->GetTuple((lineIdToAverageVectorMap[it->first]), v1);
+			continue;
+		}
+
+		vtkSmartPointer<vtkIdList> lineIds = GetLineIds(it->first);
+
+		GetDirectionVector(it->first, lineIds->GetNumberOfIds() - 1, v0);
+		vtkMath::MultiplyScalar(v0, -1);
+
+		radiiVectors->GetTuple(lineIds->GetId(lineIds->GetNumberOfIds() - 1), c0);
+
+		// Traversing backwards.
+		for(vtkIdType pId = lineIds->GetNumberOfIds() - 2; pId >= 0; pId--)
+		{
+			// vtkMath::Normalize(c0);
+
+			// Process first point only for inlet.
+			if(pId == 0 && it->first != treeInfo.begin()->first)
+			{
+				break;
+			}
+
+			GetDirectionVector(it->first, pId, v1);
 
 			DoubleCross(v0, c0, v1, c1);
 			vtkMath::Normalize(c1);
 
-			double tmp[3];
-			// c0 from parent bifurcation.
-			radiiVectors->GetTuple(parentBifId, tmp);
-
-			// Figure out the angle between this bifurcation, and the closest upstearm bifurcation.
-			twistAngle = vtkMath::DegreesFromRadians(AngleBetweenVectors(c1, tmp));
-
-			// Figure out twist direction.
-			// Probably can use double cross instead of a transform.
-			vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
-			transform->RotateWXYZ(twistAngle, v1);
-			transform->TransformPoint(tmp, tmp);
-
-			if(vtkMath::DegreesFromRadians(AngleBetweenVectors(tmp, c1)) < angleTolerance)
+			// Store radius vector at point pId. This is only inlet.
+			if(pId == 0 && it->first == treeInfo.begin()->first)
 			{
-				twistDirection = -1;
+				radiiVectors->SetTuple(lineIds->GetId(pId), c1);
 			}
-		}
 
+			// Calculate twist angle.
+			if(pId == 1 && it->first != treeInfo.begin()->first)
+			{
+				radiiVectors->GetTuple(lineIds->GetId(0), c0);
+				GetDirectionVector(it->first, 0, v0);
+				double tmp[3];
+				DoubleCross(v0, c0, v1, tmp);
+
+				twistAngles[it->first] = vtkMath::DegreesFromRadians(AngleBetweenVectors(tmp, c1));
+
+				// Figure out twist direction.
+				vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
+				transform->RotateWXYZ(twistAngles[it->first], v1);
+				transform->TransformPoint(tmp, tmp);
+
+				if(vtkMath::DegreesFromRadians(AngleBetweenVectors(tmp, c1)) < angleTolerance)
+				{
+					twistAngles[it->first] *= -1.0;
+				}
+				std::cout << twistAngles[it->first] << std::endl;
+			}
+
+			// Save v1 as v0 for next iteration.
+			vtkMath::Add(v1, zero, v0);
+
+			// Save c1 as c0 for next iteration.
+			vtkMath::Add(c1, zero, c0);
+		}
+	}
+
+	// Second pass to insert radii for all locations other than bifurcations and inlet point.
+	for(std::map<vtkIdType, std::vector<vtkIdType> >::iterator it = treeInfo.begin(); it != treeInfo.end(); ++it)
+	{
 		// Process the rest of the line.
 		vtkSmartPointer<vtkIdList> lineIds = GetLineIds(it->first);
 
-		// Insert radii for the rest of the line.
-		// Traversing the centreline in reverse direction.
-		for(vtkIdType pId = lineIds->GetNumberOfIds() - 2; pId >= 0; pId--)
+		GetDirectionVector(it->first, 0, v0);
+		vtkMath::MultiplyScalar(v0, -1);
+
+		// c0 from parent bifurcation.
+		radiiVectors->GetTuple(lineIds->GetId(0), c0);
+
+		bool terminal = (it->second.size() == 0);
+
+		// Calculate twist increment.
+		double twistAngle = 0.0;
+		if(!terminal && (it->first > treeInfo.begin()->first))
 		{
-			// Skip the start of the bifurcation unless at the first bifurcation.
-			if(it->first > treeInfo.begin()->first && pId == 0)
+			twistAngle = twistAngles[it->first];
+		}
+
+		// Traversing forward.
+		for(vtkIdType pId = 1; pId < lineIds->GetNumberOfIds(); pId++)
+		{
+			// If not on terminal, do not insert/overwrite last point.
+			if(!terminal && pId == lineIds->GetNumberOfIds() - 1)
 			{
-				continue;
+				break;
 			}
 
-			vtkMath::Normalize(c0);
+			//vtkMath::Normalize(c0);
 
 			GetDirectionVector(it->first, pId, v1);
 			vtkMath::MultiplyScalar(v1, -1);
@@ -225,20 +272,18 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 			DoubleCross(v0, c0, v1, c1);
 			vtkMath::Normalize(c1);
 
-			vtkIdType globalPointId = GetGlobalPointId(it->first, pId);
-
 			// Add the twist.
-			if(it->first > treeInfo.begin()->first)
+			if(!terminal && (it->first > treeInfo.begin()->first))
 			{
-				double angleInc = twistAngle / (double)pId;
+				double angleInc = twistAngle / (double)(lineIds->GetNumberOfIds() - 1 - pId);
 				vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
-				transform->RotateWXYZ(twistDirection * angleInc, v1);
+				transform->RotateWXYZ(angleInc, v1);
 				transform->TransformPoint(c1, c1);
 				twistAngle -= angleInc;
 			}
 
 			// Store radius vector at point pId.
-			radiiVectors->SetTuple(globalPointId, c1);
+			radiiVectors->SetTuple(lineIds->GetId(pId), c1);
 
 			// Save v1 as v0 for next iteration.
 			vtkMath::Add(v1, zero, v0);
@@ -247,91 +292,27 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 			vtkMath::Add(c1, zero, c0);
 		}
 	}
-
-#if PRINT_DEBUG
-	// Print the map.
-	for(std::map<vtkIdType, vtkIdType>::iterator it = lineIdToAverageVectorMap.begin(); it != lineIdToAverageVectorMap.end(); ++it)
-	{
-		std::cout << it->first << " => " << it->second << std::endl;
-		double tuple[3];
-		bifurcationVectors->GetTuple(it->second, tuple);
-		PrintPoint(tuple); std::cout << std::endl;
-	}
-#endif
-
-	// Process the terminals.
-	for(std::map<vtkIdType, std::vector<vtkIdType> >::iterator it = treeInfo.begin(); it != treeInfo.end(); ++it)
-	{
-		// Skip all bifurcations.
-		if(it->second.size() > 0)
-		{
-			continue;
-		}
-
-		// Process the rest of the line.
-		vtkSmartPointer<vtkIdList> lineIds = GetLineIds(it->first);
-
-		vtkIdType parentBifId = GetGlobalPointId(it->first, d_start);
-
-		GetDirectionVector(it->first, d_start, v0);
-		vtkMath::MultiplyScalar(v0, -1);
-
-		// c0 from parent bifurcation.
-		radiiVectors->GetTuple(parentBifId, c0);
-
-		// Traversing forward.
-		for(vtkIdType pId = 1; pId < lineIds->GetNumberOfIds(); pId++)
-		{
-			vtkMath::Normalize(c0);
-
-			GetDirectionVector(it->first, pId, v1);
-			vtkMath::MultiplyScalar(v1, -1);
-
-			vtkIdType globalPointId = GetGlobalPointId(it->first, pId);
-
-			DoubleCross(v0, c0, v1, c1);
-			vtkMath::Normalize(c1);
-
-			// Set the length of c1 to the radius value at this point.
-			// ==> vtkMath::MultiplyScalar(c1, resampledVesselCentreline->GetPointData()->GetScalars()->GetTuple1(globalPointId));
-
-			// Store radius vector at point pId.
-			radiiVectors->SetTuple(globalPointId, c1);
-
-			// Save v1 as v0 for next iteration.
-			vtkMath::Add(v1, zero, v0);
-
-			// Save c1 as c0 for next iteration.
-			vtkMath::Add(c1, zero, c0);
-		}
-	}
-
-	// Set radii vectors from normalised vectors to correct magnitude.
 
 	// Root point.
 	radiiVectors->GetTuple(0, c0);
 	vtkMath::MultiplyScalar(c0, input->GetPointData()->GetScalars()->GetTuple1(0));
 	radiiVectors->SetTuple(0, c0);
 
-	lines->InitTraversal();
-
-	vtkSmartPointer<vtkIdList> line = vtkSmartPointer<vtkIdList>::New();
-
-	for(vtkIdType id = 0; id < lines->GetNumberOfCells(); id++)
+	// Third pass to interpolate radii on sharp angles and set correct magnitude.
+	for(std::map<vtkIdType, std::vector<vtkIdType> >::iterator it = treeInfo.begin(); it != treeInfo.end(); ++it)
 	{
-		lines->GetNextCell(line);
+		// Process the rest of the line.
+		vtkSmartPointer<vtkIdList> lineIds = GetLineIds(it->first);
 
-		for(vtkIdType posInLine = 1; posInLine < line->GetNumberOfIds(); posInLine++)
+		for(vtkIdType pId = 1; pId < lineIds->GetNumberOfIds(); pId++)
 		{
-			vtkIdType pId = line->GetId(posInLine);
-
-			radiiVectors->GetTuple(pId, c0);
+			radiiVectors->GetTuple(lineIds->GetId(pId), c0);
 
 			// Interpolation of radii vectors.
-			if(posInLine < line->GetNumberOfIds() - 1)
+			if(pId < lineIds->GetNumberOfIds() - 2)
 			{
-				GetDirectionVector(id, posInLine, v0);
-				GetDirectionVector(id, posInLine + 1, v1);
+				GetDirectionVector(it->first, pId, v0);
+				GetDirectionVector(it->first, pId + 1, v1);
 
 				DoubleCross(v0, c0, v1, c1);
 
@@ -342,11 +323,10 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 				vtkMath::Normalize(c0);
 			}
 
-			vtkMath::MultiplyScalar(c0, input->GetPointData()->GetScalars()->GetTuple1(pId));
-			radiiVectors->SetTuple(pId, c0);
+			vtkMath::MultiplyScalar(c0, input->GetPointData()->GetScalars()->GetTuple1(lineIds->GetId(pId)));
+			radiiVectors->SetTuple(lineIds->GetId(pId), c0);
 		}
 	}
-
 
 	// Shallow copy is good enough?
 	output->ShallowCopy(input);
@@ -371,40 +351,22 @@ void vtkScalarRadiiToVectorsFilter::ProgressFunction(vtkObject* caller, long uns
 }
 
 // Get the vector indicating the direction of the centreline at this location.
-// TODO: Perhaps this method should call the other one that overrides it.
-void vtkScalarRadiiToVectorsFilter::GetDirectionVector(vtkIdType lineId, LocationType location, double *vector)
-{
-	vtkSmartPointer<vtkIdList> line = GetLineIds(lineId);
-
-	double p0[3];
-	double p1[3];
-
-	if(line->GetNumberOfIds() == 0)
-	{
-		vtkErrorMacro("Line " << lineId << " is empty.");
-	}
-
-	if(location == d_start)
-	{
-		input->GetPoint(line->GetId(1), p0);
-		input->GetPoint(line->GetId(0), p1);
-	}
-	else if(location == d_end)
-	{
-		input->GetPoint(line->GetId(line->GetNumberOfIds() - 1), p0);
-		input->GetPoint(line->GetId(line->GetNumberOfIds() - 2), p1);
-	}
-	vtkMath::Subtract(p1, p0, vector);
-}
-
-// Get the vector indicating the direction of the centreline at this location.
 void vtkScalarRadiiToVectorsFilter::GetDirectionVector(vtkIdType lineId, vtkIdType pointId, double *vector)
 {
 	vtkSmartPointer<vtkIdList> line = GetLineIds(lineId);
 
-	// TODO: Use error macro to check there are enough points for this.
-	assert(pointId >= 0);
-	assert(line->GetNumberOfIds() > pointId);
+	if(pointId < 0 || pointId > line->GetNumberOfIds())
+	{
+		vtkErrorMacro("Point id " << pointId << " is out of bounds for line id " << lineId << ".");
+	}
+
+	if(pointId == line->GetNumberOfIds() - 1 && avrgVectors.find(lineId) != avrgVectors.end())
+	{
+		vector[0] = avrgVectors[lineId][0];
+		vector[1] = avrgVectors[lineId][1];
+		vector[2] = avrgVectors[lineId][2];
+		return;
+	}
 
 	double p0[3];
 	double p1[3];
@@ -421,43 +383,6 @@ void vtkScalarRadiiToVectorsFilter::GetDirectionVector(vtkIdType lineId, vtkIdTy
 		// This is a bit fishy, because the direction at the fist point is calculated an the direction at the next point.
 		GetDirectionVector(lineId, pointId + 1, vector);
 	}
-}
-
-// Get global point id.
-// TODO: Perhaps this method should call the other one that overrides it.
-vtkIdType vtkScalarRadiiToVectorsFilter::GetGlobalPointId(vtkIdType lineId, LocationType location)
-{
-	vtkSmartPointer<vtkIdList> line = GetLineIds(lineId);
-
-	if(line->GetNumberOfIds() == 0)
-	{
-		vtkErrorMacro("Line " << lineId << " is empty.");
-	}
-
-	vtkIdType pId = -1;
-	if(location == d_start)
-	{
-		pId = line->GetId(0);
-	}
-	else if(location == d_end)
-	{
-		pId = line->GetId(line->GetNumberOfIds() - 1);
-	}
-	return pId;
-}
-
-// Get global point id.
-vtkIdType vtkScalarRadiiToVectorsFilter::GetGlobalPointId(vtkIdType lineId, vtkIdType pointId)
-{
-	vtkSmartPointer<vtkIdList> line = GetLineIds(lineId);
-
-	if(line->GetNumberOfIds() <= pointId)
-	{
-		vtkErrorMacro("Point id " << pointId << " is out of bounds.");
-	}
-
-	// Mapping from a local id in the line to polydata global point id.
-	return line->GetId(pointId);
 }
 
 // Get ids for points in this line.

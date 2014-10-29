@@ -5,6 +5,9 @@
 #ifndef __vtkScalarRadiiToVectorsFilter_h
 #define __vtkScalarRadiiToVectorsFilter_h
 
+#include <map>
+
+#include <vtkVector.h>
 #include <vtkAlgorithm.h>
 #include <vtkPolyDataAlgorithm.h>
 
@@ -38,11 +41,14 @@ private:
 
 	vtkPolyData* input;
 
-	void GetDirectionVector(vtkIdType lineId, LocationType location, double *vector);
+	std::map<vtkIdType, std::vector<vtkIdType> > treeInfo;
+	std::map<vtkIdType, vtkVector3d> avrgVectors;
+
+	//void GetDirectionVector(vtkIdType lineId, LocationType location, double *vector);
 	void GetDirectionVector(vtkIdType lineId, vtkIdType pointId, double *vector);
 
-	vtkIdType GetGlobalPointId(vtkIdType lineId, LocationType location);
-	vtkIdType GetGlobalPointId(vtkIdType lineId, vtkIdType pointId);
+	//vtkIdType GetGlobalPointId(vtkIdType lineId, LocationType location);
+	//vtkIdType GetGlobalPointId(vtkIdType lineId, vtkIdType pointId);
 
 	vtkSmartPointer<vtkIdList> GetLineIds(vtkIdType lineId);
 
