@@ -43,7 +43,7 @@ private:
 	const double unitsConversionFactor = 1.0e-3;
 	const double ECLength = 65e-6;
 	const double SMCLength = 50e-6;
-	unsigned int ECMultiple = 4;
+	const unsigned int ECMultiple = 4;
 };
 
 #endif

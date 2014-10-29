@@ -114,14 +114,13 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 	}
 #endif
 
-	// Array 0 is for upward radii.
+	// Radii vectors.
 	vtkSmartPointer<vtkDoubleArray> radiiVectors = vtkSmartPointer<vtkDoubleArray>::New();
 	radiiVectors->SetNumberOfComponents(3);
 	radiiVectors->SetNumberOfTuples(input->GetNumberOfPoints());
 	radiiVectors->SetName(RADII_ARR_NAME);
 
-	// TODO: Check this can be removed safely.
-	// For now, populate it just in case some tuples get missed.
+	// TODO: Check this can be removed safely. For now, populate it just in case some tuples get missed.
 	for(int i = 0; i < radiiVectors->GetNumberOfTuples(); i++)
 	{
 		radiiVectors->SetTuple3(i, 0, 0, 0);
@@ -133,7 +132,7 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 	double c0[3];
 	double c1[3];
 
-	// Process the bifurcations to find c0 at each bifurcation point.
+	// Process the bifurcations to find c0 at each bifurcation point as well as average vectors for both starting segments.
 	for(std::map<vtkIdType, std::vector<vtkIdType> >::iterator it = treeInfo.begin(); it != treeInfo.end(); ++it)
 	{
 		// Skip all terminals
@@ -198,7 +197,7 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 			DoubleCross(v0, c0, v1, c1);
 			vtkMath::Normalize(c1);
 
-			// Store radius vector at point pId. This is only inlet.
+			// Store radius vector at point pId. This is only for the inlet.
 			if(pId == 0 && it->first == treeInfo.begin()->first)
 			{
 				radiiVectors->SetTuple(lineIds->GetId(pId), c1);
@@ -223,7 +222,7 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 				{
 					twistAngles[it->first] *= -1.0;
 				}
-				std::cout << twistAngles[it->first] << std::endl;
+				std::cout << "Twist angle at bifurcation " << it->first << ": " << twistAngles[it->first] << std::endl;
 			}
 
 			// Save v1 as v0 for next iteration.
@@ -272,7 +271,7 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 			DoubleCross(v0, c0, v1, c1);
 			vtkMath::Normalize(c1);
 
-			// Add the twist.
+			// Add the twist for segments ending in bifurcations.
 			if(!terminal && (it->first > treeInfo.begin()->first))
 			{
 				double angleInc = twistAngle / (double)(lineIds->GetNumberOfIds() - 1 - pId);
@@ -360,6 +359,7 @@ void vtkScalarRadiiToVectorsFilter::GetDirectionVector(vtkIdType lineId, vtkIdTy
 		vtkErrorMacro("Point id " << pointId << " is out of bounds for line id " << lineId << ".");
 	}
 
+	// For bifurcations the deriction at bifurcation point is defined by the average vector.
 	if(pointId == line->GetNumberOfIds() - 1 && avrgVectors.find(lineId) != avrgVectors.end())
 	{
 		vector[0] = avrgVectors[lineId][0];

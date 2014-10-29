@@ -101,6 +101,8 @@ void vtkCentrelineData::SetCentrelineData(vtkPolyData *centrelineData)
 		// 3.
 		vtkSmartPointer<vtkParametricSpline> parametricSpline = vtkSmartPointer<vtkParametricSpline>::New();
 		parametricSpline->SetPoints(splineInputPoints);
+		parametricSpline->SetLeftConstraint(2);
+		parametricSpline->SetRightConstraint(2);
 
 		vtkSmartPointer<vtkParametricFunctionSource> splinePointsSource = vtkSmartPointer<vtkParametricFunctionSource>::New();
 		splinePointsSource->SetParametricFunction(parametricSpline);
