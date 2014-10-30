@@ -283,7 +283,11 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 			}
 		}
 
-		this->UpdateProgress(static_cast<double>(dim)/static_cast<double>(numDims));
+		if(dim < numDims - 1)
+		{
+			// Basic progress reporting.
+			this->UpdateProgress(static_cast<double>(dim + 1)/static_cast<double>(numDims));
+		}
 
 		// All done for this dimension.
 	}

@@ -56,6 +56,9 @@ vtkScalarRadiiToVectorsFilter::vtkScalarRadiiToVectorsFilter()
 
 int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
+	// Keep track of filter progress.
+	unsigned int numStages = 4;
+
 	// Get the input and output.
 	input = vtkPolyData::GetData(inputVector[0], 0);
 	vtkPolyData* output = vtkPolyData::GetData(outputVector, 0);
@@ -69,7 +72,7 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 		vtkSmartPointer<vtkIdList> lineIds = vtkSmartPointer<vtkIdList>::New(); // TODO: Take this out of the loop.
 
 		lines->GetNextCell(lineIds);
-		std::cout << lineId << ": " << lineIds->GetNumberOfIds() << std::endl;
+		// std::cout << lineId << ": " << lineIds->GetNumberOfIds() << std::endl;
 
 		vtkSmartPointer<vtkIdList> lastId = vtkSmartPointer<vtkIdList>::New();
 		lastId->InsertNextId(lineIds->GetId(lineIds->GetNumberOfIds() - 1));
@@ -99,6 +102,9 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 		}
 		treeInfo[lineId] = idList;
 	}
+
+	// Basic progress reporting.
+	this->UpdateProgress(static_cast<double>(1)/static_cast<double>(numStages));
 
 #if PRINT_DEBUG
 	// Print the map.
@@ -222,7 +228,7 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 				{
 					twistAngles[it->first] *= -1.0;
 				}
-				std::cout << "Twist angle at bifurcation " << it->first << ": " << twistAngles[it->first] << std::endl;
+				// std::cout << "Twist angle at bifurcation " << it->first << ": " << twistAngles[it->first] << std::endl;
 			}
 
 			// Save v1 as v0 for next iteration.
@@ -232,6 +238,9 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 			vtkMath::Add(c1, zero, c0);
 		}
 	}
+
+	// Basic progress reporting.
+	this->UpdateProgress(static_cast<double>(2)/static_cast<double>(numStages));
 
 	// Second pass to insert radii for all locations other than bifurcations and inlet point.
 	for(std::map<vtkIdType, std::vector<vtkIdType> >::iterator it = treeInfo.begin(); it != treeInfo.end(); ++it)
@@ -291,6 +300,9 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 			vtkMath::Add(c1, zero, c0);
 		}
 	}
+
+	// Basic progress reporting.
+	this->UpdateProgress(static_cast<double>(3)/static_cast<double>(numStages));
 
 	// Root point.
 	radiiVectors->GetTuple(0, c0);
