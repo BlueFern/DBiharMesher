@@ -45,6 +45,10 @@ add_library(vtkScalarRadiiToVectorsFilter src/vtkScalarRadiiToVectorsFilter.cxx)
 target_link_libraries(vtkScalarRadiiToVectorsFilter
 	vtkFiltersHybrid)
 
+add_library(vtkEndPointIdsToDbiharPatchFilter src/vtkEndPointIdsToDbiharPatchFilter.cxx)
+target_link_libraries(vtkEndPointIdsToDbiharPatchFilter
+	vtkFiltersHybrid)
+
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/test)
 
@@ -107,6 +111,16 @@ add_executable(testScalarRadiiToVectorsFilter1
 target_link_libraries(testScalarRadiiToVectorsFilter1
 	vtkDbiharPatchFilter
 	vtkScalarRadiiToVectorsFilter
+	${testLibs})
+
+add_executable(testEndPointIdsToDbiharPatchFilter1
+	src/vtkCentrelineData.cxx
+	test/showPolyData.cxx
+	test/testEndPointIdsToDbiharPatchFilter1.cxx)
+target_link_libraries(testEndPointIdsToDbiharPatchFilter1
+	vtkDbiharPatchFilter
+	vtkScalarRadiiToVectorsFilter
+	vtkEndPointIdsToDbiharPatchFilter
 	${testLibs})
 
 #add_executable(scratch

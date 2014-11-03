@@ -46,9 +46,6 @@ vtkScalarRadiiToVectorsFilter::vtkScalarRadiiToVectorsFilter()
 
 	angleTolerance = 1.0e-5;
 
-	// input = GetInput();
-
-	// TODO: Implement progress updates in RequestData.
 	vtkSmartPointer<vtkCallbackCommand> progressCallback = vtkSmartPointer<vtkCallbackCommand>::New();
 	progressCallback->SetCallback(this->ProgressFunction);
 	this->AddObserver(vtkCommand::ProgressEvent, progressCallback);
@@ -345,14 +342,14 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 	// TODO: Review whether this is OK to modify/augment input data with vectors. Perhaps the old radii should be stripped from this data and maybe it is cleaner to create new polydata.
 	output->GetPointData()->SetVectors(radiiVectors);
 
-	// this->UpdateProgress(static_cast<double>(dim)/static_cast<double>(numDims));
-
 	return 1;
 }
 
 void vtkScalarRadiiToVectorsFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
 	this->Superclass::PrintSelf(os, indent);
+
+	// TODO: Print treeInfo map.
 }
 
 void vtkScalarRadiiToVectorsFilter::ProgressFunction(vtkObject* caller, long unsigned int eventId, void* clientData, void* callData)
@@ -386,13 +383,14 @@ void vtkScalarRadiiToVectorsFilter::GetDirectionVector(vtkIdType lineId, vtkIdTy
 	// Mapping from a local id in the line to polydata global point id.
 	if(pointId != 0)
 	{
+		// TODO: This is a bit backwards, because direction vector should be obtained from points at positions n and n + 1.
 		input->GetPoint(line->GetId(pointId), p0);
 		input->GetPoint(line->GetId(pointId - 1), p1);
 		vtkMath::Subtract(p1, p0, vector);
 	}
 	else
 	{
-		// This is a bit fishy, because the direction at the fist point is calculated an the direction at the next point.
+		// TODO: This is a bit fishy, because the direction at the fist point is calculated an the direction at the next point.
 		GetDirectionVector(lineId, pointId + 1, vector);
 	}
 }
@@ -400,6 +398,8 @@ void vtkScalarRadiiToVectorsFilter::GetDirectionVector(vtkIdType lineId, vtkIdTy
 // Get ids for points in this line.
 vtkSmartPointer<vtkIdList> vtkScalarRadiiToVectorsFilter::GetLineIds(vtkIdType lineId)
 {
+	// TODO: GetCellPoints might be a better-suited method to use to get line ids, but in this case the input must not have any cells other than lines.
+
 	bool lineFound = false;
 	vtkSmartPointer<vtkCellArray> lines = input->GetLines();
 	vtkSmartPointer<vtkIdList> line = vtkSmartPointer<vtkIdList>::New();
