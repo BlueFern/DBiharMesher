@@ -16,6 +16,8 @@
 
 vtkStandardNewMacro(vtkCentrelineData);
 
+const char *vtkCentrelineData::RADII_ARR_NAME = {"radiiVectors"};
+
 // TODO: This class probably is better named as vtkCentrelineResampler.
 // TODO: This class probably is better implemented as a filter.
 
@@ -35,8 +37,9 @@ void vtkCentrelineData::SetCentrelineData(vtkPolyData *centrelineData)
 	// 4. Save points, lines, radii.
 
 	vtkSmartPointer<vtkCellArray> lines = vtkSmartPointer<vtkCellArray>::New();
-	vtkSmartPointer<vtkDoubleArray> radii = vtkSmartPointer<vtkDoubleArray>::New();
 	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+	vtkSmartPointer<vtkDoubleArray> radii = vtkSmartPointer<vtkDoubleArray>::New();
+	radii->SetName(vtkCentrelineData::RADII_ARR_NAME);
 
 	vtkSmartPointer<vtkIdList> cellIds = vtkSmartPointer<vtkIdList>::New();
 
@@ -101,6 +104,7 @@ void vtkCentrelineData::SetCentrelineData(vtkPolyData *centrelineData)
 		// 3.
 		vtkSmartPointer<vtkParametricSpline> parametricSpline = vtkSmartPointer<vtkParametricSpline>::New();
 		parametricSpline->SetPoints(splineInputPoints);
+		// Setting these constraints ensures regular interval sampling of output points.
 		parametricSpline->SetLeftConstraint(2);
 		parametricSpline->SetRightConstraint(2);
 
@@ -130,10 +134,6 @@ void vtkCentrelineData::SetCentrelineData(vtkPolyData *centrelineData)
 		}
 
 		// 5.
-
-		// TODO: Review this: somehow the distances between points end up being slightly irregular even after resampling.
-		// splineOutputPoints->GetPoint(0, p0);
-
 		vtkSmartPointer<vtkPolyLine> polyLine = vtkSmartPointer<vtkPolyLine>::New();
 		for(unsigned int i = 0; i < numOutputPoints; ++i)
 		{

@@ -5,26 +5,39 @@
 #include <vector>
 #include <algorithm>
 
+#include <vtkSmartPointer.h>
 #include <vtkObjectFactory.h>
 #include <vtkCallbackCommand.h>
 #include <vtkStreamingDemandDrivenPipeline.h>
 #include <vtkInformationVector.h>
 #include <vtkInformation.h>
-#include <vtkDataObject.h>
-#include <vtkSmartPointer.h>
 
+#include <vtkAppendPolyData.h>
+#include <vtkDataObject.h>
+#include <vtkPointData.h>
+#include <vtkPolyLine.h>
 #include <vtkCellArray.h>
+#include <vtkDoubleArray.h>
+#include <vtkTransform.h>
 #include <vtkIdList.h>
+#include <vtkMath.h>
 
 #include "vtkEndPointIdsToDbiharPatchFilter.h"
+#include "showPolyData.h"
 
 #define PRINT_DEBUG 0
 
+// TODO: Move to a lib. Code is duplicated.
+void DoubleCross1(const double v0[3], const double c0[3], const double v1[3], double c1[3])
+{
+	vtkMath::Cross(c0, v0, c1);
+	vtkMath::Cross(v1, c1, c1);
+}
+
 vtkStandardNewMacro(vtkEndPointIdsToDbiharPatchFilter);
 
-#if 0
+// TODO: Declare this in a better place shared between classes.
 const char *vtkEndPointIdsToDbiharPatchFilter::RADII_ARR_NAME = {"radiiVectors"};
-#endif
 
 vtkEndPointIdsToDbiharPatchFilter::vtkEndPointIdsToDbiharPatchFilter()
 {
@@ -43,6 +56,16 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 	if(EndPointIdsList->GetNumberOfIds() == 0)
 	{
 		vtkErrorMacro("Segment id list is empty.");
+	}
+
+	if((NumberOfRadialQuads & 1) != 0)
+	{
+		vtkErrorMacro("Number of radial quads must be even.")
+	}
+
+	if(NumberOfRadialQuads < 4)
+	{
+		vtkErrorMacro("Number of radial quads must be at least 4.")
 	}
 
 	// Get the input and output.
@@ -107,9 +130,9 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 #endif
 #endif
 
-	if(EndPointIdsList->GetNumberOfIds() > 2)
+	if(EndPointIdsList->GetNumberOfIds() < 2)
 	{
-		vtkErrorMacro("End point id list is expected to have between two and three points");
+		vtkErrorMacro("End point id list is expected to have at least two points.");
 	}
 	else if(EndPointIdsList->GetNumberOfIds() > 3)
 	{
@@ -123,6 +146,8 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 	{
 		branchIds.push_back(std::vector<vtkIdType>());
 	}
+
+	// TODO: Need to differentiate between straight segments and bifurcations.
 
 	// 1. Find current cell id.
 	// Temporary storage for cell ids shared by current point.
@@ -190,9 +215,9 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 	spineIds[0].insert(spineIds[0].end(), branchIds[1].begin(), branchIds[1].end());
 
 	// Last patch id list.
-	spineIds[spineIds.size() - 1].insert(spineIds[spineIds.size() - 1].end(), branchIds[0].begin(), branchIds[0].end());
+	spineIds[spineIds.size() - 1].insert(spineIds[spineIds.size() - 1].end(), branchIds[branchIds.size() - 1].rbegin(), branchIds[branchIds.size() - 1].rend());
 	spineIds[spineIds.size() - 1].push_back(bifurcationId);
-	spineIds[spineIds.size() - 1].insert(spineIds[spineIds.size() - 1].end(), branchIds[branchIds.size() - 1].begin(), branchIds[branchIds.size() - 1].end());
+	spineIds[spineIds.size() - 1].insert(spineIds[spineIds.size() - 1].end(), branchIds[0].rbegin(), branchIds[0].rend());
 
 	// Bifurcation saddle patch id list.
 	// Looping is not required here, but with the use of a loop the code can be extended to more than two branches.
@@ -214,17 +239,199 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 	}
 #endif
 
+#if 0
 	std::vector<vtkSmartPointer<vtkPolyData> > inputPatches;
 	for(int spineId = 0; spineId < spineIds.size(); spineId++)
 	{
-		inputPatches[spineId] = vtkSmartPointer<vtkPolyData>::New();
+		inputPatches[spineId].Take(vtkPolyData::New());
+	}
+#endif
+
+	vtkSmartPointer<vtkAppendPolyData> appendPolyDataFilter = vtkSmartPointer<vtkAppendPolyData>::New();
+
+	for(int spineId = 0; spineId < spineIds.size(); spineId++)
+	{
+		// TODO: It seems to make sense to have this code for patch construction in a stand-alone filter.
+
+		vtkSmartPointer<vtkPoints> patchPoints = vtkSmartPointer<vtkPoints>::New();
+		vtkSmartPointer<vtkPolyLine> patchBoundary = vtkSmartPointer<vtkPolyLine>::New();
+		vtkSmartPointer<vtkIdList> verts = vtkSmartPointer<vtkIdList>::New();
+
+		int spineLength = spineIds[spineId].size();
+
+		int numPtIds = spineLength * 2 + this->NumberOfRadialQuads * 2 - 2;
+
+		for(vtkIdType ptId = 0, spinePtId = 0; ptId < numPtIds; ptId++)
+		{
+			// Point is declared inside the loop to make sure it is (0,0,0) at the start of every iteration.
+			double point[3] = {0.0};
+			// Derivative is declared inside the loop to make sure it is (0,0,0) at the start of every iteration.
+			double deriv[3] = {0.0};
+
+			if(ptId < this->NumberOfRadialQuads) // Number of points along this edge is number of quads + 1.
+			{
+				vtkIdType localId = ptId;
+				std::cout << "LC: " << localId << std::endl;
+
+				// Inserting the first arc.
+				double parametricCoord = ptId / (double)this->NumberOfRadialQuads;
+
+				double p0[3];
+				double p1[3];
+				double v0[3];
+				double c0[3];
+
+				// Translation comes from the first point.
+				input->GetPoint(spineIds[spineId][0], p0);
+
+				// Axis of rotation comes from the centreline direction at the first point.
+				input->GetPoint(spineIds[spineId][1], p1);
+				vtkMath::Subtract(p1, p0, v0);
+
+				// Get the first radius.
+				double radius[3];
+				vtkSmartPointer<vtkDoubleArray> radiiArray = vtkDoubleArray::SafeDownCast(input->GetPointData()->GetVectors(RADII_ARR_NAME));
+				radiiArray->GetTuple(spineIds[spineId][0], radius);
+
+				// Get the rotation axis.
+				DoubleCross1(radius, v0, radius, c0);
+
+				// Angle of rotation comes from the parametric coordinate along the arc.
+				double angle = vtkMath::Pi() * parametricCoord;
+
+				// Assemble local transform.
+				vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
+				transform->Translate(p0);
+				transform->RotateWXYZ(vtkMath::DegreesFromRadians(angle), c0);
+
+				// Transform the radius.
+				transform->TransformPoint(radius, point);
+			}
+			else if(ptId < this->NumberOfRadialQuads + spineLength - 1)
+			{
+				// Inserting left seam.
+				vtkIdType localId = ptId - this->NumberOfRadialQuads;
+				std::cout << "LS: " << localId << std::endl;
+
+				double p0[3];
+
+				// Translation comes from the first point.
+				input->GetPoint(spineIds[spineId][localId], p0);
+				std::cout << "--> " << spineIds[spineId][localId] << std::endl;
+
+				// Get the first radius.
+				double radius[3];
+				vtkSmartPointer<vtkDoubleArray> radiiArray = vtkDoubleArray::SafeDownCast(input->GetPointData()->GetVectors(RADII_ARR_NAME));
+				radiiArray->GetTuple(spineIds[spineId][localId], radius);
+
+				// Flip the radius.
+				vtkMath::MultiplyScalar(radius, -1.0);
+
+				// Translate the radius.
+				vtkMath::Add(p0, radius, point);
+			}
+			else if(ptId < this->NumberOfRadialQuads * 2 + spineLength - 1)
+			{
+				// Inserting the second arc.
+				vtkIdType localId = ptId - this->NumberOfRadialQuads - (spineLength - 1);
+				std::cout << "UC: " << localId << std::endl;
+
+				double parametricCoord = localId / (double)this->NumberOfRadialQuads;
+				// Inserting the first arc.
+
+				double p0[3];
+				double p1[3];
+				double v0[3];
+				double c0[3];
+
+				// Translation comes from the first point.
+				input->GetPoint(spineIds[spineId][spineLength - 1], p0);
+
+				std::cout << "--> " << spineIds[spineId][spineLength - 1] << std::endl;
+
+				// Axis of rotation comes from the centreline direction at the first point.
+				input->GetPoint(spineIds[spineId][spineLength - 2], p1);
+				vtkMath::Subtract(p1, p0, v0);
+
+				// Get the last radius.
+				double radius[3];
+				vtkSmartPointer<vtkDoubleArray> radiiArray = vtkDoubleArray::SafeDownCast(input->GetPointData()->GetVectors(RADII_ARR_NAME));
+				radiiArray->GetTuple(spineIds[spineId][spineLength - 1], radius);
+				vtkMath::MultiplyScalar(radius, -1.0);
+
+				// Get the rotation axis.
+				DoubleCross1(radius, v0, radius, c0);
+
+				// Angle of rotation comes from the parametric coordinate along the arc.
+				double angle = vtkMath::Pi() * parametricCoord;
+
+				// Assemble local transform.
+				vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
+				transform->Translate(p0);
+				transform->RotateWXYZ(vtkMath::DegreesFromRadians(angle), c0);
+
+				// Transform the radius.
+				transform->TransformPoint(radius, point);
+			}
+			else
+			{
+				// Inserting the last seam.
+				vtkIdType localId = ptId - this->NumberOfRadialQuads * 2  - (spineLength - 1);
+				localId = std::fabs(localId - (spineLength - 1));
+				std::cout << "RS: " << localId << std::endl;
+
+				double p0[3];
+
+				// Translation comes from the first point.
+				input->GetPoint(spineIds[spineId][localId], p0);
+				std::cout << "--> " << spineIds[spineId][localId] << std::endl;
+
+				// Get the first radius.
+				double radius[3];
+				vtkSmartPointer<vtkDoubleArray> radiiArray = vtkDoubleArray::SafeDownCast(input->GetPointData()->GetVectors(RADII_ARR_NAME));
+				radiiArray->GetTuple(spineIds[spineId][localId], radius);
+
+				// Translate the radius.
+				vtkMath::Add(p0, radius, point);
+			}
+
+			vtkIdType id = patchPoints->InsertNextPoint(point);
+			// Sanity check.
+			assert(id == ptId);
+			patchBoundary->GetPointIds()->InsertNextId(ptId);
+			verts->InsertNextId(ptId);
+		}
+		patchBoundary->GetPointIds()->InsertNextId(0);
+
+		vtkSmartPointer<vtkCellArray> boundaries = vtkSmartPointer<vtkCellArray>::New();
+		boundaries->InsertNextCell(patchBoundary);
+
+		vtkSmartPointer<vtkCellArray> vertsArray = vtkSmartPointer<vtkCellArray>::New();
+		vertsArray->InsertNextCell(verts);
+
+		vtkSmartPointer<vtkPolyData> inputPatch = vtkSmartPointer<vtkPolyData>::New();
+		inputPatch->SetPoints(patchPoints);
+		inputPatch->SetLines(boundaries);
+		inputPatch->SetVerts(vertsArray);
+
+		std::cout << inputPatch->GetNumberOfPoints() << " =?= " << numPtIds << std::endl;
+
+		showPolyData(inputPatch, NULL);
+
+		appendPolyDataFilter->AddInputData(inputPatch);
+
+		// TODO: Insert the derivatives.
+
+		//inputPatches[spineId]->DeepCopy(inputPatch);
 	}
 
-	// TODO: Construct input patches.
+	appendPolyDataFilter->Update();
+	showPolyData(appendPolyDataFilter->GetOutput(), NULL);
 
 	// TODO: Use vtkDbiharPatchFiler to obtain output patches.
 
 	// TODO: Merge output patches into one vtkPolyData object.
+
 	// TODO: Implement progress updates.
 	// this->UpdateProgress(static_cast<double>(pId)/static_cast<double>(numPIds));
 

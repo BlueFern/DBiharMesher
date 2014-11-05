@@ -25,6 +25,7 @@ vtkStandardNewMacro(vtkScalarRadiiToVectorsFilter);
 
 const char *vtkScalarRadiiToVectorsFilter::RADII_ARR_NAME = {"radiiVectors"};
 
+// TODO: Move to a lib. Code is duplicated.
 void DoubleCross(const double v0[3], const double c0[3], const double v1[3], double c1[3])
 {
 	vtkMath::Cross(c0, v0, c1);

@@ -202,7 +202,7 @@ int main(int argc, char* argv[]) {
 	{
 		// Point is declared inside the loop to make sure it is (0,0,0) at the start of every iteration.
 		double point[3] = {0.0};
-		// Derivative is declared inside the loop to make sure it is (0,0,0) at the start of every interation.
+		// Derivative is declared inside the loop to make sure it is (0,0,0) at the start of every iteration.
 		double deriv[3] = {0.0};
 
 		int centrelinePId = 0;

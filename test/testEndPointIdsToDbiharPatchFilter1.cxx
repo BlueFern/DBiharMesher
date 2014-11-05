@@ -4,6 +4,8 @@
 #include <vtkSmartPointer.h>
 #include <vtkPolyData.h>
 #include <vtkGenericDataObjectReader.h>
+#include <vtkDoubleArray.h>
+#include <vtkMath.h>
 
 #include <vtkPolyDataMapper.h>
 #include <vtkActor.h>
@@ -18,10 +20,11 @@
 #include <vtkXMLPolyDataWriter.h>
 #include <vtkGenericDataObjectWriter.h>
 
+#include "showPolyData.h"
+
 #include "vtkCentrelineData.h"
 #include "vtkScalarRadiiToVectorsFilter.h"
 #include "vtkEndPointIdsToDbiharPatchFilter.h"
-#include "showPolyData.h"
 
 #include "wrapDbiharConfig.h"
 
@@ -48,12 +51,27 @@ int main(int argc, char* argv[]) {
 	vtkPolyData *resampledVesselCentrelineWithRadii = scalarRadiiToVectorsFilter->GetOutput();
 
 	vtkSmartPointer<vtkIdList> endPointIdsList = vtkSmartPointer<vtkIdList>::New();
-	endPointIdsList->InsertNextId(39);
-	endPointIdsList->InsertNextId(49);
-	endPointIdsList->InsertNextId(918);
+	endPointIdsList->InsertNextId(21);
+	endPointIdsList->InsertNextId(79);
+	endPointIdsList->InsertNextId(948);
+
+	const double unitsConversionFactor = 1.0e-3;
+	vtkSmartPointer<vtkDoubleArray> radiiArray = vtkDoubleArray::SafeDownCast(resampledVesselCentreline->GetPointData()->GetArray(vtkCentrelineData::RADII_ARR_NAME));
+	double R = radiiArray->GetValue(39);
+	R *= unitsConversionFactor; // R in m.
+
+	double C = 2 * vtkMath::Pi() * R;
+
+	const double ECLength = 65e-6; // m.
+	const double SMCLength = 50e-6; // m.
+	const unsigned int ECMultiple = 4;
+	const unsigned int SMCMultiple = 4;
+
+	unsigned int numberOfRadialQuads = (C / 2.0) / (SMCLength * SMCMultiple);
 
 	vtkSmartPointer<vtkEndPointIdsToDbiharPatchFilter> idListToDbiharPatchFilter = vtkSmartPointer<vtkEndPointIdsToDbiharPatchFilter>::New();
 	idListToDbiharPatchFilter->SetInputData(resampledVesselCentrelineWithRadii);
+	idListToDbiharPatchFilter->SetNumberOfRadialQuads(numberOfRadialQuads);
 	idListToDbiharPatchFilter->SetEndPointIdsList(endPointIdsList);
 	idListToDbiharPatchFilter->Update();
 

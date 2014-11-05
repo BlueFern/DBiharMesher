@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
 	scalarRadiiToVectorsFilter->Update();
 
 	vtkPolyData *resampledVesselCentrelineWithRadii = scalarRadiiToVectorsFilter->GetOutput();
-	showPolyData1(resampledVesselCentrelineWithRadii, 0.5);
+	showPolyData1(resampledVesselCentrelineWithRadii, 1.0);
 
 #if 1
 	vtkSmartPointer<vtkXMLPolyDataWriter> tmpWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();

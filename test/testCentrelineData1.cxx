@@ -18,6 +18,9 @@
 
 #include <vtkXMLPolyDataWriter.h>
 #include <vtkGenericDataObjectWriter.h>
+#include <vtkPointData.h>
+#include <vtkDoubleArray.h>
+#include <vtkMath.h>
 
 #include "vtkCentrelineData.h"
 #include "showPolyData.h"
@@ -46,6 +49,17 @@ int main(int argc, char* argv[]) {
 	std::cout << "Number of output points: " << resampledVesselCentreline->GetNumberOfPoints() << std::endl;
 	std::cout << "Number of output lines: " << resampledVesselCentreline->GetNumberOfLines() << std::endl;
 
+	double p0[3];
+	double p1[3];
+	double p2[3];
+	resampledVesselCentreline->GetPoint(0, p0);
+	resampledVesselCentreline->GetPoint(1, p1);
+	vtkMath::Subtract(p1, p0, p2);
+	std::cout << vtkMath::Norm(p2) << std::endl;
+
+	double r = vtkDoubleArray::SafeDownCast(resampledVesselCentreline->GetPointData()->GetScalars())->GetValue(0);
+	std::cout << r << std::endl;
+
 	vtkSmartPointer<vtkIdList> verts = vtkSmartPointer<vtkIdList>::New();
 	for(vtkIdType vId = 0; vId < resampledVesselCentreline->GetNumberOfPoints(); vId++)
 	{
@@ -62,12 +76,14 @@ int main(int argc, char* argv[]) {
 #if 1
 	vtkSmartPointer<vtkXMLPolyDataWriter> tmpWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
 	tmpWriter->SetInputData(resampledVesselCentreline);
-	tmpWriter->SetFileName("resampledCentreline.vtp");
+	tmpWriter->SetFileName("227A_resampledCentreline.vtp");
+	//tmpWriter->SetFileName("721A_resampledCentreline.vtp");
 	tmpWriter->Write();
 
 	vtkSmartPointer<vtkGenericDataObjectWriter> writer = vtkSmartPointer<vtkGenericDataObjectWriter>::New();
-	writer->SetFileName("resampledCentreline.vtk");
 	writer->SetInputData(resampledVesselCentreline);
+	writer->SetFileName("227A_resampledCentreline.vtk");
+	//writer->SetFileName("721A_resampledCentreline.vtk");
 	writer->Write();
 #endif
 
