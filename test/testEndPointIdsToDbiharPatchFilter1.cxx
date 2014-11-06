@@ -51,13 +51,13 @@ int main(int argc, char* argv[]) {
 	vtkPolyData *resampledVesselCentrelineWithRadii = scalarRadiiToVectorsFilter->GetOutput();
 
 	vtkSmartPointer<vtkIdList> endPointIdsList = vtkSmartPointer<vtkIdList>::New();
-#if 1
+#if 0
 	endPointIdsList->InsertNextId(21);
 	endPointIdsList->InsertNextId(79);
 	endPointIdsList->InsertNextId(948);
 #else
 	endPointIdsList->InsertNextId(920);
-	endPointIdsList->InsertNextId(951);
+	endPointIdsList->InsertNextId(950);
 #endif
 
 	const double unitsConversionFactor = 1.0e-3;
@@ -76,9 +76,8 @@ int main(int argc, char* argv[]) {
 	int tmpIntVal = vtkMath::Round(tmpDoubleVal);
 
 	int numberOfRadialQuads = tmpIntVal;
-	// Must be odd.
-	std::cout << (tmpIntVal & 1) << std::endl;
-	if((tmpIntVal & 1) == 1)
+	// Must be even.
+	if((numberOfRadialQuads & 1) == 1)
 	{
 		if(tmpDoubleVal - (double)tmpIntVal > 0)
 		{

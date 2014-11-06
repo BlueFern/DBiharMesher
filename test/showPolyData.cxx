@@ -66,12 +66,12 @@ void showPolyData(vtkPolyData *input, vtkStructuredGrid *output, double derivate
 		inputActor->GetProperty()->SetColor(1,0,0);
 		inputActor->GetProperty()->SetLineWidth(1.5);
 
-		vtkDataArray *derivatives = input->GetPointData()->GetVectors("derivatives");
+		vtkDataArray *derivatives = input->GetPointData()->GetVectors("derivVectors");
 		if(derivatives != 0)
 		{
 			derivativesPresent = true;
 
-			input->GetPointData()->SetActiveVectors("derivatives");
+			input->GetPointData()->SetActiveVectors("derivVectors");
 
 			vtkSmartPointer<vtkArrowSource> arrowSource = vtkSmartPointer<vtkArrowSource>::New();
 			arrowSource->Update();

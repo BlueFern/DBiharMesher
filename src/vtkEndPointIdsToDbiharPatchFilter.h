@@ -20,6 +20,7 @@ public:
 	static vtkEndPointIdsToDbiharPatchFilter *New();
 
 	static const char *RADII_ARR_NAME;
+	static const char *DERIV_ARR_NAME;
 
 	vtkSetObjectMacro(EndPointIdsList, vtkIdList);
 	vtkSetMacro(NumberOfRadialQuads, unsigned int);
@@ -39,9 +40,12 @@ private:
 	vtkPolyData* input;
 	std::map<vtkIdType, std::vector<vtkIdType> > treeInfo;
 	vtkSmartPointer<vtkIdList> EndPointIdsList;
-	// This is only for half-circle.
+	// This is only for half-circle length.
 	unsigned int NumberOfRadialQuads;
 	std::vector<std::vector<vtkIdType> > spineIds;
+
+	double cEdgeScaling;
+	double yEdgeScaling;
 };
 
 #endif

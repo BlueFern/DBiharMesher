@@ -11,7 +11,7 @@
 #include <vtkStreamingDemandDrivenPipeline.h>
 #include <vtkInformationVector.h>
 #include <vtkInformation.h>
-
+#include <vtkStructuredGrid.h>
 #include <vtkAppendPolyData.h>
 #include <vtkDataObject.h>
 #include <vtkPointData.h>
@@ -23,6 +23,7 @@
 #include <vtkMath.h>
 
 #include "vtkEndPointIdsToDbiharPatchFilter.h"
+#include "vtkDbiharPatchFilter.h"
 #include "showPolyData.h"
 
 #define PRINT_DEBUG 0
@@ -38,6 +39,7 @@ vtkStandardNewMacro(vtkEndPointIdsToDbiharPatchFilter);
 
 // TODO: Declare this in a better place shared between classes.
 const char *vtkEndPointIdsToDbiharPatchFilter::RADII_ARR_NAME = {"radiiVectors"};
+const char *vtkEndPointIdsToDbiharPatchFilter::DERIV_ARR_NAME = {"derivVectors"};
 
 vtkEndPointIdsToDbiharPatchFilter::vtkEndPointIdsToDbiharPatchFilter()
 {
@@ -45,6 +47,8 @@ vtkEndPointIdsToDbiharPatchFilter::vtkEndPointIdsToDbiharPatchFilter()
 	this->SetNumberOfOutputPorts(1);
 
 	// this->SegmentIdList = vtkSmartPointer<vtkIdList>::New();
+	this->cEdgeScaling = 3;
+	this->yEdgeScaling = 6.0;
 
 	vtkSmartPointer<vtkCallbackCommand> progressCallback = vtkSmartPointer<vtkCallbackCommand>::New();
 	progressCallback->SetCallback(this->ProgressFunction);
@@ -238,17 +242,25 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 #endif
 
 	vtkSmartPointer<vtkAppendPolyData> appendPolyDataFilter = vtkSmartPointer<vtkAppendPolyData>::New();
+	//vtkSmartPointer<vtkStructuredGridAppend> appendStructuredGridFilter = vtkSmartPointer<vtkStructuredGridAppend>::New();
 
 	for(int spineId = 0; spineId < spineIds.size(); spineId++)
 	{
+		// Points and lines.
 		vtkSmartPointer<vtkPoints> patchPoints = vtkSmartPointer<vtkPoints>::New();
 		vtkSmartPointer<vtkPolyLine> patchBoundary = vtkSmartPointer<vtkPolyLine>::New();
-		vtkSmartPointer<vtkIdList> verts = vtkSmartPointer<vtkIdList>::New();
+		//vtkSmartPointer<vtkIdList> verts = vtkSmartPointer<vtkIdList>::New();
+
+		// Derivatives.
+		vtkSmartPointer<vtkDoubleArray> derivatives = vtkSmartPointer<vtkDoubleArray>::New();
+		derivatives->SetName(DERIV_ARR_NAME);
+		derivatives->SetNumberOfComponents(3);
 
 		int spineLength = spineIds[spineId].size();
 
 		int numPtIds = spineLength * 2 + this->NumberOfRadialQuads * 2 - 2;
 
+		const double zero[3] = {0};
 		for(vtkIdType ptId = 0, spinePtId = 0; ptId < numPtIds; ptId++)
 		{
 			// Point is declared inside the loop to make sure it is (0,0,0) at the start of every iteration.
@@ -258,11 +270,12 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 
 			if(ptId < this->NumberOfRadialQuads) // Number of points along this edge is number of quads + 1.
 			{
+				// Inserting the first arc.
+
 				vtkIdType localId = ptId;
 				std::cout << "LC: " << localId << std::endl;
 
-				// Inserting the first arc.
-				double parametricCoord = ptId / (double)this->NumberOfRadialQuads;
+				double parametricCoord = localId / (double)this->NumberOfRadialQuads;
 
 				double p0[3];
 				double p1[3];
@@ -294,10 +307,24 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 
 				// Transform the radius.
 				transform->TransformPoint(radius, point);
+
+				if(localId != 0)
+				{
+					// If not at the patch corner point, we need to insert a derivative.
+
+					// It is parallel to the end point direction vector.
+					vtkMath::Add(zero, v0, deriv);
+					vtkMath::MultiplyScalar(deriv, -1.0);
+					vtkMath::Normalize(deriv);
+					// Scale derivative vector magnitude.
+					// TODO: Vector magnitude should be proportional to the length of the patch?
+					vtkMath::MultiplyScalar(deriv, cEdgeScaling);
+				}
 			}
 			else if(ptId < this->NumberOfRadialQuads + spineLength - 1)
 			{
 				// Inserting left seam.
+
 				vtkIdType localId = ptId - this->NumberOfRadialQuads;
 				std::cout << "LS: " << localId << std::endl;
 
@@ -317,6 +344,27 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 
 				// Translate the radius.
 				vtkMath::Add(p0, radius, point);
+
+				if(localId != 0)
+				{
+					// If not at the patch corner point, we need to insert a derivative.
+					double p0[3];
+					double p1[3];
+					double v0[3];
+
+					input->GetPoint(spineIds[spineId][localId], p0);
+					input->GetPoint(spineIds[spineId][localId + 1], p1);
+					// Get the centreline direction at the current point.
+					vtkMath::Subtract(p1, p0, v0);
+
+					// It is perpendicular to the radius vector and the local direction.
+					vtkMath::Cross(v0, radius, deriv);
+					vtkMath::Normalize(deriv);
+
+					double scaling = vtkMath::Norm(radius) * yEdgeScaling;
+					// Scale derivative vector magnitude.
+					vtkMath::MultiplyScalar(deriv, scaling);
+				}
 			}
 			else if(ptId < this->NumberOfRadialQuads * 2 + spineLength - 1)
 			{
@@ -360,6 +408,18 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 
 				// Transform the radius.
 				transform->TransformPoint(radius, point);
+
+				if(localId != 0)
+				{
+					// If not at the patch corner point, we need to insert a derivative.
+					// It is parallel to the end point direction vector.
+					vtkMath::Add(zero, v0, deriv);
+					vtkMath::MultiplyScalar(deriv, -1.0);
+					vtkMath::Normalize(deriv);
+					// Scale derivative vector magnitude.
+					// TODO: Vector magnitude should be proportional to the length of the patch?
+					vtkMath::MultiplyScalar(deriv, cEdgeScaling);
+				}
 			}
 			else
 			{
@@ -381,40 +441,87 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 
 				// Translate the radius.
 				vtkMath::Add(p0, radius, point);
+
+				if(localId != spineLength - 1)
+				{
+					// If not at the patch corner point, we need to insert a derivative.
+					double p0[3];
+					double p1[3];
+					double v0[3];
+
+					input->GetPoint(spineIds[spineId][localId], p0);
+					input->GetPoint(spineIds[spineId][localId + 1], p1);
+
+					// Get the centreline direction at the current point.
+					vtkMath::Subtract(p1, p0, v0);
+
+					// It is perpendicular to the radius vector and the local direction.
+					vtkMath::Cross(v0, radius, deriv);
+					vtkMath::MultiplyScalar(deriv, -1.0);
+					vtkMath::Normalize(deriv);
+
+					double scaling = vtkMath::Norm(radius) * yEdgeScaling;
+					// Scale derivative vector magnitude.
+					vtkMath::MultiplyScalar(deriv, scaling);
+				}
 			}
 
 			vtkIdType id = patchPoints->InsertNextPoint(point);
 			// Sanity check.
 			assert(id == ptId);
 			patchBoundary->GetPointIds()->InsertNextId(ptId);
-			verts->InsertNextId(ptId);
+			//verts->InsertNextId(ptId);
+			derivatives->InsertNextTuple(deriv);
 		}
 		patchBoundary->GetPointIds()->InsertNextId(0);
 
 		vtkSmartPointer<vtkCellArray> boundaries = vtkSmartPointer<vtkCellArray>::New();
 		boundaries->InsertNextCell(patchBoundary);
 
-		vtkSmartPointer<vtkCellArray> vertsArray = vtkSmartPointer<vtkCellArray>::New();
-		vertsArray->InsertNextCell(verts);
+		//vtkSmartPointer<vtkCellArray> vertsArray = vtkSmartPointer<vtkCellArray>::New();
+		//vertsArray->InsertNextCell(verts);
 
 		vtkSmartPointer<vtkPolyData> inputPatch = vtkSmartPointer<vtkPolyData>::New();
 		inputPatch->SetPoints(patchPoints);
 		inputPatch->SetLines(boundaries);
-		inputPatch->SetVerts(vertsArray);
+		//inputPatch->SetVerts(vertsArray);
+		inputPatch->GetPointData()->SetVectors(derivatives);
 
 		std::cout << inputPatch->GetNumberOfPoints() << " =?= " << numPtIds << std::endl;
 
-		showPolyData(inputPatch, NULL);
+		showPolyData(inputPatch, NULL, 1.0);
+
+		vtkSmartPointer<vtkDbiharPatchFilter> patchFilter = vtkSmartPointer<vtkDbiharPatchFilter>::New();
+
+		// Set the bounds of the UV space.
+		patchFilter->SetA(0.0);
+		patchFilter->SetB(2.0/3.0);
+		patchFilter->SetC(0.0);
+		patchFilter->SetD(vtkMath::Pi());
+		// Set the boundary conditions.
+		patchFilter->SetMQuads(this->NumberOfRadialQuads);
+		patchFilter->SetNQuads(spineLength - 1);
+		// Set solution method.
+		patchFilter->SetIFlag(2);
+
+		patchFilter->SetInputData(inputPatch);
+		patchFilter->Update();
+
+		vtkPolyData *outputPatch = patchFilter->GetOutput();
+
+		vtkSmartPointer<vtkStructuredGrid> structuredGrid = vtkSmartPointer<vtkStructuredGrid>::New();
+		structuredGrid->SetDimensions(this->NumberOfRadialQuads + 1, spineLength, 1);
+		structuredGrid->SetPoints(outputPatch->GetPoints());
+
+		showPolyData(inputPatch, structuredGrid);
 
 		appendPolyDataFilter->AddInputData(inputPatch);
-
-		// TODO: Insert the derivatives.
 
 		//inputPatches[spineId]->DeepCopy(inputPatch);
 	}
 
 	appendPolyDataFilter->Update();
-	showPolyData(appendPolyDataFilter->GetOutput(), NULL);
+	showPolyData(appendPolyDataFilter->GetOutput(), NULL, 1.0);
 
 	// TODO: Use vtkDbiharPatchFiler to obtain output patches.
 

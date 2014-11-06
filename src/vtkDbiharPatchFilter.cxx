@@ -24,7 +24,7 @@
 
 vtkStandardNewMacro(vtkDbiharPatchFilter);
 
-const char *vtkDbiharPatchFilter::DERIV_ARR_NAME = {"derivatives"};
+const char *vtkDbiharPatchFilter::DERIV_ARR_NAME = {"derivVectors"};
 
 vtkDbiharPatchFilter::vtkDbiharPatchFilter()
 {

@@ -118,9 +118,9 @@ add_executable(testEndPointIdsToDbiharPatchFilter1
 	test/showPolyData.cxx
 	test/testEndPointIdsToDbiharPatchFilter1.cxx)
 target_link_libraries(testEndPointIdsToDbiharPatchFilter1
-	vtkDbiharPatchFilter
 	vtkScalarRadiiToVectorsFilter
 	vtkEndPointIdsToDbiharPatchFilter
+	vtkDbiharPatchFilter
 	${testLibs})
 
 #add_executable(scratch
@@ -129,4 +129,3 @@ target_link_libraries(testEndPointIdsToDbiharPatchFilter1
 #target_link_libraries(scratch
 #	${testLibs}
 #	vtkIOLegacy)
-	
