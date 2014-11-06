@@ -123,10 +123,10 @@ target_link_libraries(testEndPointIdsToDbiharPatchFilter1
 	vtkEndPointIdsToDbiharPatchFilter
 	${testLibs})
 
-add_executable(scratch
-	test/showPolyData.cxx
-	test/scratch.cxx)
-target_link_libraries(scratch
-	${testLibs}
-	vtkIOLegacy)
+#add_executable(scratch
+#	test/showPolyData.cxx
+#	test/scratch.cxx)
+#target_link_libraries(scratch
+#	${testLibs}
+#	vtkIOLegacy)
 	

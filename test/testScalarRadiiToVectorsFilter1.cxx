@@ -40,12 +40,6 @@ int main(int argc, char* argv[]) {
 
 	vtkPolyData *resampledVesselCentreline = centrelineSegmentSource->GetOutput();
 
-	//std::cout << "Number of input points: " << vesselCentreline->GetNumberOfPoints() << std::endl;
-	//std::cout << "Number of input lines: " << vesselCentreline->GetNumberOfLines() << std::endl;
-
-	//std::cout << "Number of output points: " << resampledVesselCentreline->GetNumberOfPoints() << std::endl;
-	//std::cout << "Number of output lines: " << resampledVesselCentreline->GetNumberOfLines() << std::endl;
-
 	vtkSmartPointer<vtkScalarRadiiToVectorsFilter> scalarRadiiToVectorsFilter = vtkSmartPointer<vtkScalarRadiiToVectorsFilter>::New();
 	scalarRadiiToVectorsFilter->SetInputData(resampledVesselCentreline);
 	scalarRadiiToVectorsFilter->Update();
@@ -56,12 +50,14 @@ int main(int argc, char* argv[]) {
 #if 1
 	vtkSmartPointer<vtkXMLPolyDataWriter> tmpWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
 	tmpWriter->SetInputData(resampledVesselCentrelineWithRadii);
-	tmpWriter->SetFileName("resampledCentrelineWithRadii.vtp");
+	tmpWriter->SetFileName("227A_resampledCentrelineWithRadii.vtp");
+	//tmpWriter->SetFileName("721A_resampledCentrelineWithRadii.vtp");
 	tmpWriter->Write();
 
 	vtkSmartPointer<vtkGenericDataObjectWriter> writer = vtkSmartPointer<vtkGenericDataObjectWriter>::New();
-	writer->SetFileName("resampledCentrelineWithRadii.vtk");
 	writer->SetInputData(resampledVesselCentrelineWithRadii);
+	writer->SetFileName("227A_resampledCentrelineWithRadii.vtk");
+	//writer->SetFileName("721A_resampledCentrelineWithRadii.vtk");
 	writer->Write();
 #endif
 

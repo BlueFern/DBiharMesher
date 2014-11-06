@@ -16,7 +16,7 @@
 
 vtkStandardNewMacro(vtkCentrelineData);
 
-const char *vtkCentrelineData::RADII_ARR_NAME = {"radiiVectors"};
+const char *vtkCentrelineData::RADII_ARR_NAME = {"radiiScalars"};
 
 // TODO: This class probably is better named as vtkCentrelineResampler.
 // TODO: This class probably is better implemented as a filter.
@@ -34,7 +34,7 @@ void vtkCentrelineData::SetCentrelineData(vtkPolyData *centrelineData)
 	// 2. Calculate the parametric resolution of the spline.
 	// 3. Resample the segment.
 	// 4. Resample the radii.
-	// 4. Save points, lines, radii.
+	// 5. Save points, lines, radii.
 
 	vtkSmartPointer<vtkCellArray> lines = vtkSmartPointer<vtkCellArray>::New();
 	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
@@ -137,10 +137,6 @@ void vtkCentrelineData::SetCentrelineData(vtkPolyData *centrelineData)
 		vtkSmartPointer<vtkPolyLine> polyLine = vtkSmartPointer<vtkPolyLine>::New();
 		for(unsigned int i = 0; i < numOutputPoints; ++i)
 		{
-			// splineOutputPoints->GetPoint(i, p1);
-			// std::cout << sqrt(vtkMath::Distance2BetweenPoints(p0, p1)) << std::endl;
-			// memcpy(p0, p1, sizeof(double_t) * 3);
-
 			vtkIdType pId = -1;
 
 			// Check if this branch has a parent segment.
@@ -169,13 +165,13 @@ void vtkCentrelineData::SetCentrelineData(vtkPolyData *centrelineData)
 			if(pId == -1)
 			{
 				pId = points->InsertNextPoint(splineOutputPoints->GetPoint(i));
+
+				double t = i * (length / (double)(numOutputPoints - 1));
+				double radius = radiiSpline->Evaluate(t);
+				radii->InsertNextTuple(&radius);
 			}
 
 			polyLine->GetPointIds()->InsertNextId(pId);
-
-			double t = i * (length / (double)(numOutputPoints - 1));
-			double radius = radiiSpline->Evaluate(t);
-			radii->InsertNextTuple(&radius);
 
 			// Remember the last stored id for this segment.
 			if(i == numOutputPoints - 1)
