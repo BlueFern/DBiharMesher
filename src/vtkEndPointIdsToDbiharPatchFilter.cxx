@@ -53,9 +53,22 @@ vtkEndPointIdsToDbiharPatchFilter::vtkEndPointIdsToDbiharPatchFilter()
 
 int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
+	bool bifurcation = true;
 	if(EndPointIdsList->GetNumberOfIds() == 0)
 	{
 		vtkErrorMacro("Segment id list is empty.");
+	}
+	else if(EndPointIdsList->GetNumberOfIds() == 1)
+	{
+		vtkErrorMacro("Segment id list must have at least two point ids.")
+	}
+	else if(EndPointIdsList->GetNumberOfIds() == 2)
+	{
+		bifurcation = false;
+	}
+	else if(EndPointIdsList->GetNumberOfIds() > 3)
+	{
+		vtkWarningMacro("Patch generation for more than two branches at bifurcations has not been tested.");
 	}
 
 	if((NumberOfRadialQuads & 1) != 0)
@@ -74,84 +87,11 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 
 	vtkPolyData* output = vtkPolyData::GetData(outputVector, 0);
 
-#if 0
-	vtkSmartPointer<vtkCellArray> lines = input->GetLines();
-	lines->InitTraversal();
-
-	// Obtain tree structure (bifurcations and terminals) from the centreline points, lines.
-	for(vtkIdType lineId = 0; lineId < lines->GetNumberOfCells(); lineId++)
-	{
-		vtkSmartPointer<vtkIdList> lineIds = vtkSmartPointer<vtkIdList>::New(); // TODO: Take this out of the loop.
-
-		lines->GetNextCell(lineIds);
-		// std::cout << lineId << ": " << lineIds->GetNumberOfIds() << std::endl;
-
-		vtkSmartPointer<vtkIdList> lastId = vtkSmartPointer<vtkIdList>::New();
-		lastId->InsertNextId(lineIds->GetId(lineIds->GetNumberOfIds() - 1));
-
-		// WARNING: The code in the GetCellNeighbors method changes the traversal location in the vtkCellArray. In my view it is utterly retarded.
-		vtkIdType traverseLocation = input->GetLines()->GetTraversalLocation();
-
-		vtkSmartPointer<vtkIdList> neighbourCellIds = vtkSmartPointer<vtkIdList>::New();
-		input->GetCellNeighbors(lineId, lastId, neighbourCellIds);
-
-		// Restore traversal location.
-		input->GetLines()->SetTraversalLocation(traverseLocation);
-
-		//std::cout << "Line " << lineId << " shares last point with " << neighbourCellIds->GetNumberOfIds() << " cells." << std::endl;
-
-		std::vector<vtkIdType> idList;
-
-		// The assumption is that non-bifurcating segments are not divided in segments.
-		if(neighbourCellIds->GetNumberOfIds() == 1)
-		{
-			vtkWarningMacro("Found a point shared between only two cells, which breaks the assumption of non-bifurcating segments integrity.");
-		}
-
-		for(vtkIdType pId = 0; pId < neighbourCellIds->GetNumberOfIds(); pId++)
-		{
-			idList.push_back(neighbourCellIds->GetId(pId));
-		}
-		treeInfo[lineId] = idList;
-	}
-
-#if PRINT_DEBUG
-	// Print the map.
-	for(std::map<vtkIdType, std::vector<vtkIdType> >::iterator it = treeInfo.begin(); it != treeInfo.end(); ++it)
-	{
-		std::vector<vtkIdType> v = it->second;
-		std::cout << it->first << " => ";
-		for(std::vector<vtkIdType>::iterator i = v.begin(); i != v.end(); ++i)
-		{
-			std::cout << *i << " ";
-		}
-		std::cout << endl;
-	}
-#endif
-#endif
-
-	if(EndPointIdsList->GetNumberOfIds() < 2)
-	{
-		vtkErrorMacro("End point id list is expected to have at least two points.");
-	}
-	else if(EndPointIdsList->GetNumberOfIds() > 3)
-	{
-		vtkWarningMacro("Patch generation for more than two branches at bifurcations has not been tested.");
-	}
-
-	std::vector<std::vector<vtkIdType> > branchIds;
-
 	// Process segment id list to produce patches.
-	for(int i = 0; i < EndPointIdsList->GetNumberOfIds(); i++)
-	{
-		branchIds.push_back(std::vector<vtkIdType>());
-	}
 
-	// TODO: Need to differentiate between straight segments and bifurcations.
+	vtkSmartPointer<vtkIdList> tmpIdList = vtkSmartPointer<vtkIdList>::New();
 
 	// 1. Find current cell id.
-	// Temporary storage for cell ids shared by current point.
-	vtkSmartPointer<vtkIdList> tmpIdList = vtkSmartPointer<vtkIdList>::New();
 	input->GetPointCells(EndPointIdsList->GetId(0), tmpIdList);
 	if(tmpIdList->GetNumberOfIds() > 1)
 	{
@@ -159,49 +99,8 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 	}
 	vtkIdType trunkCellId = tmpIdList->GetId(0);
 
-	// 2. Find last point id for the nearest downstream bifurcation.
-	tmpIdList = input->GetCell(trunkCellId)->GetPointIds();
-	vtkIdType bifurcationId = tmpIdList->GetId(tmpIdList->GetNumberOfIds() - 1);
-
-	// 3. For trunkCellId traverse back to collect ids. Exclude bifurcation id.
-	for(int id = tmpIdList->GetNumberOfIds() - 2; id >= EndPointIdsList->GetId(0); id--)
-	{
-		branchIds[0].push_back(tmpIdList->GetId(id));
-	}
-	std::reverse(branchIds[0].begin(), branchIds[0].end());
-
-	// 4. Find branch ids.
-	vtkSmartPointer<vtkIdList> ptIds = vtkSmartPointer<vtkIdList>::New();
-	vtkSmartPointer<vtkIdList> cellIds = vtkSmartPointer<vtkIdList>::New();
-	ptIds->InsertNextId(bifurcationId);
-	input->GetCellNeighbors(trunkCellId, ptIds, cellIds);
-
-	// 5. Collect branch ids.
-	for(int spineId = 1; spineId < branchIds.size(); spineId++)
-	{
-		tmpIdList = input->GetCell(cellIds->GetId(spineId - 1))->GetPointIds();
-		vtkIdType endId = EndPointIdsList->GetId(spineId);
-		for(int id = 1; id < tmpIdList->GetNumberOfIds(); id++)
-		{
-			vtkIdType pId = tmpIdList->GetId(id);
-			branchIds[spineId].push_back(pId);
-			if(pId == endId)
-			{
-				break;
-			}
-		}
-	}
-
-#if 0
-	for(int spineId = 0; spineId < branchIds.size(); spineId++)
-	{
-		for(std::vector<vtkIdType>::iterator it = branchIds[spineId].begin(); it != branchIds[spineId].end(); ++it)
-		{
-			std::cout << *it << " ";
-		}
-		std::cout << std::endl;
-	}
-#endif
+	// All ids in the trunk cell.
+	vtkSmartPointer<vtkIdList> trunkIdCellIdList = input->GetCell(trunkCellId)->GetPointIds();
 
 	// Now assemble branch ids.
 	for(int i = 0; i < EndPointIdsList->GetNumberOfIds(); i++)
@@ -209,25 +108,116 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 		spineIds.push_back(std::vector<vtkIdType>());
 	}
 
-	// First patch id list.
-	spineIds[0].insert(spineIds[0].end(), branchIds[0].begin(), branchIds[0].end());
-	spineIds[0].push_back(bifurcationId);
-	spineIds[0].insert(spineIds[0].end(), branchIds[1].begin(), branchIds[1].end());
-
-	// Last patch id list.
-	spineIds[spineIds.size() - 1].insert(spineIds[spineIds.size() - 1].end(), branchIds[branchIds.size() - 1].rbegin(), branchIds[branchIds.size() - 1].rend());
-	spineIds[spineIds.size() - 1].push_back(bifurcationId);
-	spineIds[spineIds.size() - 1].insert(spineIds[spineIds.size() - 1].end(), branchIds[0].rbegin(), branchIds[0].rend());
-
-	// Bifurcation saddle patch id list.
-	// Looping is not required here, but with the use of a loop the code can be extended to more than two branches.
-	for(int id = 1; id < cellIds->GetNumberOfIds(); id++)
+	if(!bifurcation)
 	{
-		spineIds[id].insert(spineIds[id].end(), branchIds[id].rbegin(), branchIds[id].rend());
-		spineIds[id].push_back(bifurcationId);
-		spineIds[id].insert(spineIds[id].end(), branchIds[id + 1].begin(), branchIds[id + 1].end());
-	}
+		// Collecting ids for a straight segment.
 
+		vtkIdType locId = -1;
+		vtkIdType ptId = -1;
+
+		// Find the location of the first point.
+		while(true)
+		{
+			// TODO: Verify we are not going to fall off the end of the list and not land in a bifurcation.
+			ptId = trunkIdCellIdList->GetId(++locId);
+			if(ptId == EndPointIdsList->GetId(0))
+			{
+				break;
+			}
+		}
+
+		// Remember the point ids for this trunk.
+		while(true)
+		{
+			// TODO: Verify we are not going to fall off the end of the list and not land in a bifurcation.
+			spineIds[0].push_back(ptId);
+			spineIds[1].push_back(ptId);
+			if(ptId == EndPointIdsList->GetId(1))
+			{
+				break;
+			}
+			else
+			{
+				ptId = trunkIdCellIdList->GetId(++locId);
+			}
+		}
+		// For the second patch the ids need to be reversed.
+		std::reverse(spineIds[1].rbegin(), spineIds[1].rend());
+	}
+	else
+	{
+		// Collecting ids for a bifurcation.
+
+		std::vector<std::vector<vtkIdType> > branchIds;
+		for(int i = 0; i < EndPointIdsList->GetNumberOfIds(); i++)
+		{
+			branchIds.push_back(std::vector<vtkIdType>());
+		}
+
+		// TODO: This code is not robust, because we are assuming the end of the list is the one bifurcation. Find a better way!
+		// For trunkCellId traverse back to collect ids. Exclude bifurcation id.
+		for(int id = trunkIdCellIdList->GetNumberOfIds() - 2; id >= EndPointIdsList->GetId(0); id--)
+		{
+			branchIds[0].push_back(trunkIdCellIdList->GetId(id));
+		}
+		std::reverse(branchIds[0].begin(), branchIds[0].end());
+
+		// TODO: This code is not robust, because we are assuming the end of the list is the one bifurcation. Find a better way!
+		// Find last point id for the nearest downstream bifurcation.
+		vtkIdType bifurcationId = trunkIdCellIdList->GetId(trunkIdCellIdList->GetNumberOfIds() - 1);
+
+		vtkSmartPointer<vtkIdList> ptIds = vtkSmartPointer<vtkIdList>::New();
+		vtkSmartPointer<vtkIdList> cellIds = vtkSmartPointer<vtkIdList>::New();
+		ptIds->InsertNextId(bifurcationId);
+		input->GetCellNeighbors(trunkCellId, ptIds, cellIds);
+
+		// Collect branch ids.
+		for(int spineId = 1; spineId < branchIds.size(); spineId++)
+		{
+			// TODO: Need error checking to catch us falling of the end of the id list.
+			tmpIdList = input->GetCell(cellIds->GetId(spineId - 1))->GetPointIds();
+			vtkIdType endId = EndPointIdsList->GetId(spineId);
+			for(int id = 1; id < tmpIdList->GetNumberOfIds(); id++)
+			{
+				vtkIdType pId = tmpIdList->GetId(id);
+				branchIds[spineId].push_back(pId);
+				if(pId == endId)
+				{
+					break;
+				}
+			}
+		}
+
+	#if 0
+		for(int spineId = 0; spineId < branchIds.size(); spineId++)
+		{
+			for(std::vector<vtkIdType>::iterator it = branchIds[spineId].begin(); it != branchIds[spineId].end(); ++it)
+			{
+				std::cout << *it << " ";
+			}
+			std::cout << std::endl;
+		}
+	#endif
+
+		// First patch id list.
+		spineIds[0].insert(spineIds[0].end(), branchIds[0].begin(), branchIds[0].end());
+		spineIds[0].push_back(bifurcationId);
+		spineIds[0].insert(spineIds[0].end(), branchIds[1].begin(), branchIds[1].end());
+
+		// Last patch id list.
+		spineIds[spineIds.size() - 1].insert(spineIds[spineIds.size() - 1].end(), branchIds[branchIds.size() - 1].rbegin(), branchIds[branchIds.size() - 1].rend());
+		spineIds[spineIds.size() - 1].push_back(bifurcationId);
+		spineIds[spineIds.size() - 1].insert(spineIds[spineIds.size() - 1].end(), branchIds[0].rbegin(), branchIds[0].rend());
+
+		// Bifurcation saddle patch(es) id list.
+		// Looping is not required here, but with the use of a loop the code can be extended to more than two branches.
+		for(int id = 1; id < cellIds->GetNumberOfIds(); id++)
+		{
+			spineIds[id].insert(spineIds[id].end(), branchIds[id].rbegin(), branchIds[id].rend());
+			spineIds[id].push_back(bifurcationId);
+			spineIds[id].insert(spineIds[id].end(), branchIds[id + 1].begin(), branchIds[id + 1].end());
+		}
+	}
 #if 1
 	for(int spineId = 0; spineId < spineIds.size(); spineId++)
 	{
@@ -251,8 +241,6 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 
 	for(int spineId = 0; spineId < spineIds.size(); spineId++)
 	{
-		// TODO: It seems to make sense to have this code for patch construction in a stand-alone filter.
-
 		vtkSmartPointer<vtkPoints> patchPoints = vtkSmartPointer<vtkPoints>::New();
 		vtkSmartPointer<vtkPolyLine> patchBoundary = vtkSmartPointer<vtkPolyLine>::New();
 		vtkSmartPointer<vtkIdList> verts = vtkSmartPointer<vtkIdList>::New();

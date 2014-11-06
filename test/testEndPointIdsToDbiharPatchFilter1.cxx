@@ -51,13 +51,18 @@ int main(int argc, char* argv[]) {
 	vtkPolyData *resampledVesselCentrelineWithRadii = scalarRadiiToVectorsFilter->GetOutput();
 
 	vtkSmartPointer<vtkIdList> endPointIdsList = vtkSmartPointer<vtkIdList>::New();
+#if 1
 	endPointIdsList->InsertNextId(21);
 	endPointIdsList->InsertNextId(79);
 	endPointIdsList->InsertNextId(948);
+#else
+	endPointIdsList->InsertNextId(920);
+	endPointIdsList->InsertNextId(951);
+#endif
 
 	const double unitsConversionFactor = 1.0e-3;
 	vtkSmartPointer<vtkDoubleArray> radiiArray = vtkDoubleArray::SafeDownCast(resampledVesselCentreline->GetPointData()->GetArray(vtkCentrelineData::RADII_ARR_NAME));
-	double R = radiiArray->GetValue(39);
+	double R = radiiArray->GetValue(endPointIdsList->GetId(0));
 	R *= unitsConversionFactor; // R in m.
 
 	double C = 2 * vtkMath::Pi() * R;
@@ -67,7 +72,25 @@ int main(int argc, char* argv[]) {
 	const unsigned int ECMultiple = 4;
 	const unsigned int SMCMultiple = 4;
 
-	unsigned int numberOfRadialQuads = (C / 2.0) / (SMCLength * SMCMultiple);
+	double tmpDoubleVal = (C / 2.0) / (SMCLength * SMCMultiple);
+	int tmpIntVal = vtkMath::Round(tmpDoubleVal);
+
+	int numberOfRadialQuads = tmpIntVal;
+	// Must be odd.
+	std::cout << (tmpIntVal & 1) << std::endl;
+	if((tmpIntVal & 1) == 1)
+	{
+		if(tmpDoubleVal - (double)tmpIntVal > 0)
+		{
+			// Increment.
+			numberOfRadialQuads++;
+		}
+		else
+		{
+			// Decrement.
+			numberOfRadialQuads--;
+		}
+	}
 
 	vtkSmartPointer<vtkEndPointIdsToDbiharPatchFilter> idListToDbiharPatchFilter = vtkSmartPointer<vtkEndPointIdsToDbiharPatchFilter>::New();
 	idListToDbiharPatchFilter->SetInputData(resampledVesselCentrelineWithRadii);
