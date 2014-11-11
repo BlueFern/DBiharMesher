@@ -230,3 +230,83 @@ void showPolyData1(vtkPolyData *input, double vectorScaling)
 
 	renderWindow->Finalize();
 }
+
+void showGrids(std::vector<vtkSmartPointer<vtkStructuredGrid> > grids, vtkSmartPointer<vtkPolyData> centreline)
+{
+
+	vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
+	renderer->SetBackground(0.3, 0.6, 0.3); // Green background.
+
+	vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
+	renderWindow->SetSize(600, 600);
+	renderWindow->AddRenderer(renderer);
+
+	vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
+	vtkInteractorStyleSwitch *iss = vtkInteractorStyleSwitch::SafeDownCast(renderWindowInteractor->GetInteractorStyle());
+	iss->SetCurrentStyleToTrackballCamera();
+	renderWindowInteractor->SetRenderWindow(renderWindow);
+
+	if(centreline != NULL)
+	{
+		vtkSmartPointer<vtkPolyDataMapper> centrelineMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+		centrelineMapper->SetInputData(centreline);
+
+		vtkSmartPointer<vtkActor> inputActor = vtkSmartPointer<vtkActor>::New();
+		inputActor->SetMapper(centrelineMapper);
+		inputActor->GetProperty()->SetColor(1,0,0);
+		inputActor->GetProperty()->SetLineWidth(1.5);
+		inputActor->GetProperty()->SetPointSize(5);
+
+		vtkSmartPointer<vtkArrowSource> arrowSource = vtkSmartPointer<vtkArrowSource>::New();
+		arrowSource->Update();
+
+		vtkSmartPointer<vtkGlyph3D> arrowsFilter = vtkSmartPointer<vtkGlyph3D>::New();
+		arrowsFilter->SetInputData(centreline);
+		arrowsFilter->SetScaleFactor(1.0);
+		arrowsFilter->SetSourceConnection(arrowSource->GetOutputPort());
+		arrowsFilter->SetScaleModeToScaleByVector();
+		arrowsFilter->SetVectorModeToUseVector();
+		arrowsFilter->OrientOn();
+		arrowsFilter->Update();
+
+		vtkSmartPointer<vtkPolyDataMapper> arrowsMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+		arrowsMapper->SetInputConnection(arrowsFilter->GetOutputPort());
+
+		vtkSmartPointer<vtkActor> arrowsActor = vtkSmartPointer<vtkActor>::New();
+		arrowsActor->SetMapper(arrowsMapper);
+
+		renderer->AddActor(inputActor);
+		renderer->AddActor(arrowsActor);
+
+		double bounds[6];
+		centreline->GetBounds(bounds);
+		vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
+		// Translate the axis to lower left corner.
+		transform->Translate(bounds[0] - (bounds[1] - bounds[0]) / 8.0, bounds[2] - (bounds[3] - bounds[2]) / 8.0, 0.0);
+		vtkSmartPointer<vtkAxesActor> axes = vtkSmartPointer<vtkAxesActor>::New();
+		axes->SetUserTransform(transform);
+		renderer->AddActor(axes);
+
+		vtkSmartPointer<vtkCallbackCommand> keypressCallback = vtkSmartPointer<vtkCallbackCommand>::New();
+		keypressCallback->SetCallback(KeypressCallbackFunction);
+		keypressCallback->SetClientData(arrowsActor);
+		renderWindowInteractor->AddObserver(vtkCommand::KeyPressEvent, keypressCallback);
+	}
+
+	for(int i = 0; i < grids.size(); i++)
+	{
+		vtkSmartPointer<vtkDataSetMapper> gridMapper = vtkSmartPointer<vtkDataSetMapper>::New();
+		gridMapper->SetInputData(grids[i]);
+		vtkSmartPointer<vtkActor> gridActor = vtkSmartPointer<vtkActor>::New();
+		gridActor->SetMapper(gridMapper);
+		gridActor->GetProperty()->EdgeVisibilityOn();
+		gridActor->GetProperty()->SetEdgeColor(0, 0, 1);
+		gridActor->GetProperty()->SetOpacity(0.7);
+		renderer->AddActor(gridActor);
+	}
+
+	renderWindow->Render();
+	renderWindowInteractor->Start();
+
+	renderWindow->Finalize();
+}

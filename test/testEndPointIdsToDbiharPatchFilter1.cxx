@@ -20,6 +20,9 @@
 #include <vtkXMLPolyDataWriter.h>
 #include <vtkGenericDataObjectWriter.h>
 
+#include <vtkXMLStructuredGridReader.h>
+#include <vtkStructuredGridAppend.h>
+
 #include "showPolyData.h"
 
 #include "vtkCentrelineData.h"
@@ -56,8 +59,9 @@ int main(int argc, char* argv[]) {
 	endPointIdsList->InsertNextId(79);
 	endPointIdsList->InsertNextId(948);
 #else
-	endPointIdsList->InsertNextId(920);
-	endPointIdsList->InsertNextId(950);
+	// TODO: Test 80 to 210 which spans accros a bifurcation.
+	endPointIdsList->InsertNextId(350); //920);
+	endPointIdsList->InsertNextId(450); //990);
 #endif
 
 	const double unitsConversionFactor = 1.0e-3;

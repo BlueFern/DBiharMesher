@@ -16,3 +16,8 @@ void showPolyData(vtkPolyData *input, vtkStructuredGrid *output, double derivate
  * Show polydata with vectors.
  */
 void showPolyData1(vtkPolyData *input, double vectorScaling = 1.0);
+
+/**
+ * Show grids with optional centreline.
+ */
+void showGrids(std::vector<vtkSmartPointer<vtkStructuredGrid> > grids, vtkSmartPointer<vtkPolyData> centreline = NULL);

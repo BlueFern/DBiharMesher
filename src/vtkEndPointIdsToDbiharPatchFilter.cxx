@@ -3,6 +3,7 @@
  */
 
 #include <vector>
+#include <string>
 #include <algorithm>
 
 #include <vtkSmartPointer.h>
@@ -27,6 +28,9 @@
 #include "showPolyData.h"
 
 #define PRINT_DEBUG 0
+
+//#define SSTR( x ) dynamic_cast< std::ostringstream & >( \
+//        ( std::ostringstream() << std::dec << x ) ).str()
 
 // TODO: Move to a lib. Code is duplicated.
 void DoubleCross1(const double v0[3], const double c0[3], const double v1[3], double c1[3])
@@ -233,8 +237,11 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 	}
 #endif
 
-#if 0
+
 	std::vector<vtkSmartPointer<vtkPolyData> > inputPatches;
+	std::vector<vtkSmartPointer<vtkStructuredGrid> > outputGrids;
+
+#if 0
 	for(int spineId = 0; spineId < spineIds.size(); spineId++)
 	{
 		inputPatches[spineId].Take(vtkPolyData::New());
@@ -242,14 +249,12 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 #endif
 
 	vtkSmartPointer<vtkAppendPolyData> appendPolyDataFilter = vtkSmartPointer<vtkAppendPolyData>::New();
-	//vtkSmartPointer<vtkStructuredGridAppend> appendStructuredGridFilter = vtkSmartPointer<vtkStructuredGridAppend>::New();
 
 	for(int spineId = 0; spineId < spineIds.size(); spineId++)
 	{
 		// Points and lines.
 		vtkSmartPointer<vtkPoints> patchPoints = vtkSmartPointer<vtkPoints>::New();
 		vtkSmartPointer<vtkPolyLine> patchBoundary = vtkSmartPointer<vtkPolyLine>::New();
-		//vtkSmartPointer<vtkIdList> verts = vtkSmartPointer<vtkIdList>::New();
 
 		// Derivatives.
 		vtkSmartPointer<vtkDoubleArray> derivatives = vtkSmartPointer<vtkDoubleArray>::New();
@@ -478,18 +483,14 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 		vtkSmartPointer<vtkCellArray> boundaries = vtkSmartPointer<vtkCellArray>::New();
 		boundaries->InsertNextCell(patchBoundary);
 
-		//vtkSmartPointer<vtkCellArray> vertsArray = vtkSmartPointer<vtkCellArray>::New();
-		//vertsArray->InsertNextCell(verts);
-
 		vtkSmartPointer<vtkPolyData> inputPatch = vtkSmartPointer<vtkPolyData>::New();
 		inputPatch->SetPoints(patchPoints);
 		inputPatch->SetLines(boundaries);
-		//inputPatch->SetVerts(vertsArray);
 		inputPatch->GetPointData()->SetVectors(derivatives);
 
 		std::cout << inputPatch->GetNumberOfPoints() << " =?= " << numPtIds << std::endl;
 
-		showPolyData(inputPatch, NULL, 1.0);
+		//showPolyData(inputPatch, NULL, 1.0);
 
 		vtkSmartPointer<vtkDbiharPatchFilter> patchFilter = vtkSmartPointer<vtkDbiharPatchFilter>::New();
 
@@ -507,23 +508,27 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 		patchFilter->SetInputData(inputPatch);
 		patchFilter->Update();
 
-		vtkPolyData *outputPatch = patchFilter->GetOutput();
+		vtkSmartPointer<vtkPolyData> outputPatch = vtkSmartPointer<vtkPolyData>::New();
+		outputPatch->DeepCopy(patchFilter->GetOutput());
+		vtkSmartPointer<vtkPoints> outputPoints = vtkSmartPointer<vtkPoints>::New();
+		outputPoints->DeepCopy(outputPatch->GetPoints());
 
 		vtkSmartPointer<vtkStructuredGrid> structuredGrid = vtkSmartPointer<vtkStructuredGrid>::New();
 		structuredGrid->SetDimensions(this->NumberOfRadialQuads + 1, spineLength, 1);
-		structuredGrid->SetPoints(outputPatch->GetPoints());
+		structuredGrid->SetPoints(outputPoints);
 
-		showPolyData(inputPatch, structuredGrid);
+		//showPolyData(inputPatch, structuredGrid);
+		outputGrids.push_back(structuredGrid);
 
 		appendPolyDataFilter->AddInputData(inputPatch);
 
-		//inputPatches[spineId]->DeepCopy(inputPatch);
+		//inputPatches.push_back(inputPatch);
 	}
 
 	appendPolyDataFilter->Update();
-	showPolyData(appendPolyDataFilter->GetOutput(), NULL, 1.0);
+	showPolyData(appendPolyDataFilter->GetOutput(), NULL, 0.1);
 
-	// TODO: Use vtkDbiharPatchFiler to obtain output patches.
+	showGrids(outputGrids, input);
 
 	// TODO: Merge output patches into one vtkPolyData object.
 
