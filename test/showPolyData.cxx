@@ -301,7 +301,7 @@ void showGrids(std::vector<vtkSmartPointer<vtkStructuredGrid> > grids, vtkSmartP
 		gridActor->SetMapper(gridMapper);
 		gridActor->GetProperty()->EdgeVisibilityOn();
 		gridActor->GetProperty()->SetEdgeColor(0, 0, 1);
-		gridActor->GetProperty()->SetOpacity(0.7);
+		gridActor->GetProperty()->SetOpacity(1.0);
 		renderer->AddActor(gridActor);
 	}
 

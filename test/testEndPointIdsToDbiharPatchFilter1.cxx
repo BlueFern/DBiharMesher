@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
 	vtkPolyData *resampledVesselCentrelineWithRadii = scalarRadiiToVectorsFilter->GetOutput();
 
 	vtkSmartPointer<vtkIdList> endPointIdsList = vtkSmartPointer<vtkIdList>::New();
-#if 0
+#if 1
 	endPointIdsList->InsertNextId(21);
 	endPointIdsList->InsertNextId(79);
 	endPointIdsList->InsertNextId(948);
