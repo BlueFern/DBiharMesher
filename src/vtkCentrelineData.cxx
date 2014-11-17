@@ -157,7 +157,8 @@ void vtkCentrelineData::SetCentrelineData(vtkPolyData *centrelineData)
 					else
 					{
 						// This should not normally occur.
-						vtkErrorWithObjectMacro(this, "Something is rotten in the state of Denmark: " << __FILE__ << ":" << __LINE__);
+						vtkErrorMacro("Something is rotten in the state of Denmark: " << __FILE__ << ":" << __LINE__);
+						exit(EXIT_FAILURE);
 					}
 				}
 			}

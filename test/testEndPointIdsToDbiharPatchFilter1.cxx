@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
 	std::cout << "Starting " << __FILE__ << std::endl;
 
 	vtkSmartPointer<vtkGenericDataObjectReader> vesselCentrelineReader = vtkSmartPointer<vtkGenericDataObjectReader>::New();
-	vesselCentrelineReader->SetFileName("/home/cza14/centreline.vtk");
+	vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/SyntheticBifurcation_1.vtk").c_str());
 	vesselCentrelineReader->Update();
 
 	vtkPolyData *vesselCentreline = vtkPolyData::SafeDownCast(vesselCentrelineReader->GetOutput());
@@ -54,13 +54,13 @@ int main(int argc, char* argv[]) {
 
 	vtkSmartPointer<vtkIdList> endPointIdsList = vtkSmartPointer<vtkIdList>::New();
 
-#if 0
-	endPointIdsList->InsertNextId(x);
-	endPointIdsList->InsertNextId(y);
-	endPointIdsList->InsertNextId(z);
+#if 1
+	endPointIdsList->InsertNextId(40);
+	endPointIdsList->InsertNextId(100);
+	endPointIdsList->InsertNextId(176);
 #else
 	endPointIdsList->InsertNextId(0);
-	endPointIdsList->InsertNextId(150);
+	endPointIdsList->InsertNextId(70);
 #endif
 
 	const double unitsConversionFactor = 1.0e-3;

@@ -65,10 +65,12 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 	if(EndPointIdsList->GetNumberOfIds() == 0)
 	{
 		vtkErrorMacro("Segment id list is empty.");
+		exit(EXIT_FAILURE);
 	}
 	else if(EndPointIdsList->GetNumberOfIds() == 1)
 	{
-		vtkErrorMacro("Segment id list must have at least two point ids.")
+		vtkErrorMacro("Segment id list must have at least two point ids.");
+		exit(EXIT_FAILURE);
 	}
 	else if(EndPointIdsList->GetNumberOfIds() == 2)
 	{
@@ -81,12 +83,14 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 
 	if((NumberOfRadialQuads & 1) != 0)
 	{
-		vtkErrorMacro("Number of radial quads must be even.")
+		vtkErrorMacro("Number of radial quads must be even.");
+		exit(EXIT_FAILURE);
 	}
 
 	if(NumberOfRadialQuads < 4)
 	{
-		vtkErrorMacro("Number of radial quads must be at least 4.")
+		vtkErrorMacro("Number of radial quads must be at least 4.");
+		exit(EXIT_FAILURE);
 	}
 
 	// Get the input and output.
@@ -104,6 +108,7 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 	if(tmpIdList->GetNumberOfIds() > 1)
 	{
 		vtkErrorMacro("First point id is shared between multiple cells. Dbihar patch must not start on a bifurcation.");
+		exit(EXIT_FAILURE);
 	}
 	vtkIdType trunkCellId = tmpIdList->GetId(0);
 
@@ -123,33 +128,50 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 		// Collecting ids for a straight segment.
 		vtkIdType locId = -1;
 		vtkIdType ptId = -1;
+		vtkIdType maxLocId = trunkIdCellIdList->GetNumberOfIds() - 1;
 
 		// Find the location of the first point.
+		vtkIdType firstId = EndPointIdsList->GetId(0);
 		while(true)
 		{
 			// TODO: Verify we are not going to fall off the end of the list and not land in a bifurcation.
-			ptId = trunkIdCellIdList->GetId(++locId);
-			if(ptId == EndPointIdsList->GetId(0))
+			++locId;
+			if(locId > maxLocId)
+			{
+				vtkErrorMacro("Unable to find id " << firstId << " in the id list.");
+				exit(EXIT_FAILURE);
+			}
+			ptId = trunkIdCellIdList->GetId(locId);
+			if(ptId == firstId)
 			{
 				break;
 			}
 		}
 
 		// Remember the point ids for this trunk.
+		vtkIdType lastId = EndPointIdsList->GetId(1);
 		while(true)
 		{
 			// TODO: Verify we are not going to fall off the end of the list and not land in a bifurcation.
 			spineIds[0].push_back(ptId);
 			spineIds[1].push_back(ptId);
-			if(ptId == EndPointIdsList->GetId(1))
+			if(ptId == lastId)
 			{
 				break;
 			}
 			else
 			{
-				ptId = trunkIdCellIdList->GetId(++locId);
+				++locId;
+				if(locId > maxLocId)
+				{
+					vtkErrorMacro("Unable to find id " << lastId << " in the id list.");
+					exit(EXIT_FAILURE);
+				}
+				ptId = trunkIdCellIdList->GetId(locId);
 			}
 		}
+
+		std::cout << "Reversing list..." << std::endl;
 
 		// For the second patch the ids need to be reversed.
 		std::reverse(spineIds[1].rbegin(), spineIds[1].rend());
@@ -271,8 +293,8 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 		int numPtIds = spineLength * 2 + this->NumberOfRadialQuads * 2 - 2;
 
 		vtkIdType bifurcationPos = -1;
-		vtkIdType liftBifurcationDerivId = -1;
 		vtkIdType rightBifurcationDerivId = -1;
+		vtkIdType leftBifurcationDerivId = -1;
 
 		// Find position of the bifurcation id in the spineId.
 		if(bifurcation)
@@ -286,8 +308,8 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 					break;
 				}
 			}
-			liftBifurcationDerivId = this->NumberOfRadialQuads + bifurcationPos;
-			rightBifurcationDerivId = numPtIds - bifurcationPos;
+			rightBifurcationDerivId = this->NumberOfRadialQuads + bifurcationPos;
+			leftBifurcationDerivId = numPtIds - bifurcationPos;
 		}
 
 		const double zero[3] = {0};
@@ -300,7 +322,7 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 		double v0[3];
 		double c0[3];
 
-		// TODO: Interpolate them (similar to what we do with radii) between adjacent points. Alternatively, we should try
+		// TODO: Interpolate the derivatives (similar to what we do with radii) between adjacent points. Alternatively, we should try
 		// calculating the derivatives only for the centreline and translating them to both edges. They would still have to be interpolated.
 
 		for(vtkIdType ptId = 0, spinePtId = 0; ptId < numPtIds; ptId++)
@@ -438,6 +460,7 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 			else
 			{
 				// Inserting along the "right" patch edge.
+
 				vtkIdType localId = ptId - this->NumberOfRadialQuads * 2  - (spineLength - 1);
 				localId = std::fabs(localId - (spineLength - 1));
 				std::cout << "RS: " << localId << std::endl;
@@ -490,45 +513,65 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 			double derivN[3];
 
 			// For the "left" bifurcation point get the adjacent vectors.
-			derivatives->GetTuple(liftBifurcationDerivId - 1, derivNm1);
-			derivatives->GetTuple(liftBifurcationDerivId + 1, derivNp1);
-			vtkMath::Add(derivNm1, derivNp1, derivN);
-			vtkMath::Normalize(derivN);
-			vtkMath::MultiplyScalar(derivN, scaling);
-			derivatives->SetTuple(liftBifurcationDerivId, derivN);
-
-			// Figure out the angles between the vectors at bifurcations and the adjacent vectors.
-			double firstAngleNm1 = vtkMath::DegreesFromRadians(vtkMath::AngleBetweenVectors(derivNm1, derivN));
-			double firstAngleNp1 = vtkMath::DegreesFromRadians(vtkMath::AngleBetweenVectors(derivNp1, derivN));
-
-			// For the "right" bifurcation point get the adjacent vectors.
 			derivatives->GetTuple(rightBifurcationDerivId - 1, derivNm1);
-			derivatives->GetTuple(rightBifurcationDerivId + 2, derivNp1);
+			derivatives->GetTuple(rightBifurcationDerivId + 1, derivNp1);
 			vtkMath::Add(derivNm1, derivNp1, derivN);
 			vtkMath::Normalize(derivN);
 			vtkMath::MultiplyScalar(derivN, scaling);
 			derivatives->SetTuple(rightBifurcationDerivId, derivN);
 
 			// Figure out the angles between the vectors at bifurcations and the adjacent vectors.
-			double secondAngleNm1 = vtkMath::DegreesFromRadians(vtkMath::AngleBetweenVectors(derivNm1, derivN));
-			double secondAngleNp1 = vtkMath::DegreesFromRadians(vtkMath::AngleBetweenVectors(derivNp1, derivN));
+			double rightAngleNm1 = vtkMath::DegreesFromRadians(vtkMath::AngleBetweenVectors(derivNm1, derivN));
+			double rightAngleNp1 = vtkMath::DegreesFromRadians(vtkMath::AngleBetweenVectors(derivNp1, derivN));
+
+			// For the "right" bifurcation point get the adjacent vectors.
+			derivatives->GetTuple(leftBifurcationDerivId - 1, derivNp1);
+			derivatives->GetTuple(leftBifurcationDerivId + 1, derivNm1);
+			vtkMath::Add(derivNm1, derivNp1, derivN);
+			vtkMath::Normalize(derivN);
+			vtkMath::MultiplyScalar(derivN, scaling);
+			derivatives->SetTuple(leftBifurcationDerivId, derivN);
+
+			// Figure out the angles between the vectors at bifurcations and the adjacent vectors.
+			double leftAngleNm1 = vtkMath::DegreesFromRadians(vtkMath::AngleBetweenVectors(derivNm1, derivN));
+			double leftAngleNp1 = vtkMath::DegreesFromRadians(vtkMath::AngleBetweenVectors(derivNp1, derivN));
 
 			// TODO: This constant is to be examined closer.
 			double rotationCoeff = 1.1;
-
+#if 1
 			// Traversing the "right" edge of the patch from bifurcation backwards.
-			for(int ptId = bifurcationPos - 1, derivId = liftBifurcationDerivId - 1; ptId > 0; ptId--, derivId--)
+			for(int ptId = bifurcationPos - 1, derivId = rightBifurcationDerivId - 1; ptId > 0; ptId--, derivId--)
 			{
 				// Fraction of the rotation angle.
 				double currentFraction = ptId / (double)(bifurcationPos - 1);
-				std::cout << ". LB; ptId: " << ptId << ", currentFraction: " << currentFraction << std::endl;
+				std::cout << "** LB; ptId: " << ptId << ", currentFraction: " << currentFraction << std::endl;
 
 				// Rotate derivative around radius by fraction of the angle.
 				radiiArray->GetTuple(spineIds[spineId][ptId], r);
 				vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
-				transform->RotateWXYZ(-firstAngleNm1 * rotationCoeff * currentFraction, r);
+				transform->RotateWXYZ(-rightAngleNm1 * rotationCoeff * currentFraction, r);
 
-				std::cout << firstAngleNm1 * rotationCoeff * currentFraction << std::endl;
+				std::cout << rightAngleNm1 * rotationCoeff * currentFraction << std::endl;
+
+				double deriv0[3];
+				derivatives->GetTuple(derivId, deriv0);
+				double deriv1[3];
+				transform->TransformPoint(deriv0, deriv1);
+				derivatives->SetTuple(derivId, deriv1);
+			}
+			// Traversing the "left" edge of the patch from bifurcation backwards.
+			for(int ptId = bifurcationPos - 1, derivId = leftBifurcationDerivId + 1; ptId > 0; ptId--, derivId++)
+			{
+				// Fraction of the rotation angle.
+				double currentFraction = ptId / (double)(bifurcationPos - 1);
+				std::cout << "++ LB; ptId: " << ptId << ", currentFraction: " << currentFraction << std::endl;
+
+				// Rotate derivative around radius by fraction of the angle.
+				radiiArray->GetTuple(spineIds[spineId][ptId], r);
+				vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
+				transform->RotateWXYZ(-leftAngleNm1 * rotationCoeff * currentFraction, r);
+
+				std::cout << leftAngleNm1 * rotationCoeff * currentFraction << std::endl;
 
 				double deriv0[3];
 				derivatives->GetTuple(derivId, deriv0);
@@ -537,38 +580,18 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 				derivatives->SetTuple(derivId, deriv1);
 			}
 			// Traversing the "right" edge of the patch from bifurcation forward.
-			for(int ptId = bifurcationPos + 1, derivId = liftBifurcationDerivId + 1; ptId < spineLength - 1; ptId++, derivId++)
-			{
-				// Fraction of the rotation angle.
-				double currentFraction = (spineLength - ptId) / (double)(spineLength - 1 - bifurcationPos);
-				std::cout << ".. LA; ptId: " << ptId << ", currentFraction: " << currentFraction << std::endl;
-
-				// Rotate derivative around radius by fraction of the angle.
-				radiiArray->GetTuple(spineIds[spineId][ptId], r);
-				vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
-				transform->RotateWXYZ(firstAngleNm1 * rotationCoeff * currentFraction, r);
-
-				std::cout << firstAngleNm1 * rotationCoeff * currentFraction << std::endl;
-
-				double deriv0[3];
-				derivatives->GetTuple(derivId, deriv0);
-				double deriv1[3];
-				transform->TransformPoint(deriv0, deriv1);
-				derivatives->SetTuple(derivId, deriv1);
-			}
-			// Traversing the "left" edge of the patch from bifurcation backwards.
 			for(int ptId = bifurcationPos + 1, derivId = rightBifurcationDerivId + 1; ptId < spineLength - 1; ptId++, derivId++)
 			{
 				// Fraction of the rotation angle.
-				double currentFraction = (spineLength - ptId) / (double)(spineLength - 1 - bifurcationPos);
-				std::cout << "... RA; ptId: " << ptId << ", currentFraction: " << currentFraction << std::endl;
+				double currentFraction = (spineLength - 1 - ptId) / (double)(spineLength - 1 - bifurcationPos);
+				std::cout << "== LA; ptId: " << ptId << ", currentFraction: " << currentFraction << std::endl;
 
 				// Rotate derivative around radius by fraction of the angle.
 				radiiArray->GetTuple(spineIds[spineId][ptId], r);
 				vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
-				transform->RotateWXYZ(-firstAngleNm1 * rotationCoeff * currentFraction, r);
+				transform->RotateWXYZ(rightAngleNm1 * rotationCoeff * currentFraction, r);
 
-				std::cout << firstAngleNm1 * rotationCoeff * currentFraction << std::endl;
+				std::cout << rightAngleNm1 * rotationCoeff * currentFraction << std::endl;
 
 				double deriv0[3];
 				derivatives->GetTuple(derivId, deriv0);
@@ -576,19 +599,19 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 				transform->TransformPoint(deriv0, deriv1);
 				derivatives->SetTuple(derivId, deriv1);
 			}
-			// Traversing the "left" edge of the patch from bifurcation backwards.
-			for(int ptId = bifurcationPos - 1, derivId = rightBifurcationDerivId - 1; ptId > 0; ptId--, derivId--)
+			// Traversing the "left" edge of the patch from bifurcation forward.
+			for(int ptId = bifurcationPos + 1, derivId = leftBifurcationDerivId - 1; ptId < spineLength - 1; ptId++, derivId--)
 			{
 				// Fraction of the rotation angle.
-				double currentFraction = ptId / (double)(bifurcationPos - 1);
-				std::cout << ".... LB; ptId: " << ptId << ", currentFraction: " << currentFraction << std::endl;
+				double currentFraction = (spineLength - 1 - ptId) / (double)(spineLength - 1 - bifurcationPos);
+				std::cout << "-- RA; ptId: " << ptId << ", currentFraction: " << currentFraction << std::endl;
 
 				// Rotate derivative around radius by fraction of the angle.
 				radiiArray->GetTuple(spineIds[spineId][ptId], r);
 				vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
-				transform->RotateWXYZ(firstAngleNm1 * rotationCoeff * currentFraction, r);
+				transform->RotateWXYZ(leftAngleNm1 * rotationCoeff * currentFraction, r);
 
-				std::cout << firstAngleNm1 * rotationCoeff * currentFraction << std::endl;
+				std::cout << leftAngleNm1 * rotationCoeff * currentFraction << std::endl;
 
 				double deriv0[3];
 				derivatives->GetTuple(derivId, deriv0);
@@ -596,6 +619,7 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 				transform->TransformPoint(deriv0, deriv1);
 				derivatives->SetTuple(derivId, deriv1);
 			}
+#endif
 		}
 #endif
 

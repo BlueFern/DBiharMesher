@@ -64,7 +64,8 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 	vtkIdType pIds = (this->MQuads + this->NQuads) * 2;
 	if(input->GetNumberOfPoints() != pIds)
 	{
-		vtkErrorWithObjectMacro(this, "Number of points in the input data (" << input->GetNumberOfPoints() << ") does not match the expected number of points (" << pIds << ").");
+		vtkErrorMacro("Number of points in the input data (" << input->GetNumberOfPoints() << ") does not match the expected number of points (" << pIds << ").");
+		exit(EXIT_FAILURE);
 	}
 
 	// TODO: Review whether MDim and NDim members can be removed.
@@ -103,7 +104,8 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 	}
 	else if(derivatives->GetNumberOfTuples() != pIds)
 	{
-		vtkErrorWithObjectMacro(this, "Number of derivative vectors in the input data (" << derivatives->GetNumberOfTuples() << ") does not match the expected number of points (" << pIds << ").");
+		vtkErrorMacro("Number of derivative vectors in the input data (" << derivatives->GetNumberOfTuples() << ") does not match the expected number of points (" << pIds << ").");
+		exit(EXIT_FAILURE);
 	}
 
 	// Allocate f.
@@ -124,7 +126,8 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 	else
 	{
 		// Other values for IFlag not supported.
-		vtkErrorWithObjectMacro(this, "Unsupported value for IFlag: " << this->IFlag << ".");
+		vtkErrorMacro("Unsupported value for IFlag: " << this->IFlag << ".");
+		exit(EXIT_FAILURE);
 	}
 
 	// Allocate workspace.
@@ -352,27 +355,35 @@ void vtkDbiharPatchFilter::CheckError()
 	switch(this->OFlag)
 	{
 		case 0:
-			vtkErrorWithObjectMacro(this, "Something is rotten in the state of Denmark, because zero return from dbihar is unexpected.");
-			return;
+			vtkErrorMacro("Something is rotten in the state of Denmark, because zero return from dbihar is unexpected.");
+			exit(EXIT_FAILURE);
+			//return;
 		case -1:
-			vtkErrorWithObjectMacro(this, "Dbihar: n and/or m is even or less than 3.");
-			return;
+			vtkErrorMacro("Dbihar: n and/or m is even or less than 3.");
+			exit(EXIT_FAILURE);
+			//return;
 		case -2:
-			vtkErrorWithObjectMacro(this, "Dbihar: a >= b and/or c >= d.");
-			return;
+			vtkErrorMacro("Dbihar: a >= b and/or c >= d.");
+			exit(EXIT_FAILURE);
+			//return;
 		case -3:
-			vtkErrorWithObjectMacro(this, "Dbihar: idf < m + 2 or lw is too small.");
-			return;
+			vtkErrorMacro("Dbihar: idf < m + 2 or lw is too small.");
+			exit(EXIT_FAILURE);
+			//return;
 		case -4:
-			vtkErrorWithObjectMacro(this, "Dbihar: Linpack failure in cholesky-factorization. This should not occur, check input carefully.");
-			return;
+			vtkErrorMacro("Dbihar: Linpack failure in cholesky-factorization. This should not occur, check input carefully.");
+			exit(EXIT_FAILURE);
+			//return;
 		case -5:
-			vtkErrorWithObjectMacro(this, "Dbihar: Linpack detected a computationally singular system using the symmetric indefinite factorization.");
-			return;
+			vtkErrorMacro("Dbihar: Linpack detected a computationally singular system using the symmetric indefinite factorization.");
+			exit(EXIT_FAILURE);
+			//return;
 		case -6:
-			vtkErrorWithObjectMacro(this, "Dbihar: The conjugate gradient iteration failed to converge in 30 iterations. The probable cause is an indefinite or near singular system. Try using iflag=4. Note that tol returns an estimate of the residual in the current conjugate gradient iteration.");
-			return;
+			vtkErrorMacro("Dbihar: The conjugate gradient iteration failed to converge in 30 iterations. The probable cause is an indefinite or near singular system. Try using iflag=4. Note that tol returns an estimate of the residual in the current conjugate gradient iteration.");
+			exit(EXIT_FAILURE);
+			//return;
 		default:
+			// TODO: Is this normal completion here?
 			;
 	}
 }
