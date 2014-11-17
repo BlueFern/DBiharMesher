@@ -123,6 +123,16 @@ target_link_libraries(testEndPointIdsToDbiharPatchFilter1
 	vtkDbiharPatchFilter
 	${testLibs})
 
+add_executable(testEndPointIdsToDbiharPatchFilter2
+	src/vtkCentrelineData.cxx
+	test/showPolyData.cxx
+	test/testEndPointIdsToDbiharPatchFilter2.cxx)
+target_link_libraries(testEndPointIdsToDbiharPatchFilter2
+	vtkScalarRadiiToVectorsFilter
+	vtkEndPointIdsToDbiharPatchFilter
+	vtkDbiharPatchFilter
+	${testLibs})
+
 #add_executable(scratch
 #	test/showPolyData.cxx
 #	test/scratch.cxx)

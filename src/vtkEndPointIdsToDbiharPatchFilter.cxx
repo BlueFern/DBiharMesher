@@ -229,7 +229,7 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 		}
 	}
 
-#if 0
+#if 1
 	for(int spineId = 0; spineId < spineIds.size(); spineId++)
 	{
 		for(std::vector<vtkIdType>::iterator it = spineIds[spineId].begin(); it != spineIds[spineId].end(); ++it)

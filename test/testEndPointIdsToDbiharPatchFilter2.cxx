@@ -36,7 +36,8 @@ int main(int argc, char* argv[]) {
 	std::cout << "Starting " << __FILE__ << std::endl;
 
 	vtkSmartPointer<vtkGenericDataObjectReader> vesselCentrelineReader = vtkSmartPointer<vtkGenericDataObjectReader>::New();
-	vesselCentrelineReader->SetFileName("/home/cza14/centreline.vtk");
+	vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/227A_Centreline.vtk").c_str());
+	//vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/721A_Centreline.vtk").c_str());
 	vesselCentrelineReader->Update();
 
 	vtkPolyData *vesselCentreline = vtkPolyData::SafeDownCast(vesselCentrelineReader->GetOutput());
@@ -54,14 +55,17 @@ int main(int argc, char* argv[]) {
 
 	vtkSmartPointer<vtkIdList> endPointIdsList = vtkSmartPointer<vtkIdList>::New();
 
-#if 0
-	endPointIdsList->InsertNextId(x);
-	endPointIdsList->InsertNextId(y);
-	endPointIdsList->InsertNextId(z);
+#if 1
+	// Bifurcation segment.
+	endPointIdsList->InsertNextId(21);
+	endPointIdsList->InsertNextId(79);
+	endPointIdsList->InsertNextId(948);
 #else
-	endPointIdsList->InsertNextId(0);
-	endPointIdsList->InsertNextId(150);
+	// Straight segment.
+	endPointIdsList->InsertNextId(350); //920);
+	endPointIdsList->InsertNextId(450); //990);
 #endif
+	// TODO: Test 80 to 210 which spans accros a bifurcation.
 
 	const double unitsConversionFactor = 1.0e-3;
 	vtkSmartPointer<vtkDoubleArray> radiiArray = vtkDoubleArray::SafeDownCast(resampledVesselCentreline->GetPointData()->GetArray(vtkCentrelineData::RADII_ARR_NAME));
