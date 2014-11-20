@@ -51,7 +51,7 @@ vtkEndPointIdsToDbiharPatchFilter::vtkEndPointIdsToDbiharPatchFilter()
 	this->SetNumberOfOutputPorts(1);
 
 	// this->SegmentIdList = vtkSmartPointer<vtkIdList>::New();
-	this->cEdgeScaling = 3;
+	this->cEdgeScaling = 4.0;
 	this->yEdgeScaling = 6.0;
 
 	vtkSmartPointer<vtkCallbackCommand> progressCallback = vtkSmartPointer<vtkCallbackCommand>::New();
@@ -549,14 +549,21 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 				// Rotate derivative around radius by fraction of the angle.
 				radiiArray->GetTuple(spineIds[spineId][ptId], r);
 				vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
-				transform->RotateWXYZ(-rightAngleNm1 * rotationCoeff * currentFraction, r);
-
-				std::cout << rightAngleNm1 * rotationCoeff * currentFraction << std::endl;
+				double angle = -rightAngleNm1 * rotationCoeff * currentFraction;
+				transform->RotateWXYZ(angle, r);
+				std::cout << angle << std::endl;
 
 				double deriv0[3];
 				derivatives->GetTuple(derivId, deriv0);
 				double deriv1[3];
 				transform->TransformPoint(deriv0, deriv1);
+
+				double norm = vtkMath::Norm(deriv1);
+				double norm1 = norm / cos(vtkMath::RadiansFromDegrees(std::fabs(angle)));
+				double ratio = norm1/norm;
+				vtkMath::MultiplyScalar(deriv1, ratio);
+				std::cout << norm << ", " << norm1 << ", " << ratio << std::endl;
+
 				derivatives->SetTuple(derivId, deriv1);
 			}
 			// Traversing the "left" edge of the patch from bifurcation backwards.
@@ -569,14 +576,21 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 				// Rotate derivative around radius by fraction of the angle.
 				radiiArray->GetTuple(spineIds[spineId][ptId], r);
 				vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
-				transform->RotateWXYZ(-leftAngleNm1 * rotationCoeff * currentFraction, r);
-
-				std::cout << leftAngleNm1 * rotationCoeff * currentFraction << std::endl;
+				double angle = -leftAngleNm1 * rotationCoeff * currentFraction;
+				transform->RotateWXYZ(angle, r);
+				std::cout << angle << std::endl;
 
 				double deriv0[3];
 				derivatives->GetTuple(derivId, deriv0);
 				double deriv1[3];
 				transform->TransformPoint(deriv0, deriv1);
+
+				double norm = vtkMath::Norm(deriv1);
+				double norm1 = norm / cos(vtkMath::RadiansFromDegrees(std::fabs(angle)));
+				double ratio = norm1/norm;
+				vtkMath::MultiplyScalar(deriv1, ratio);
+				std::cout << norm << ", " << norm1 << ", " << ratio << std::endl;
+
 				derivatives->SetTuple(derivId, deriv1);
 			}
 			// Traversing the "right" edge of the patch from bifurcation forward.
@@ -589,14 +603,21 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 				// Rotate derivative around radius by fraction of the angle.
 				radiiArray->GetTuple(spineIds[spineId][ptId], r);
 				vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
-				transform->RotateWXYZ(rightAngleNm1 * rotationCoeff * currentFraction, r);
-
-				std::cout << rightAngleNm1 * rotationCoeff * currentFraction << std::endl;
+				double angle = rightAngleNm1 * rotationCoeff * currentFraction;
+				transform->RotateWXYZ(angle, r);
+				std::cout << angle << std::endl;
 
 				double deriv0[3];
 				derivatives->GetTuple(derivId, deriv0);
 				double deriv1[3];
 				transform->TransformPoint(deriv0, deriv1);
+
+				double norm = vtkMath::Norm(deriv1);
+				double norm1 = norm / cos(vtkMath::RadiansFromDegrees(std::fabs(angle)));
+				double ratio = norm1/norm;
+				vtkMath::MultiplyScalar(deriv1, ratio);
+				std::cout << norm << ", " << norm1 << ", " << ratio << std::endl;
+
 				derivatives->SetTuple(derivId, deriv1);
 			}
 			// Traversing the "left" edge of the patch from bifurcation forward.
@@ -609,14 +630,21 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 				// Rotate derivative around radius by fraction of the angle.
 				radiiArray->GetTuple(spineIds[spineId][ptId], r);
 				vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
-				transform->RotateWXYZ(leftAngleNm1 * rotationCoeff * currentFraction, r);
-
-				std::cout << leftAngleNm1 * rotationCoeff * currentFraction << std::endl;
+				double angle = leftAngleNm1 * rotationCoeff * currentFraction;
+				transform->RotateWXYZ(angle, r);
+				std::cout << angle << std::endl;
 
 				double deriv0[3];
 				derivatives->GetTuple(derivId, deriv0);
 				double deriv1[3];
 				transform->TransformPoint(deriv0, deriv1);
+
+				double norm = vtkMath::Norm(deriv1);
+				double norm1 = norm / cos(vtkMath::RadiansFromDegrees(std::fabs(angle)));
+				double ratio = norm1/norm;
+				vtkMath::MultiplyScalar(deriv1, ratio);
+				std::cout << norm << ", " << norm1 << ", " << ratio << std::endl;
+
 				derivatives->SetTuple(derivId, deriv1);
 			}
 #endif
