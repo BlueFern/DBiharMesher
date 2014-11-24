@@ -1,5 +1,9 @@
 #include <stdlib.h>
 #include <assert.h>
+#include <time.h>
+
+#include <algorithm>
+#include <sstream>
 
 #include <vtkSmartPointer.h>
 #include <vtkProperty.h>
@@ -15,6 +19,9 @@
 #include <vtkRenderer.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkInteractorStyleSwitch.h>
+
+#include <vtkWindowToImageFilter.h>
+#include <vtkPNGWriter.h>
 
 #include <vtkAxesActor.h>
 #include <vtkTransform.h>
@@ -43,6 +50,30 @@ void KeypressCallbackFunction(vtkObject* caller, long unsigned int vtkNotUsed(ev
 	{
 		actor->SetVisibility(!actor->GetVisibility());
 		iren->Render();
+	}
+
+	if(std::string(iren->GetKeySym()) == "s")
+	{
+		vtkSmartPointer<vtkWindowToImageFilter> windowToImageFilter = vtkSmartPointer<vtkWindowToImageFilter>::New();
+		windowToImageFilter->SetInput(iren->GetRenderWindow());
+		windowToImageFilter->SetMagnification(3);
+		windowToImageFilter->ReadFrontBufferOff(); // Read from the back buffer.
+		windowToImageFilter->Update();
+
+		time_t _tm =time(NULL);
+		struct tm *curtime = localtime(&_tm);
+		std::ostringstream outputFileNameStream;
+		outputFileNameStream << "Screenshot_" << asctime(curtime) << ".png";
+
+		std::string outputFileName = outputFileNameStream.str();
+		outputFileName.erase(std::remove(outputFileName.begin(), outputFileName.end(), '\n'), outputFileName.end());
+		std::replace(outputFileName.begin(), outputFileName.end(), ' ', '_');
+		std::replace(outputFileName.begin(), outputFileName.end(), ':', '-');
+
+		vtkSmartPointer<vtkPNGWriter> writer = vtkSmartPointer<vtkPNGWriter>::New();
+		writer->SetFileName(outputFileName.c_str());
+		writer->SetInputConnection(windowToImageFilter->GetOutputPort());
+		writer->Write();
 	}
 }
 
