@@ -23,14 +23,15 @@
 #include <vtkIdList.h>
 #include <vtkMath.h>
 
+#include <vtkXMLStructuredGridWriter.h>
+
 #include "vtkEndPointIdsToDbiharPatchFilter.h"
 #include "vtkDbiharPatchFilter.h"
 #include "showPolyData.h"
 
 #define PRINT_DEBUG 0
 
-//#define SSTR( x ) dynamic_cast< std::ostringstream & >( \
-//        ( std::ostringstream() << std::dec << x ) ).str()
+#define SSTR( x ) dynamic_cast< std::ostringstream & >( ( std::ostringstream() << std::dec << x ) ).str()
 
 // TODO: Move to a lib. Code is duplicated.
 void DoubleCross1(const double v0[3], const double c0[3], const double v1[3], double c1[3])
@@ -321,6 +322,20 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 		double p1[3];
 		double v0[3];
 		double c0[3];
+
+		// Set Dirichlet and Neumann boundary conditions. Both boundary conditions are stored in a vtkPolyData object.
+		// The Diriclet boundary values are stored as the ordered set of points.
+		// The Neumann boundary values are stored as vectors associated with each corresponding point.
+		// What is called 'spineIds' in this case are just lists of point ids corresponding to segments of centrelines which are to be used for producing surface meshes.
+		// For a non-bifurcating surface mesh there are two list of point ids, one per input patch for the Dbihar filter.
+		// For a bifurcating surface mesh there are three lists of point ids, one per input patch for the Dbihar filter.
+		// The code walks the given point id list starting at the first point. For this centreline point id an arch consisting of points obtained through radius rotation around this centreline point is inserted into the Dirichlet boundary condition point set.
+		// Then the centreline point id list is traversed forward, where for each point id and the corresponding radius vector a point is added into the Dirichlet boundary condition point set.
+		// When the last centreline point id is reached, an arch consisting of points obtained through radius rotation around this centreline point is inserted into the Dirichlet boundary condition point set.
+		// Then the centreline point id list is traversed backcward, where for each point id and the corresponding radius vector a point is added into the Dirichlet boundary condition point set.
+		// The Neumann boundary conditions are inserted for every point during the centreline point id list traversal. For the arches the direction of the derivatives is parallel to the direction of the centreline at the start and end points of the centreline segment.
+		// For the other two edges of the patch the derivatives are oriented perpendicular to both the vector radius and the corresponding centreline edge. The magnitudes of the derivative vectors are proportional to the radius of the centreline at the given point.
+		// While the code is in the debugg stage, the patches with the initialised boundary conditions are shown for visual verification.
 
 		// TODO: Interpolate the derivatives (similar to what we do with radii) between adjacent points. Alternatively, we should try
 		// calculating the derivatives only for the centreline and translating them to both edges. They would still have to be interpolated.
@@ -687,6 +702,11 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 		vtkSmartPointer<vtkStructuredGrid> structuredGrid = vtkSmartPointer<vtkStructuredGrid>::New();
 		structuredGrid->SetDimensions(this->NumberOfRadialQuads + 1, spineLength, 1);
 		structuredGrid->SetPoints(outputPoints);
+
+		vtkSmartPointer<vtkXMLStructuredGridWriter> writer = vtkSmartPointer<vtkXMLStructuredGridWriter>::New();
+		writer->SetFileName(SSTR("structuredGrid" << spineId << ".vts").c_str());
+		writer->SetInputData(structuredGrid);
+		writer->Update();
 
 		//showPolyData(inputPatch, structuredGrid);
 		outputGrids.push_back(structuredGrid);

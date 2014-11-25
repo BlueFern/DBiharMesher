@@ -61,6 +61,8 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 	input = vtkPolyData::GetData(inputVector[0], 0);
 	vtkPolyData* output = vtkPolyData::GetData(outputVector, 0);
 
+	// TODO: This code will get confused if the polydata has cells other than lines, i.e. vertices or polygons.
+
 	vtkSmartPointer<vtkCellArray> lines = input->GetLines();
 	lines->InitTraversal();
 
