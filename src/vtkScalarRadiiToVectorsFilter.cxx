@@ -32,6 +32,7 @@ void DoubleCross(const double v0[3], const double c0[3], const double v1[3], dou
 	vtkMath::Cross(v1, c1, c1);
 }
 
+// TODO: Move to a lib. Code is duplicated.
 // This is taken from vtkMath class in VTK Nightly in October 2014.
 double AngleBetweenVectors(const double v1[3], const double v2[3])
 {

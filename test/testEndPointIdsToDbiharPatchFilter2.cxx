@@ -21,7 +21,6 @@
 #include <vtkGenericDataObjectWriter.h>
 
 #include <vtkXMLStructuredGridReader.h>
-#include <vtkStructuredGridAppend.h>
 
 #include "showPolyData.h"
 
@@ -35,9 +34,10 @@ int main(int argc, char* argv[]) {
 
 	std::cout << "Starting " << __FILE__ << std::endl;
 
+#if 0
 	vtkSmartPointer<vtkGenericDataObjectReader> vesselCentrelineReader = vtkSmartPointer<vtkGenericDataObjectReader>::New();
-	vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/227A_Centreline.vtk").c_str());
-	//vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/721A_Centreline.vtk").c_str());
+	//vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/227A_Centreline.vtk").c_str());
+	vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/721A_Centreline.vtk").c_str());
 	vesselCentrelineReader->Update();
 
 	vtkPolyData *vesselCentreline = vtkPolyData::SafeDownCast(vesselCentrelineReader->GetOutput());
@@ -46,6 +46,14 @@ int main(int argc, char* argv[]) {
 	centrelineSegmentSource->SetCentrelineData(vesselCentreline);
 
 	vtkPolyData *resampledVesselCentreline = centrelineSegmentSource->GetOutput();
+#else
+	vtkSmartPointer<vtkGenericDataObjectReader> vesselCentrelineReader = vtkSmartPointer<vtkGenericDataObjectReader>::New();
+	vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/227A_CentrelineResampled_4ECs.vtk").c_str());
+	//vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/721A_CentrelineResampled_4ECs.vtk").c_str());
+	vesselCentrelineReader->Update();
+
+	vtkPolyData *resampledVesselCentreline = vtkPolyData::SafeDownCast(vesselCentrelineReader->GetOutput());
+#endif
 
 	vtkSmartPointer<vtkScalarRadiiToVectorsFilter> scalarRadiiToVectorsFilter = vtkSmartPointer<vtkScalarRadiiToVectorsFilter>::New();
 	scalarRadiiToVectorsFilter->SetInputData(resampledVesselCentreline);
@@ -60,6 +68,10 @@ int main(int argc, char* argv[]) {
 	endPointIdsList->InsertNextId(21);
 	endPointIdsList->InsertNextId(79);
 	endPointIdsList->InsertNextId(948);
+	//endPointIdsList->InsertNextId(160);
+	//endPointIdsList->InsertNextId(260);
+	//endPointIdsList->InsertNextId(560);
+
 #else
 	// Straight segment.
 	endPointIdsList->InsertNextId(350); //920);
@@ -98,11 +110,21 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
+	std::cout << numberOfRadialQuads << std::endl;
+
 	vtkSmartPointer<vtkEndPointIdsToDbiharPatchFilter> idListToDbiharPatchFilter = vtkSmartPointer<vtkEndPointIdsToDbiharPatchFilter>::New();
 	idListToDbiharPatchFilter->SetInputData(resampledVesselCentrelineWithRadii);
 	idListToDbiharPatchFilter->SetNumberOfRadialQuads(numberOfRadialQuads);
 	idListToDbiharPatchFilter->SetEndPointIdsList(endPointIdsList);
 	idListToDbiharPatchFilter->Update();
+
+	showPolyData(idListToDbiharPatchFilter->GetOutput(), NULL, 0.1);
+
+	vtkSmartPointer<vtkXMLPolyDataWriter> meshWrtirer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+	meshWrtirer->SetInputData(idListToDbiharPatchFilter->GetOutput());
+	meshWrtirer->SetFileName((std::string(argv[0]) + ".vtp").c_str());
+	std::cout << "Writing " << meshWrtirer->GetFileName() << std::endl;
+	meshWrtirer->Write();
 
 	std::cout << "Exiting " << __FILE__ << std::endl;
 

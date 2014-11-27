@@ -21,7 +21,6 @@
 #include <vtkGenericDataObjectWriter.h>
 
 #include <vtkXMLStructuredGridReader.h>
-#include <vtkStructuredGridAppend.h>
 
 #include "showPolyData.h"
 
@@ -55,9 +54,9 @@ int main(int argc, char* argv[]) {
 	vtkSmartPointer<vtkIdList> endPointIdsList = vtkSmartPointer<vtkIdList>::New();
 
 #if 1
-	endPointIdsList->InsertNextId(40);
-	endPointIdsList->InsertNextId(100);
-	endPointIdsList->InsertNextId(176);
+	endPointIdsList->InsertNextId(32);
+	endPointIdsList->InsertNextId(120);
+	endPointIdsList->InsertNextId(196);
 #else
 	endPointIdsList->InsertNextId(0);
 	endPointIdsList->InsertNextId(70);
@@ -99,6 +98,14 @@ int main(int argc, char* argv[]) {
 	idListToDbiharPatchFilter->SetNumberOfRadialQuads(numberOfRadialQuads);
 	idListToDbiharPatchFilter->SetEndPointIdsList(endPointIdsList);
 	idListToDbiharPatchFilter->Update();
+
+	showPolyData(idListToDbiharPatchFilter->GetOutput(), NULL, 0.1);
+
+	vtkSmartPointer<vtkXMLPolyDataWriter> meshWrtirer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+	meshWrtirer->SetInputData(idListToDbiharPatchFilter->GetOutput());
+	meshWrtirer->SetFileName((std::string(argv[0]) + ".vtp").c_str());
+	std::cout << "Writing " << meshWrtirer->GetFileName() << std::endl;
+	meshWrtirer->Write();
 
 	std::cout << "Exiting " << __FILE__ << std::endl;
 

@@ -118,6 +118,7 @@ add_executable(testEndPointIdsToDbiharPatchFilter1
 	test/showPolyData.cxx
 	test/testEndPointIdsToDbiharPatchFilter1.cxx)
 target_link_libraries(testEndPointIdsToDbiharPatchFilter1
+	vtkFiltersGeometry
 	vtkScalarRadiiToVectorsFilter
 	vtkEndPointIdsToDbiharPatchFilter
 	vtkDbiharPatchFilter
@@ -128,6 +129,7 @@ add_executable(testEndPointIdsToDbiharPatchFilter2
 	test/showPolyData.cxx
 	test/testEndPointIdsToDbiharPatchFilter2.cxx)
 target_link_libraries(testEndPointIdsToDbiharPatchFilter2
+	vtkFiltersGeometry
 	vtkScalarRadiiToVectorsFilter
 	vtkEndPointIdsToDbiharPatchFilter
 	vtkDbiharPatchFilter

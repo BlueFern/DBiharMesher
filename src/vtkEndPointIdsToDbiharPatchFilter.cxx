@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <string>
+#include <sstream>
 #include <algorithm>
 
 #include <vtkSmartPointer.h>
@@ -13,7 +14,9 @@
 #include <vtkInformationVector.h>
 #include <vtkInformation.h>
 #include <vtkStructuredGrid.h>
+#include <vtkStructuredGridGeometryFilter.h>
 #include <vtkAppendPolyData.h>
+#include <vtkCleanPolyData.h>
 #include <vtkDataObject.h>
 #include <vtkPointData.h>
 #include <vtkPolyLine.h>
@@ -23,7 +26,8 @@
 #include <vtkIdList.h>
 #include <vtkMath.h>
 
-#include <vtkXMLStructuredGridWriter.h>
+//#include <vtkXMLPolyDataWriter.h>
+//#include <vtkXMLStructuredGridWriter.h>
 
 #include "vtkEndPointIdsToDbiharPatchFilter.h"
 #include "vtkDbiharPatchFilter.h"
@@ -31,7 +35,9 @@
 
 #define PRINT_DEBUG 0
 
+#if 0
 #define SSTR( x ) dynamic_cast< std::ostringstream & >( ( std::ostringstream() << std::dec << x ) ).str()
+#endif
 
 // TODO: Move to a lib. Code is duplicated.
 void DoubleCross1(const double v0[3], const double c0[3], const double v1[3], double c1[3])
@@ -39,6 +45,17 @@ void DoubleCross1(const double v0[3], const double c0[3], const double v1[3], do
 	vtkMath::Cross(c0, v0, c1);
 	vtkMath::Cross(v1, c1, c1);
 }
+
+#if 1
+// TODO: Move to a lib. Code is duplicated.
+// This is taken from vtkMath class in VTK Nightly in October 2014.
+double AngleBetweenVectorsD(const double v1[3], const double v2[3])
+{
+  double cross[3];
+  vtkMath::Cross(v1, v2, cross);
+  return atan2(vtkMath::Norm(cross), vtkMath::Dot(v1, v2));
+}
+#endif
 
 vtkStandardNewMacro(vtkEndPointIdsToDbiharPatchFilter);
 
@@ -271,10 +288,10 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 	}
 #endif
 
-	std::vector<vtkSmartPointer<vtkPolyData> > inputPatches;
 	std::vector<vtkSmartPointer<vtkStructuredGrid> > outputGrids;
 
 	vtkSmartPointer<vtkAppendPolyData> appendPolyDataFilter = vtkSmartPointer<vtkAppendPolyData>::New();
+	vtkSmartPointer<vtkAppendPolyData> appendGridFilter = vtkSmartPointer<vtkAppendPolyData>::New();
 
 	vtkSmartPointer<vtkDoubleArray> radiiArray = vtkDoubleArray::SafeDownCast(input->GetPointData()->GetVectors(RADII_ARR_NAME));
 
@@ -536,8 +553,8 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 			derivatives->SetTuple(rightBifurcationDerivId, derivN);
 
 			// Figure out the angles between the vectors at bifurcations and the adjacent vectors.
-			double rightAngleNm1 = vtkMath::DegreesFromRadians(vtkMath::AngleBetweenVectors(derivNm1, derivN));
-			double rightAngleNp1 = vtkMath::DegreesFromRadians(vtkMath::AngleBetweenVectors(derivNp1, derivN));
+			double rightAngleNm1 = vtkMath::DegreesFromRadians(AngleBetweenVectorsD(derivNm1, derivN));
+			double rightAngleNp1 = vtkMath::DegreesFromRadians(AngleBetweenVectorsD(derivNp1, derivN));
 
 			// For the "right" bifurcation point get the adjacent vectors.
 			derivatives->GetTuple(leftBifurcationDerivId - 1, derivNp1);
@@ -548,8 +565,8 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 			derivatives->SetTuple(leftBifurcationDerivId, derivN);
 
 			// Figure out the angles between the vectors at bifurcations and the adjacent vectors.
-			double leftAngleNm1 = vtkMath::DegreesFromRadians(vtkMath::AngleBetweenVectors(derivNm1, derivN));
-			double leftAngleNp1 = vtkMath::DegreesFromRadians(vtkMath::AngleBetweenVectors(derivNp1, derivN));
+			double leftAngleNm1 = vtkMath::DegreesFromRadians(AngleBetweenVectorsD(derivNm1, derivN));
+			double leftAngleNp1 = vtkMath::DegreesFromRadians(AngleBetweenVectorsD(derivNp1, derivN));
 
 			// TODO: This constant is to be examined closer.
 			double rotationCoeff = 1.1;
@@ -694,39 +711,60 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 		patchFilter->SetInputData(inputPatch);
 		patchFilter->Update();
 
+#if 0
 		vtkSmartPointer<vtkPolyData> outputPatch = vtkSmartPointer<vtkPolyData>::New();
 		outputPatch->DeepCopy(patchFilter->GetOutput());
 		vtkSmartPointer<vtkPoints> outputPoints = vtkSmartPointer<vtkPoints>::New();
 		outputPoints->DeepCopy(outputPatch->GetPoints());
+#endif
 
 		vtkSmartPointer<vtkStructuredGrid> structuredGrid = vtkSmartPointer<vtkStructuredGrid>::New();
 		structuredGrid->SetDimensions(this->NumberOfRadialQuads + 1, spineLength, 1);
-		structuredGrid->SetPoints(outputPoints);
+		structuredGrid->SetPoints(patchFilter->GetOutput()->GetPoints());
+
+		vtkSmartPointer<vtkStructuredGridGeometryFilter> gridToPolyDataFilter = vtkSmartPointer<vtkStructuredGridGeometryFilter>::New();
+		gridToPolyDataFilter->SetInputData(structuredGrid);
+		std::cout << this->NumberOfRadialQuads + 1 << ", " << spineLength << std::endl;
+		std::cout << "points in grid: " << structuredGrid->GetNumberOfPoints() << std::endl;
+
+		appendGridFilter->AddInputConnection(gridToPolyDataFilter->GetOutputPort());
+
+#if 0
+		vtkSmartPointer<vtkXMLPolyDataWriter> pdw = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+		pdw->SetInputData(patchFilter->GetOutput());
+		pdw->SetFileName(SSTR("dbhPatch" << spineId << ".vtp").c_str());
+		pdw->Write();
 
 		vtkSmartPointer<vtkXMLStructuredGridWriter> writer = vtkSmartPointer<vtkXMLStructuredGridWriter>::New();
 		writer->SetFileName(SSTR("structuredGrid" << spineId << ".vts").c_str());
 		writer->SetInputData(structuredGrid);
 		writer->Update();
+#endif
 
-		//showPolyData(inputPatch, structuredGrid);
 		outputGrids.push_back(structuredGrid);
 
 		appendPolyDataFilter->AddInputData(inputPatch);
-
-		//inputPatches.push_back(inputPatch);
 	}
 
+	// TODO: Remove this.
 	appendPolyDataFilter->Update();
 	showPolyData(appendPolyDataFilter->GetOutput(), NULL, 0.1);
 
-	showGrids(outputGrids, input);
+	appendGridFilter->Update();
+	std::cout << "total points in grids: " << appendGridFilter->GetOutput()->GetNumberOfPoints() << std::endl;
 
-	// TODO: Merge output patches into one vtkPolyData object. vtkStructuredGridAppend filter from VTK nightly is not working correctly.
+	vtkSmartPointer<vtkCleanPolyData> polyDataCleaner = vtkSmartPointer<vtkCleanPolyData>::New();
+	polyDataCleaner->SetInputData(appendGridFilter->GetOutput());
+	polyDataCleaner->Update();
+
+	std::cout << "points after clean: " << polyDataCleaner->GetOutput()->GetNumberOfPoints() << std::endl;
+
+	showGrids(outputGrids, input);
 
 	// TODO: Implement progress updates.
 	// this->UpdateProgress(static_cast<double>(pId)/static_cast<double>(numPIds));
 
-	output->DeepCopy(output);
+	output->DeepCopy(polyDataCleaner->GetOutput());
 
 	return 1;
 }
