@@ -31,6 +31,8 @@ vtkDbiharPatchFilter::vtkDbiharPatchFilter()
 	this->SetNumberOfInputPorts(1);
 	this->SetNumberOfOutputPorts(1);
 
+	OutputPoints = vtkSmartPointer<vtkPoints>::New();
+
 	this->A = 0.0;
 	this->B = 0.0;
 	this->C = 0.0;
@@ -72,17 +74,6 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 	this->MDim = this->MQuads - 1;
 	this->NDim = this->NQuads - 1;
 
-	// Prepare output points.
-	vtkPoints *outputPoints = vtkPoints::New();
-	double tmpPoint[3] = {0.0, 0.0, 0.0};
-	for(int n = 0; n < (this->NQuads + 1); n++)
-	{
-		for(int m = 0; m < (this->MQuads + 1); m++)
-		{
-			outputPoints->InsertNextPoint(tmpPoint);
-		}
-	}
-
 	// Allocate derivatives.
 	double *bda = new double[this->NDim];
 	//std::fill_n(bda, this->NDim, 0.0);
@@ -117,7 +108,10 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 	int lw;
 	if(this->IFlag == 2)
 	{
-		lw = (int)(std::max(7 * this->NDim, 3 * this->MDim) + 2 * (this->NDim + this->MDim) + 19);
+		// This is the lower bound (?) estimate.
+		// lw = (int)(std::max(7 * this->NDim, 3 * this->MDim) + 2 * (this->NDim + this->MDim) + 19);
+		// This is the upper bound (?) estimate.
+		lw = (int)(std::max(7 * this->NDim, 3 * this->MDim) + 2 * (this->NDim + this->MDim) + 19 + 20 * (this->NDim + 3));
 	}
 	else if(this->IFlag == 4)
 	{
@@ -132,6 +126,13 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 
 	// Allocate workspace.
 	double *w = new double[lw];
+
+	// Prepare output points.
+	double tmpPoint[3] = {0.0, 0.0, 0.0};
+	for(int pId = 0; pId < (this->NQuads + 1) * (this->MQuads + 1); pId++)
+	{
+		OutputPoints->InsertNextPoint(tmpPoint);
+	}
 
 	int numDims = 3;
 	// Do this once for each dimension, X, Y, Z.
@@ -273,16 +274,16 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 		}
 #endif
 
-		// Save result.
+		// Save result to output points.
 		vtkIdType pId = 0;
 		// For each element of f copy the value into the current dimension of the corresponding output point.
 		for(int row = 0; row < this->NQuads + 1; row++)
 		{
 			for(int col = 0; col < this->MQuads + 1; col++, pId++)
 			{
-				outputPoints->GetPoint(pId, tmpPoint);
+				OutputPoints->GetPoint(pId, tmpPoint);
 				tmpPoint[dim] = f[pId];
-				outputPoints->InsertPoint(pId, tmpPoint);
+				OutputPoints->InsertPoint(pId, tmpPoint);
 			}
 		}
 
@@ -295,7 +296,7 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 		// All done for this dimension.
 	}
 
-	output->SetPoints(outputPoints);
+	output->SetPoints(OutputPoints);
 
 	// Deallocate f;
 	delete [] f;

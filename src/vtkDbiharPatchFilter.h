@@ -54,6 +54,8 @@ private:
 	vtkDbiharPatchFilter(const vtkDbiharPatchFilter&); // Not implemented.
 	void operator=(const vtkDbiharPatchFilter&); // Not implemented.
 
+	vtkSmartPointer<vtkPoints> OutputPoints;
+
 	double A, B, C, D;
 	int MDim, NDim;
 	int MQuads, NQuads;
