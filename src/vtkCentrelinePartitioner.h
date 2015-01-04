@@ -1,5 +1,5 @@
 /*
- * vtkCentrelinePartioner.h
+ * vtkCentrelinePartitioner.h
  *
  *  Created on: 18/12/2014
  *      Author: sed59

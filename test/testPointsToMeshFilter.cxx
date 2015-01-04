@@ -5,6 +5,7 @@
 #include <vtkXMLPolyDataReader.h>
 #include <vtkXMLPolyDataWriter.h>
 
+#include "wrapDbiharConfig.h"
 #include "vtkPointsToMeshFilter.h"
 #include "showPolyData.h"
 
@@ -14,7 +15,7 @@ int main(int argc, char* argv[]) {
 	std::cout << "Starting " << __FILE__ << std::endl;
 
 	vtkSmartPointer<vtkXMLPolyDataReader> pointsReader = vtkSmartPointer<vtkXMLPolyDataReader>::New();
-	pointsReader->SetFileName("testPoints.vtp");
+	pointsReader->SetFileName((std::string(TEST_DATA_DIR) + "/testPoints.vtp").c_str());
 
 	vtkSmartPointer<vtkUnsignedIntArray> dimensions = vtkSmartPointer<vtkUnsignedIntArray>::New();
 	dimensions->InsertNextValue(28);

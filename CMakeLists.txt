@@ -53,8 +53,8 @@ add_library(vtkPointsToMeshFilter src/vtkPointsToMeshFilter.cxx)
 target_link_libraries(vtkPointsToMeshFilter
 	vtkFiltersHybrid)
 
-add_library(vtkCentrelinePartioner src/vtkCentrelinePartioner.cxx)
-target_link_libraries(vtkCentrelinePartioner
+add_library(vtkCentrelinePartitioner src/vtkCentrelinePartitioner.cxx)
+target_link_libraries(vtkCentrelinePartitioner
 	vtkFiltersExtraction
 	vtkFiltersHybrid)
 	
@@ -151,12 +151,12 @@ target_link_libraries(testPointsToMeshFilter1
 	vtkPointsToMeshFilter
 	${testLibs})
 
-add_executable(testCentrelinePartioner1
+add_executable(testCentrelinePartitioner1
 	src/vtkCentrelineData.cxx
-	src/vtkCentrelinePartioner.cxx
-	test/testCentrelinePartioner1.cxx)
-target_link_libraries(testCentrelinePartioner1
-	vtkCentrelinePartioner
+	src/vtkCentrelinePartitioner.cxx
+	test/testCentrelinePartitioner1.cxx)
+target_link_libraries(testCentrelinePartitioner1
+	vtkCentrelinePartitioner
 	${testLibs})
 	
 #add_executable(scratch
