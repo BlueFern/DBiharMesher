@@ -26,9 +26,6 @@
 #include <vtkIdList.h>
 #include <vtkMath.h>
 
-//#include <vtkXMLPolyDataWriter.h>
-//#include <vtkXMLStructuredGridWriter.h>
-
 #include "vtkEndPointIdsToDbiharPatchFilter.h"
 #include "vtkDbiharPatchFilter.h"
 #include "showPolyData.h"
@@ -290,8 +287,9 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 
 	std::vector<vtkSmartPointer<vtkStructuredGrid> > outputGrids;
 
-	vtkSmartPointer<vtkAppendPolyData> appendPolyDataFilter = vtkSmartPointer<vtkAppendPolyData>::New();
-	vtkSmartPointer<vtkAppendPolyData> appendGridFilter = vtkSmartPointer<vtkAppendPolyData>::New();
+	vtkSmartPointer<vtkAppendPolyData> appendGridsFilter = vtkSmartPointer<vtkAppendPolyData>::New();
+
+	vtkSmartPointer<vtkAppendPolyData> appendInputsFilter = vtkSmartPointer<vtkAppendPolyData>::New();
 
 	vtkSmartPointer<vtkDoubleArray> radiiArray = vtkDoubleArray::SafeDownCast(input->GetPointData()->GetVectors(RADII_ARR_NAME));
 
@@ -693,15 +691,13 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 
 		std::cout << inputPatch->GetNumberOfPoints() << " =?= " << numPtIds << std::endl;
 
-		showPolyData(inputPatch, NULL, 0.1);
-
 		vtkSmartPointer<vtkDbiharPatchFilter> patchFilter = vtkSmartPointer<vtkDbiharPatchFilter>::New();
 
 		// Set the bounds of the UV space.
 		patchFilter->SetA(0.0);
-		patchFilter->SetB(2.0/3.0);
+		patchFilter->SetB(1.0);
 		patchFilter->SetC(0.0);
-		patchFilter->SetD(vtkMath::Pi());
+		patchFilter->SetD(8.0);
 		// Set the boundary conditions.
 		patchFilter->SetMQuads(this->NumberOfRadialQuads);
 		patchFilter->SetNQuads(spineLength - 1);
@@ -711,12 +707,8 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 		patchFilter->SetInputData(inputPatch);
 		patchFilter->Update();
 
-#if 0
 		vtkSmartPointer<vtkPolyData> outputPatch = vtkSmartPointer<vtkPolyData>::New();
-		outputPatch->DeepCopy(patchFilter->GetOutput());
-		vtkSmartPointer<vtkPoints> outputPoints = vtkSmartPointer<vtkPoints>::New();
-		outputPoints->DeepCopy(outputPatch->GetPoints());
-#endif
+		outputPatch->SetPoints(patchFilter->GetOutput()->GetPoints());
 
 		vtkSmartPointer<vtkStructuredGrid> structuredGrid = vtkSmartPointer<vtkStructuredGrid>::New();
 		structuredGrid->SetDimensions(this->NumberOfRadialQuads + 1, spineLength, 1);
@@ -724,37 +716,22 @@ int vtkEndPointIdsToDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(re
 
 		vtkSmartPointer<vtkStructuredGridGeometryFilter> gridToPolyDataFilter = vtkSmartPointer<vtkStructuredGridGeometryFilter>::New();
 		gridToPolyDataFilter->SetInputData(structuredGrid);
-		std::cout << this->NumberOfRadialQuads + 1 << ", " << spineLength << std::endl;
-		std::cout << "points in grid: " << structuredGrid->GetNumberOfPoints() << std::endl;
-
-		appendGridFilter->AddInputConnection(gridToPolyDataFilter->GetOutputPort());
-
-#if 0
-		vtkSmartPointer<vtkXMLPolyDataWriter> pdw = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-		pdw->SetInputData(patchFilter->GetOutput());
-		pdw->SetFileName(SSTR("dbhPatch" << spineId << ".vtp").c_str());
-		pdw->Write();
-
-		vtkSmartPointer<vtkXMLStructuredGridWriter> writer = vtkSmartPointer<vtkXMLStructuredGridWriter>::New();
-		writer->SetFileName(SSTR("structuredGrid" << spineId << ".vts").c_str());
-		writer->SetInputData(structuredGrid);
-		writer->Update();
-#endif
+		appendGridsFilter->AddInputConnection(gridToPolyDataFilter->GetOutputPort());
 
 		outputGrids.push_back(structuredGrid);
 
-		appendPolyDataFilter->AddInputData(inputPatch);
+		appendInputsFilter->AddInputData(inputPatch);
 	}
 
 	// TODO: Remove this.
-	appendPolyDataFilter->Update();
-	showPolyData(appendPolyDataFilter->GetOutput(), NULL, 0.1);
+	appendInputsFilter->Update();
+	showPolyData(appendInputsFilter->GetOutput(), NULL, 0.1);
 
-	appendGridFilter->Update();
-	std::cout << "total points in grids: " << appendGridFilter->GetOutput()->GetNumberOfPoints() << std::endl;
+	appendGridsFilter->Update();
+	std::cout << "total points in grids: " << appendGridsFilter->GetOutput()->GetNumberOfPoints() << std::endl;
 
 	vtkSmartPointer<vtkCleanPolyData> polyDataCleaner = vtkSmartPointer<vtkCleanPolyData>::New();
-	polyDataCleaner->SetInputData(appendGridFilter->GetOutput());
+	polyDataCleaner->SetInputData(appendGridsFilter->GetOutput());
 	polyDataCleaner->Update();
 
 	std::cout << "points after clean: " << polyDataCleaner->GetOutput()->GetNumberOfPoints() << std::endl;
