@@ -49,17 +49,15 @@ add_library(vtkEndPointIdsToDbiharPatchFilter src/vtkEndPointIdsToDbiharPatchFil
 target_link_libraries(vtkEndPointIdsToDbiharPatchFilter
 	vtkFiltersHybrid)
 
-add_library(vtkExtractCentrelineSegment src/vtkExtractCentrelineSegment.cxx)
-target_link_libraries(vtkExtractCentrelineSegment
-	vtkFiltersExtraction
+add_library(vtkPointsToMeshFilter src/vtkPointsToMeshFilter.cxx)
+target_link_libraries(vtkPointsToMeshFilter
 	vtkFiltersHybrid)
-	
+
 add_library(vtkCentrelinePartioner src/vtkCentrelinePartioner.cxx)
 target_link_libraries(vtkCentrelinePartioner
 	vtkFiltersExtraction
 	vtkFiltersHybrid)
 	
-
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/test)
 
@@ -146,15 +144,13 @@ target_link_libraries(testEndPointIdsToDbiharPatchFilter2
 	vtkDbiharPatchFilter
 	${testLibs})
 
-add_executable(testExtractCentrelineSegment1
-	src/vtkCentrelineData.cxx
-	src/vtkExtractCentrelineSegment.cxx
-	test/showPolyData.cxx
-	test/testExtractCentrelineSegment1.cxx)
-target_link_libraries(testExtractCentrelineSegment1
-	vtkExtractCentrelineSegment
+add_executable(testPointsToMeshFilter1
+	test/testPointsToMeshFilter.cxx
+	test/showPolyData.cxx)
+target_link_libraries(testPointsToMeshFilter1
+	vtkPointsToMeshFilter
 	${testLibs})
-	
+
 add_executable(testCentrelinePartioner1
 	src/vtkCentrelineData.cxx
 	src/vtkCentrelinePartioner.cxx
