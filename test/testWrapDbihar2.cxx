@@ -110,6 +110,9 @@ int main(int argc, char* argv[]) {
 	derivatives->SetName(vtkDbiharPatchFilter::DERIV_ARR_NAME);
 	derivatives->SetNumberOfComponents(3);
 
+	double dX = 20; // Vertical boundaries.
+	double dY = 30; // Horizontal boundaries.
+
 	double deriv[3] = {0.0};
 	for(vtkIdType pId = 0; pId < pIds; pId++)
 	{
@@ -124,7 +127,7 @@ int main(int argc, char* argv[]) {
 			if(pId != 0)
 			{
 				deriv[0] = 0.0;
-				deriv[1] = -10.0;
+				deriv[1] = -dY;
 				deriv[2] = 0.0;
 			}
 		}
@@ -135,7 +138,7 @@ int main(int argc, char* argv[]) {
 			{
 				deriv[0] = 0.0;
 				deriv[1] = 0.0;
-				deriv[2] = -60.0;
+				deriv[2] = -dX;
 			}
 		}
 		// Inserting derivatives along the y = y2 boundary segment, skipping the corner case.
@@ -144,7 +147,7 @@ int main(int argc, char* argv[]) {
 			if(pId != cQuads + yQuads)
 			{
 				deriv[0] = 0.0;
-				deriv[1] = 10.0;
+				deriv[1] = dY;
 				deriv[2] = 0.0;
 			}
 		}
@@ -155,7 +158,7 @@ int main(int argc, char* argv[]) {
 			{
 				deriv[0] = 0.0;
 				deriv[1] = 0.0;
-				deriv[2] = -60.0;
+				deriv[2] = -dX;
 			}
 		}
 		derivatives->InsertNextTuple(deriv);
@@ -170,16 +173,16 @@ int main(int argc, char* argv[]) {
 
 	// Set the bounds of the UV space.
 	patchFilter->SetA(0.0);
-	patchFilter->SetB(2.0/3.0);
+	patchFilter->SetB(1.7); // 2.0/3.0);
 	patchFilter->SetC(0.0);
-	patchFilter->SetD(vtkMath::Pi());
-	// Set the boundary conditions.
+	patchFilter->SetD(1.0); // vtkMath::Pi());
+	// Set the number of quads.
 	patchFilter->SetMQuads(cQuads);
 	patchFilter->SetNQuads(yQuads);
+	// Set the boundary conditions.
+	patchFilter->SetInputData(inputPatch);
 	// Set solution method.
 	patchFilter->SetIFlag(2);
-
-	patchFilter->SetInputData(inputPatch);
 
 	// patchFilter->Print(std::cout);
 

@@ -96,6 +96,7 @@ void showPolyData(vtkPolyData *input, vtkStructuredGrid *output, double derivate
 		inputActor->SetMapper(inputMapper);
 		inputActor->GetProperty()->SetColor(1,0,0);
 		inputActor->GetProperty()->SetLineWidth(1.5);
+		inputActor->GetProperty()->SetRepresentationToWireframe();
 
 		vtkDataArray *derivatives = input->GetPointData()->GetVectors("derivVectors");
 		if(derivatives != 0)
@@ -190,20 +191,18 @@ void showPolyData(vtkPolyData *input, vtkStructuredGrid *output, double derivate
 
 void showPolyData1(vtkPolyData *input, double vectorScaling)
 {
-	vtkSmartPointer<vtkActor> inputActor;
-	vtkSmartPointer<vtkActor> vectorsActor;
-
 	vtkSmartPointer<vtkPolyDataMapper> inputMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
 	inputMapper->SetInputData(input);
 
-	inputActor = vtkSmartPointer<vtkActor>::New();
+	vtkSmartPointer<vtkActor> inputActor = vtkSmartPointer<vtkActor>::New();
 	inputActor->SetMapper(inputMapper);
 	inputActor->GetProperty()->SetColor(1,0,0);
 	inputActor->GetProperty()->SetLineWidth(1.5);
 	inputActor->GetProperty()->SetPointSize(5);
 
-	vtkDataArray *vectors = input->GetPointData()->GetVectors();
-	if(vectors != 0)
+	vtkSmartPointer<vtkActor> derivativesActor = vtkSmartPointer<vtkActor>::New();
+	vtkDataArray *derivatives = input->GetPointData()->GetVectors();
+	if(derivatives != 0)
 	{
 		vtkSmartPointer<vtkArrowSource> arrowSource = vtkSmartPointer<vtkArrowSource>::New();
 		arrowSource->Update();
@@ -220,8 +219,7 @@ void showPolyData1(vtkPolyData *input, double vectorScaling)
 		vtkSmartPointer<vtkPolyDataMapper> derivativesMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
 		derivativesMapper->SetInputConnection(derivativesFilter->GetOutputPort());
 
-		vectorsActor = vtkSmartPointer<vtkActor>::New();
-		vectorsActor->SetMapper(derivativesMapper);
+		derivativesActor->SetMapper(derivativesMapper);
 	}
 
 	vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
@@ -237,7 +235,7 @@ void showPolyData1(vtkPolyData *input, double vectorScaling)
 	renderWindowInteractor->SetRenderWindow(renderWindow);
 
 	renderer->AddActor(inputActor);
-	renderer->AddActor(vectorsActor);
+	renderer->AddActor(derivativesActor);
 
 	vtkSmartPointer<vtkAxesActor> axes = vtkSmartPointer<vtkAxesActor>::New();
 	if(input != 0)
@@ -253,7 +251,7 @@ void showPolyData1(vtkPolyData *input, double vectorScaling)
 
 	vtkSmartPointer<vtkCallbackCommand> keypressCallback = vtkSmartPointer<vtkCallbackCommand>::New();
 	keypressCallback->SetCallback(KeypressCallbackFunction);
-	keypressCallback->SetClientData(vectorsActor);
+	keypressCallback->SetClientData(derivativesActor);
 	renderWindowInteractor->AddObserver(vtkCommand::KeyPressEvent, keypressCallback);
 
 	renderWindow->Render();
