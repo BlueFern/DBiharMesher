@@ -52,7 +52,7 @@ target_link_libraries(vtkEndPointIdsToDbiharPatchFilter
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/test)
 
-set(testLibs vtkIOXML vtkIOLegacy vtkIOImage vtkRenderingAnnotation vtkRenderingFreeTypeOpenGL vtkInteractionStyle vtkFiltersSources)
+set(testLibs vtkIOXML vtkIOLegacy vtkIOImage vtkRenderingAnnotation vtkRenderingFreeTypeOpenGL vtkInteractionStyle vtkFiltersSources vtkFiltersGeometry)
 
 add_executable(testWrapDbihar1
 	test/showPolyData.cxx
@@ -96,6 +96,13 @@ target_link_libraries(testWrapDbihar6
 	vtkDbiharPatchFilter
 	${testLibs})
 
+add_executable(testWrapDbihar7
+	test/showPolyData.cxx
+	test/testWrapDbihar7.cxx)
+target_link_libraries(testWrapDbihar7
+	vtkDbiharPatchFilter
+	${testLibs})
+
 add_executable(testCentrelineData1
 	src/vtkCentrelineData.cxx
 	test/showPolyData.cxx
@@ -118,7 +125,6 @@ add_executable(testEndPointIdsToDbiharPatchFilter1
 	test/showPolyData.cxx
 	test/testEndPointIdsToDbiharPatchFilter1.cxx)
 target_link_libraries(testEndPointIdsToDbiharPatchFilter1
-	vtkFiltersGeometry
 	vtkScalarRadiiToVectorsFilter
 	vtkEndPointIdsToDbiharPatchFilter
 	vtkDbiharPatchFilter
@@ -129,7 +135,6 @@ add_executable(testEndPointIdsToDbiharPatchFilter2
 	test/showPolyData.cxx
 	test/testEndPointIdsToDbiharPatchFilter2.cxx)
 target_link_libraries(testEndPointIdsToDbiharPatchFilter2
-	vtkFiltersGeometry
 	vtkScalarRadiiToVectorsFilter
 	vtkEndPointIdsToDbiharPatchFilter
 	vtkDbiharPatchFilter
