@@ -31,8 +31,12 @@ private:
 	vtkCentrelinePartitioner(const vtkCentrelinePartitioner&); // Not implemented.
 	void operator=(const vtkCentrelinePartitioner&); // Not implemented.
 
+	static int GetBound(bool bifurcation, int cellSize, int Bound);
+	static void joinIdLists(vtkSmartPointer<vtkIdList> previous, vtkSmartPointer<vtkIdList> current,
+					   vtkSmartPointer<vtkIdList> joined);
+	static void reverseIdList(vtkSmartPointer<vtkIdList> spine, vtkSmartPointer<vtkIdList> reversedSpine);
+	static const int minEdgePoints = 5;
 	int Bound;
-
 };
 
 

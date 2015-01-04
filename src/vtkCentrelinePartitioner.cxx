@@ -11,9 +11,6 @@
  * vtkPolyData is returned which has cells/lines as these segments, and points and
  * point data identical to the input.
  *
- *
- * Created by: Stewart Dowding
- * Version 1.1	 22/12/2014
  */
 
 #include <sstream>
@@ -41,10 +38,15 @@ vtkCentrelinePartitioner::vtkCentrelinePartitioner()
 	this->SetNumberOfOutputPorts(1);
 }
 
-int GetBound(bool bifurcation, int cellSize, int Bound)
+/**
+ * Calculates the maximum bound (of IDs) up to the desired bound size before an end or bifurcation.
+ * If the cell size is too small to accommodate the desired bound, this function returns the maximum size
+ * the bound can be. If bifurcation is set to true, there is a bifurcation ahead and so there must be a bound
+ * at both the start of the cell and the end.
+ */
+int vtkCentrelinePartitioner::GetBound(bool bifurcation, int cellSize, int Bound)
 {
 	int actualBound = 0;
-	int minEdgePoints = 4;
 	int numberOfBifurcations = 1; //Need twice the space for two bifurcations.
 
 	if (bifurcation)
@@ -66,13 +68,18 @@ int GetBound(bool bifurcation, int cellSize, int Bound)
 			actualBound = cellSize / numberOfBifurcations;
 		}
 	}
-
+	if (actualBound%2 != 0) {
+		actualBound++;
+	}
 	return actualBound;
-
 }
 
-void reverseIdList(vtkSmartPointer<vtkIdList> spine, vtkSmartPointer<vtkIdList> reversedSpine)
+/**
+ * Fills a second list (reversedSpine) with the IDs in the first (spine), in reverse order.
+ */
+void vtkCentrelinePartitioner::reverseIdList(vtkSmartPointer<vtkIdList> spine, vtkSmartPointer<vtkIdList> reversedSpine)
 {
+	reversedSpine->Reset(); // Ensure this list is initially empty.
 	int spineLength = spine->GetNumberOfIds() - 1;
 	while (spineLength >= 0)
 	{
@@ -81,9 +88,13 @@ void reverseIdList(vtkSmartPointer<vtkIdList> spine, vtkSmartPointer<vtkIdList> 
 	}
 }
 
-void joinIdLists(vtkSmartPointer<vtkIdList> previous, vtkSmartPointer<vtkIdList> current,
+/**
+ * Fills the third empty list with the the first two joined together (second appended to the first).
+ */
+void vtkCentrelinePartitioner::joinIdLists(vtkSmartPointer<vtkIdList> previous, vtkSmartPointer<vtkIdList> current,
 				   vtkSmartPointer<vtkIdList> joined)
 {
+	joined->Reset(); // Ensure the joined list is empty to begin.
 	joined->DeepCopy(previous);
 	for (int i = 0; i < current->GetNumberOfIds(); i++)
 	{
@@ -91,6 +102,10 @@ void joinIdLists(vtkSmartPointer<vtkIdList> previous, vtkSmartPointer<vtkIdList>
 	}
 }
 
+/**
+ * Main logic of the filter. Iteratively traverses the input centreline data and builds up cells that are roughly
+ * sized segments of the tree.
+ */
 int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 										vtkInformationVector **inputVector,
 										vtkInformationVector *outputVector)
@@ -134,23 +149,23 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 			localId++;
 		}
 
+		reverseIdList(currentSegment, reversedSpine);
 		segments->InsertNextCell(currentSegment);
+		segments->InsertNextCell(reversedSpine);
 		output->SetLines(segments);
 
 		return 1;
-
 	}
 
 	bool bifurcation = true;
 	bool straightSegments = false;
-	int minEdgepoints = 4;
 	int actualBound;
 	int sections;
 	int numberOfBranches = 0;
 
 	actualBound = GetBound(false, cellSize, this->Bound);
 
-	if (cellSize > 2 * this->Bound + minEdgepoints || cellSize == 2 * this->Bound)
+	if (cellSize > 2 * this->Bound + minEdgePoints || cellSize == 2 * this->Bound)
 	{
 		straightSegments = true;
 	}
@@ -351,7 +366,11 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 	output->SetLines(segments);
 
 	return 1;
-
 }
 
+void vtkCentrelinePartitioner::PrintSelf(ostream &os, vtkIndent indent)
+{
+	this->Superclass::PrintSelf(os, indent);
 
+	//os << indent << "A: " << this->A << "\n";
+}
