@@ -24,6 +24,7 @@ public:
 	static const char *RADII_ARR_NAME;
 
 	void SetCentrelineData(vtkPolyData *centrelineData);
+	vtkSetMacro(EdgeLength, double);
 	vtkPolyData *GetOutput();
 
 	int GetNumbefOfBifurcations();
@@ -42,6 +43,9 @@ private:
 
 	vtkSmartPointer<vtkPolyData> polyData;
 
+	double EdgeLength = 0;
+
+#if 0
 	// TODO: unitsConversionFactor should be defined through a setter method, if at all. Perhaps it is best this class should be agnostic of these constants.
 	const double unitsConversionFactor = 1.0e-3;
 	// TODO: EC_Multiple and SMC_Multiple should be defined through a setter method, if at all. Perhaps it is best this class should be agnostic of these constants.
@@ -50,6 +54,8 @@ private:
 	// TODO: These constants should be available globally. Perhaps it is best this class should be agnostic of these constants.
 	const double ECLength = 65e-6;
 	const double SMCLength = 50e-6;
+#endif
+
 };
 
 #endif

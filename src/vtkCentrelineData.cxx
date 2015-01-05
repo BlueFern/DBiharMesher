@@ -98,8 +98,23 @@ void vtkCentrelineData::SetCentrelineData(vtkPolyData *centrelineData)
 			memcpy(p0, p1, sizeof(double_t) * 3);
 		}
 
-		// 2.
-		int resolution = (int)((length * this->unitsConversionFactor) / (ECMultiple * ECLength));
+		// 2. Make sure each cell contains odd number of points.
+		int resolution = (int)(length / this->EdgeLength);
+		// If the initial value for the resolution is even, adjust it by 1 in the direction of the least error.
+		if(resolution & 1)
+		{
+			double tmp = std::fabs(length - resolution * this->EdgeLength);
+			// If the remainder is less then half of the given edge length, decrement the resolution value. Otherwise increment it.
+			if(tmp < this->EdgeLength / 2.0)
+			{
+				resolution--;
+			}
+			else
+			{
+				resolution++;
+			}
+		}
+		// TODO: Print the error of the actual edge length using vtkWarningMacro.
 
 		// 3.
 		vtkSmartPointer<vtkParametricSpline> parametricSpline = vtkSmartPointer<vtkParametricSpline>::New();
@@ -179,6 +194,12 @@ void vtkCentrelineData::SetCentrelineData(vtkPolyData *centrelineData)
 			{
 				lastPointIds[segmentId] = pId;
 			}
+		}
+
+		if(!polyLine->GetNumberOfPoints() & 1)
+		{
+			vtkErrorMacro("Something is rotten in the state of Denmark:" << __FILE__ << ":" << __LINE__);
+			exit(EXIT_FAILURE);
 		}
 
 		lines->InsertNextCell(polyLine);
