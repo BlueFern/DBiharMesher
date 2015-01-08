@@ -1,10 +1,3 @@
-/*
- * vtkCentrelinePartitioner.h
- *
- *  Created on: 18/12/2014
- *      Author: sed59
- */
-
 #ifndef __vtkCentrelinePartitioner_h_
 #define __vtkCentrelinePartitioner_h_
 
@@ -16,9 +9,10 @@ class vtkIdList;
 class vtkCentrelinePartitioner : public vtkPolyDataAlgorithm {
 public:
 	vtkTypeMacro(vtkCentrelinePartitioner,vtkPolyDataAlgorithm);
+	void PrintSelf(ostream& os, vtkIndent indent);
 
 	static vtkCentrelinePartitioner *New();
-
+	static const int minEdgePoints;
 	vtkSetMacro(Bound, int);
 
 protected:
@@ -31,15 +25,11 @@ private:
 	vtkCentrelinePartitioner(const vtkCentrelinePartitioner&); // Not implemented.
 	void operator=(const vtkCentrelinePartitioner&); // Not implemented.
 
-	static int GetBound(bool bifurcation, int cellSize, int Bound);
-	static void joinIdLists(vtkSmartPointer<vtkIdList> previous, vtkSmartPointer<vtkIdList> current,
+	void joinIdLists(vtkSmartPointer<vtkIdList> previous, vtkSmartPointer<vtkIdList> current,
 					   vtkSmartPointer<vtkIdList> joined);
-	static void reverseIdList(vtkSmartPointer<vtkIdList> spine, vtkSmartPointer<vtkIdList> reversedSpine);
-	static const int minEdgePoints = 5;
+	void reverseIdList(vtkSmartPointer<vtkIdList> spine, vtkSmartPointer<vtkIdList> reversedSpine);
+
 	int Bound;
 };
-
-
-
 
 #endif

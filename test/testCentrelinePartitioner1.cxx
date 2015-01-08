@@ -39,22 +39,24 @@ int main(int argc, char* argv[]) {
 
 	vtkPolyData *vesselCentreline = vtkPolyData::SafeDownCast(vesselCentrelineReader->GetOutput());
 
-	vtkSmartPointer<vtkCentrelineData> centrelineSegmentSource = vtkSmartPointer<vtkCentrelineData>::New();
-	centrelineSegmentSource->SetCentrelineData(vesselCentreline);
+	//vtkSmartPointer<vtkCentrelineData> centrelineSegmentSource = vtkSmartPointer<vtkCentrelineData>::New();
+	//centrelineSegmentSource->SetCentrelineData(vesselCentreline);
 
-	vtkPolyData *resampledVesselCentreline = centrelineSegmentSource->GetOutput();
+	//vtkPolyData *resampledVesselCentreline = centrelineSegmentSource->GetOutput();
 
 	vtkSmartPointer<vtkCentrelinePartitioner> centrelinePartitioner = vtkSmartPointer<vtkCentrelinePartitioner>::New();
-	centrelinePartitioner->SetInputData(resampledVesselCentreline);
+	centrelinePartitioner->SetInputData(vesselCentreline);
 	centrelinePartitioner->SetBound(50);
 	centrelinePartitioner->Update();
 
 	vtkSmartPointer<vtkPolyData> centrelineSegments = centrelinePartitioner->GetOutput();
 	vtkSmartPointer<vtkPolyDataWriter> writer = vtkSmartPointer<vtkPolyDataWriter>::New();
 	writer->SetInputData(centrelineSegments);
-	writer->SetFileName("TEST227_ResampledBifurcation.vtk");
+	writer->SetFileName("TEST_227_ResampledBifurcation_Partitioned.vtk");
+	//writer->SetFileName("TEST_721_ResampledBifurcation_Partitioned.vtk");
 	writer->SetFileTypeToASCII();
 	writer->Write();
+	centrelinePartitioner->Print(std::cout);
 
 
 

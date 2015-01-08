@@ -31,47 +31,13 @@
 #include "showPolyData.h"
 
 vtkStandardNewMacro(vtkCentrelinePartitioner);
+const int vtkCentrelinePartitioner::minEdgePoints = 5;
 
 vtkCentrelinePartitioner::vtkCentrelinePartitioner()
 {
 	this->SetNumberOfInputPorts(1);
 	this->SetNumberOfOutputPorts(1);
-}
 
-/**
- * Calculates the maximum bound (of IDs) up to the desired bound size before an end or bifurcation.
- * If the cell size is too small to accommodate the desired bound, this function returns the maximum size
- * the bound can be. If bifurcation is set to true, there is a bifurcation ahead and so there must be a bound
- * at both the start of the cell and the end.
- */
-int vtkCentrelinePartitioner::GetBound(bool bifurcation, int cellSize, int Bound)
-{
-	int actualBound = 0;
-	int numberOfBifurcations = 1; //Need twice the space for two bifurcations.
-
-	if (bifurcation)
-	{
-		numberOfBifurcations = 2;
-	}
-
-	if (cellSize <= numberOfBifurcations * Bound)
-	{
-		actualBound = cellSize / numberOfBifurcations;
-	}
-	else
-	{
-		actualBound = Bound;
-
-		// Big enough for Bounds, but not leaving enough room for a straight segment.
-		if (cellSize < numberOfBifurcations * Bound + minEdgePoints)
-		{
-			actualBound = cellSize / numberOfBifurcations;
-		}
-	}
-	if (actualBound%2 != 0) {
-		actualBound++;
-	}
-	return actualBound;
 }
 
 /**
@@ -129,13 +95,12 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 	vtkSmartPointer<vtkIdList> connectedCellIds = vtkSmartPointer<vtkIdList>::New();
 	vtkSmartPointer<vtkIdList> nextEndPoint = vtkSmartPointer<vtkIdList>::New();
 
-	vtkIdType branchId;
+	vtkIdType branchId = 0;
 	vtkIdType pointId = 0;
 	vtkIdType localId = 0;
 
-	cellIdList = input->GetCell(0)->GetPointIds();
+	cellIdList = input->GetCell(branchId)->GetPointIds();
 	vtkIdType localEndPoint = cellIdList->GetNumberOfIds() - 1;
-	vtkIdType endPoint = cellIdList->GetId(localEndPoint);
 	vtkIdType cellSize = cellIdList->GetNumberOfIds();
 	input->GetPointCells(cellIdList->GetId(localEndPoint), connectedCellIds);
 
@@ -159,16 +124,39 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 
 	bool bifurcation = true;
 	bool straightSegments = false;
-	int actualBound;
 	int sections;
 	int numberOfBranches = 0;
+	int actualLength;
+	int sectionLength;
+	int padding = 0;
+	int branchStartingPoint[input->GetNumberOfCells()][2];
+	int offset;
+	int numberOfSections;
 
-	actualBound = GetBound(false, cellSize, this->Bound);
+	sections = cellSize / this->Bound + (cellSize % this->Bound !=  0); // Ceiling division.
 
-	if (cellSize > 2 * this->Bound + minEdgePoints || cellSize == 2 * this->Bound)
+	// Must have an odd number of sections for each section to be odd.
+	if (sections % 2 == 0)
+	{
+		sections++;
+	}
+
+	sectionLength = cellSize / sections;
+	if (sectionLength % 2 == 0)
+	{
+		sectionLength++;
+	}
+
+	if (sections > 1)
 	{
 		straightSegments = true;
 	}
+	branchStartingPoint[0][0] = sectionLength;
+	branchStartingPoint[0][1] = sections;
+
+	input->GetPointCells(cellIdList->GetId(localEndPoint), connectedCellIds);
+	numberOfBranches = connectedCellIds->GetNumberOfIds();
+
 
 	//-----------------------------------------------------------------------------------------------
 	// Begin creating segments.
@@ -176,79 +164,81 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 
 	for (int i = 1; i <= input->GetNumberOfCells(); i++)
 	{
+		currentSegment->Reset();
+		joinedIdLists->Reset();
+		reversedSpine->Reset();
+		endSegment->Reset();
+
 		if (straightSegments)
 		{
-			// How many full straight sections we can make before hitting 'bifurcation-reserved' area?
-			sections = (cellSize - actualBound) / actualBound;
+			// If we're not on the trunk/inlet we need to begin from the end of the spine that
+			// went down this branch already.
 
-			for (int k = 0; k <= sections; k++)
+			actualLength = cellSize - 2 * branchStartingPoint[i-1][0]; // Reserved space at both ends of branch.
+			if (!bifurcation || i == 1) // Only one reserved area to worry about.
 			{
-				while (localId < actualBound * (k + 1))
+				actualLength = cellSize - branchStartingPoint[i-1][0];
+			}
+
+			sections = actualLength / this->Bound + (actualLength % this->Bound !=  0); // Ceiling division.
+
+			// Must have an even number of sections for each section to be odd (duplicate points between segments).
+			if (sections % 2 != 0)
+			{
+				sections++;
+			}
+
+			sectionLength = actualLength / sections;
+
+			//exactDivide = (actualLength % sections == 0) && (sectionLength % 2 != 0);
+			if (sectionLength % 2 == 0)
+			{
+				sectionLength++;
+			}
+			offset = 0;
+			for (int section = 0; section < sections; section++)
+			{
+
+				while (localId < padding + (sectionLength * (section + 1)) - offset)
 				{
 					pointId = cellIdList->GetId(localId);
 					currentSegment->InsertUniqueId(pointId);
 					localId++;
 				}
+				offset++;
 
-				localId--; // For connectivity in next cell.
-
-				// Not pretty. Skips over a straight segment that was part of a previous bifurcation segment.
-				if (currentSegment->GetNumberOfIds() > 0)
+				// Coming up to an end point (not a bifurcation), collect remaining points.
+				if (section + 1 == sections && !bifurcation)
 				{
-					reverseIdList(currentSegment, reversedSpine);
-					segments->InsertNextCell(currentSegment);
-					segments->InsertNextCell(reversedSpine);
-					currentSegment->Reset();
-					reversedSpine->Reset();
+					while (localId <= localEndPoint)
+					{
+						pointId = cellIdList->GetId(localId);
+						currentSegment->InsertUniqueId(pointId);
+						localId++;
+					}
 				}
+
+				localId--;
+
+				reverseIdList(currentSegment, reversedSpine);
+				segments->InsertNextCell(currentSegment);
+				segments->InsertNextCell(reversedSpine);
+				currentSegment->Reset();
+				reversedSpine->Reset();
+
 			}
-
-			if (bifurcation)
-			{
-				// Add left over bit until hitting 'bifurcation-reserved' area.
-				while (localId < cellSize - actualBound)
-				{
-					pointId = cellIdList->GetId(localId);
-					currentSegment->InsertUniqueId(pointId);
-					localId++;
-				}
-
-				if (currentSegment->GetNumberOfIds() > 0)
-				{
-					reverseIdList(currentSegment, reversedSpine);
-					segments->InsertNextCell(currentSegment);
-					segments->InsertNextCell(reversedSpine);
-					currentSegment->Reset();
-					reversedSpine->Reset();
-				}
-			}
-		}
-
-		//-----------------------------------------------------------------------------------------------
-		// Collect points up to bifurcation/end point.
-		//-----------------------------------------------------------------------------------------------
-
-		while (localId <= localEndPoint)
-		{
-			pointId = cellIdList->GetId(localId);
-			endSegment->InsertUniqueId(pointId);
-			localId++;
-		}
-
-		input->GetPointCells(cellIdList->GetId(localEndPoint), connectedCellIds);
-		numberOfBranches = connectedCellIds->GetNumberOfIds();
-
-		if(numberOfBranches == 1)
-		{
-			bifurcation = false;
-		}
-		if (numberOfBranches > 2)
-		{
-			bifurcation = true;
 		}
 
 		if (bifurcation)
 		{
+			// Collect points up to bifurcation.
+			while (localId < localEndPoint)
+			{
+				pointId = cellIdList->GetId(localId);
+				endSegment->InsertUniqueId(pointId);
+				localId++;
+			}
+
 			previousSegment->DeepCopy(endSegment);
 
 			// Create spines around the bifurcation.
@@ -262,7 +252,7 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 
 				// Check if this branch ends in a bifurcation.
 				input->GetPointCells(cellIdList->GetId(cellSize - 1), nextEndPoint);
-				if(nextEndPoint->GetNumberOfIds() == 1)
+				if (nextEndPoint->GetNumberOfIds() == 1)
 				{
 					bifurcation = false;
 				}
@@ -271,9 +261,28 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 					bifurcation = true;
 				}
 
-				actualBound = GetBound(bifurcation, cellSize, this->Bound);
 
-				while (localId < actualBound)
+				sections = cellSize / this->Bound + (cellSize % this->Bound !=  0);
+				// With cells resampled with an odd number of points, must have at least 2 sections between two bifurcations.
+				if (sections < 2)
+				{
+					sections = 2;
+				}
+				// Must have an even number of sections for each section to be odd (duplicate points between segments).
+				else if (sections % 2 != 0)
+				{
+					sections++;
+				}
+
+				sectionLength = cellSize / sections;
+				if (sectionLength % 2 == 0)
+				{
+					sectionLength++;
+				}
+				branchStartingPoint[branchId][0] = sectionLength;
+				branchStartingPoint[branchId][1] = sections;
+
+				while (localId < sectionLength)
 				{
 					pointId = cellIdList->GetId(localId);
 					currentSegment->InsertUniqueId(pointId);
@@ -298,6 +307,7 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 				reversedSpine->Reset();
 			}
 
+			// Final spine around bifurcation.
 			joinIdLists(endSegment, previousSegment, joinedIdLists); // Is moving the opposite direction.
 			reverseIdList(joinedIdLists, reversedSpine);
 			segments->InsertNextCell(reversedSpine);
@@ -308,22 +318,10 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 			endSegment->Reset();
 		}
 
-		// Wasn't a bifurcation. Add the end segment and its reverse to the cell array.
-		else
-		{
-			segments->InsertNextCell(endSegment);
-			reverseIdList(endSegment, reversedSpine);
-			segments->InsertNextCell(reversedSpine);
-			endSegment->Reset();
-			reversedSpine->Reset();
-		}
 
-		//------------------------------------------------------------------------------------------------
 		// Get ready for next iteration.
-		//-----------------------------------------------------------------------------------------------
 
 		// No data to get during last iteration. Break early.
-		// For-loop format necessary because of the difference with the trunk cell.
 		if (i == input->GetNumberOfCells())
 		{
 			break;
@@ -331,36 +329,33 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 
 		cellIdList = input->GetCell(i)->GetPointIds();
 		localEndPoint = cellIdList->GetNumberOfIds() - 1;
-		endPoint = cellIdList->GetId(localEndPoint);
-		input->GetPointCells(endPoint, connectedCellIds);
 
 		// Does the next cell end in a bifurcation?
-		if(connectedCellIds->GetNumberOfIds() == 1)
+		input->GetPointCells(cellIdList->GetId(localEndPoint), connectedCellIds);
+		numberOfBranches = connectedCellIds->GetNumberOfIds();
+
+		if (numberOfBranches == 1)
 		{
 			bifurcation = false;
 		}
-		if (connectedCellIds->GetNumberOfIds() > 2)
+		if (numberOfBranches > 2)
 		{
 			bifurcation = true;
 		}
 
 		cellSize = cellIdList->GetNumberOfIds();
-		actualBound = GetBound(bifurcation,cellSize,this->Bound);
-		localId = actualBound; // Start after the section included in the spine over the previous bifurcation.
 
-		// Are there straight segments in the next iteration?
-		if (actualBound < this->Bound || actualBound > this->Bound)
+		localId = branchStartingPoint[i][0] - 1;
+		numberOfSections = branchStartingPoint[i][1];
+		if (numberOfSections > 2 || (numberOfSections > 1 && bifurcation == false))
 		{
-			straightSegments = false;
+			straightSegments = true;
 		}
 		else
 		{
-			straightSegments = true;
-			if (cellSize-actualBound == this->Bound)
-			{
-				straightSegments = false;
-			}
+			straightSegments = false;
 		}
+		padding = branchStartingPoint[i][0] - 1;
 	}
 
 	output->SetLines(segments);
@@ -372,5 +367,6 @@ void vtkCentrelinePartitioner::PrintSelf(ostream &os, vtkIndent indent)
 {
 	this->Superclass::PrintSelf(os, indent);
 
-	//os << indent << "A: " << this->A << "\n";
+	os << indent << "Minimum points for an edge: " << this->minEdgePoints << "\n";
+	os << indent << "Given bound: " << this->Bound << "\n";
 }
