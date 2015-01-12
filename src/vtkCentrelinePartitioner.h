@@ -13,7 +13,7 @@ public:
 
 	static vtkCentrelinePartitioner *New();
 	static const int minEdgePoints;
-	vtkSetMacro(Bound, int);
+	vtkSetMacro(PartitionLength, int);
 
 protected:
 	vtkCentrelinePartitioner();
@@ -29,7 +29,7 @@ private:
 					   vtkSmartPointer<vtkIdList> joined);
 	void reverseIdList(vtkSmartPointer<vtkIdList> spine, vtkSmartPointer<vtkIdList> reversedSpine);
 
-	int Bound;
+	int PartitionLength;
 };
 
 #endif

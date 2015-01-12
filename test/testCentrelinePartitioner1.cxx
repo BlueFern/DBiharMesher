@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
 
 	vtkSmartPointer<vtkCentrelinePartitioner> centrelinePartitioner = vtkSmartPointer<vtkCentrelinePartitioner>::New();
 	centrelinePartitioner->SetInputData(vesselCentreline);
-	centrelinePartitioner->SetBound(50);
+	centrelinePartitioner->SetPartitionLength(50);
 	centrelinePartitioner->Update();
 
 	vtkSmartPointer<vtkPolyData> centrelineSegments = centrelinePartitioner->GetOutput();

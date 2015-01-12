@@ -1,7 +1,20 @@
 /**
- * This filter partitions given vtkPolyData into segments with maximum size of
- * a given bound + a small fixed distance (so that straight segments are at least
- * 4 points long - a minimum requirement for the dbihar patch generator).
+ * This filter partitions given vtkPolyData into segments using a user set partition
+ * length as a guide. This bound should represent how many points (roughly) are to be
+ * included to or from a bifurcation point to avoid having non-smooth boundaries between
+ * branches. Therefore the segment size for a spine over such a bifurcation will be
+ * closer to twice the partition length.
+ *
+ * Less important are the straight segments at the ends or between bifurcations. Their
+ * size will be roughly the input bound, and always greater than the minimum number
+ * of points the dbihar patch filter requires to build an edge (so long as the input
+ * data has enough points in each cell).
+ *
+ * The size of the segments is only ever rough due to the requirement for each segment
+ * to have odd length. Using the given bound, the program attempts to divide a cell/branch
+ * into a number of segments of that size (and all odd). As a result of this process
+ * the sizes tend to be less than or equal to the partition length in all cases other
+ * than spines over bifurcations and end points.
  *
  * Both straight sections and their reverses are added as cells. Bifurcations
  * are traversed by going down one branch (towards the bifurcation), and up the next.
@@ -25,10 +38,9 @@
 #include <vtkIdList.h>
 #include <vtkCell.h>
 #include <vtkCellArray.h>
-#include <vtkCentrelinePartitioner.h>
 #include <vtkPointData.h>
 
-#include "showPolyData.h"
+#include "vtkCentrelinePartitioner.h"
 
 vtkStandardNewMacro(vtkCentrelinePartitioner);
 const int vtkCentrelinePartitioner::minEdgePoints = 5;
@@ -37,7 +49,6 @@ vtkCentrelinePartitioner::vtkCentrelinePartitioner()
 {
 	this->SetNumberOfInputPorts(1);
 	this->SetNumberOfOutputPorts(1);
-
 }
 
 /**
@@ -46,11 +57,11 @@ vtkCentrelinePartitioner::vtkCentrelinePartitioner()
 void vtkCentrelinePartitioner::reverseIdList(vtkSmartPointer<vtkIdList> spine, vtkSmartPointer<vtkIdList> reversedSpine)
 {
 	reversedSpine->Reset(); // Ensure this list is initially empty.
-	int spineLength = spine->GetNumberOfIds() - 1;
-	while (spineLength >= 0)
+	int spineId = spine->GetNumberOfIds() - 1;
+	while (spineId >= 0)
 	{
-		reversedSpine->InsertNextId(spine->GetId(spineLength));
-		spineLength--;
+		reversedSpine->InsertNextId(spine->GetId(spineId));
+		spineId--;
 	}
 }
 
@@ -124,16 +135,13 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 
 	bool bifurcation = true;
 	bool straightSegments = false;
-	int sections;
-	int numberOfBranches = 0;
-	int actualLength;
-	int sectionLength;
+	int actualLength = 0;
 	int padding = 0;
 	int branchStartingPoint[input->GetNumberOfCells()][2];
-	int offset;
-	int numberOfSections;
+	int offset = 0;
+	int numberOfSections = 0;
 
-	sections = cellSize / this->Bound + (cellSize % this->Bound !=  0); // Ceiling division.
+	int sections = cellSize / this->PartitionLength + (cellSize % this->PartitionLength !=  0); // Ceiling division.
 
 	// Must have an odd number of sections for each section to be odd.
 	if (sections % 2 == 0)
@@ -141,7 +149,7 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 		sections++;
 	}
 
-	sectionLength = cellSize / sections;
+	int sectionLength = cellSize / sections;
 	if (sectionLength % 2 == 0)
 	{
 		sectionLength++;
@@ -155,12 +163,10 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 	branchStartingPoint[0][1] = sections;
 
 	input->GetPointCells(cellIdList->GetId(localEndPoint), connectedCellIds);
-	numberOfBranches = connectedCellIds->GetNumberOfIds();
+	int numberOfBranches = connectedCellIds->GetNumberOfIds();
 
 
-	//-----------------------------------------------------------------------------------------------
 	// Begin creating segments.
-	//-----------------------------------------------------------------------------------------------
 
 	for (int i = 1; i <= input->GetNumberOfCells(); i++)
 	{
@@ -180,7 +186,7 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 				actualLength = cellSize - branchStartingPoint[i-1][0];
 			}
 
-			sections = actualLength / this->Bound + (actualLength % this->Bound !=  0); // Ceiling division.
+			sections = actualLength / this->PartitionLength + (actualLength % this->PartitionLength !=  0); // Ceiling division.
 
 			// Must have an even number of sections for each section to be odd (duplicate points between segments).
 			if (sections % 2 != 0)
@@ -261,8 +267,7 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 					bifurcation = true;
 				}
 
-
-				sections = cellSize / this->Bound + (cellSize % this->Bound !=  0);
+				sections = cellSize / this->PartitionLength + (cellSize % this->PartitionLength !=  0);
 				// With cells resampled with an odd number of points, must have at least 2 sections between two bifurcations.
 				if (sections < 2)
 				{
@@ -367,6 +372,6 @@ void vtkCentrelinePartitioner::PrintSelf(ostream &os, vtkIndent indent)
 {
 	this->Superclass::PrintSelf(os, indent);
 
-	os << indent << "Minimum points for an edge: " << this->minEdgePoints << "\n";
-	os << indent << "Given bound: " << this->Bound << "\n";
+	//os << indent << "Minimum points for an edge: " << this->minEdgePoints << "\n";
+	os << indent << "Given bound: " << this->PartitionLength << "\n";
 }
