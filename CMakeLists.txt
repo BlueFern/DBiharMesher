@@ -49,6 +49,15 @@ add_library(vtkEndPointIdsToDbiharPatchFilter src/vtkEndPointIdsToDbiharPatchFil
 target_link_libraries(vtkEndPointIdsToDbiharPatchFilter
 	vtkFiltersHybrid)
 
+add_library(vtkPointsToMeshFilter src/vtkPointsToMeshFilter.cxx)
+target_link_libraries(vtkPointsToMeshFilter
+	vtkFiltersHybrid)
+
+add_library(vtkCentrelinePartitioner src/vtkCentrelinePartitioner.cxx)
+target_link_libraries(vtkCentrelinePartitioner
+	vtkFiltersExtraction
+	vtkFiltersHybrid)
+	
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/test)
 
@@ -140,6 +149,21 @@ target_link_libraries(testEndPointIdsToDbiharPatchFilter2
 	vtkDbiharPatchFilter
 	${testLibs})
 
+add_executable(testPointsToMeshFilter1
+	test/testPointsToMeshFilter.cxx
+	test/showPolyData.cxx)
+target_link_libraries(testPointsToMeshFilter1
+	vtkPointsToMeshFilter
+	${testLibs})
+
+add_executable(testCentrelinePartitioner1
+	src/vtkCentrelineData.cxx
+	src/vtkCentrelinePartitioner.cxx
+	test/testCentrelinePartitioner1.cxx)
+target_link_libraries(testCentrelinePartitioner1
+	vtkCentrelinePartitioner
+	${testLibs})
+	
 #add_executable(scratch
 #	test/showPolyData.cxx
 #	test/scratch.cxx)
