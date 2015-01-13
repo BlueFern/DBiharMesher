@@ -57,11 +57,25 @@ add_library(vtkCentrelinePartitioner src/vtkCentrelinePartitioner.cxx)
 target_link_libraries(vtkCentrelinePartitioner
 	vtkFiltersExtraction
 	vtkFiltersHybrid)
-	
+
+add_library(vtkEndCapFilter src/vtkEndCapFilter.cxx)
+target_link_libraries(vtkEndCapFilter
+	vtkFiltersHybrid
+	vtkFiltersGeometry
+	vtkDbiharPatchFilter)
+
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/test)
 
 set(testLibs vtkIOXML vtkIOLegacy vtkIOImage vtkRenderingAnnotation vtkRenderingFreeTypeOpenGL vtkInteractionStyle vtkFiltersSources)
+
+add_executable(testWrapDbihar0
+	test/showPolyData.cxx
+	test/testWrapDbihar0.cxx)
+target_link_libraries(testWrapDbihar0
+	vtkFiltersGeometry
+	vtkDbiharPatchFilter
+	${testLibs})
 
 add_executable(testWrapDbihar1
 	test/showPolyData.cxx
@@ -158,7 +172,14 @@ add_executable(testCentrelinePartitioner1
 target_link_libraries(testCentrelinePartitioner1
 	vtkCentrelinePartitioner
 	${testLibs})
-	
+
+add_executable(testEndCapFilter1
+	test/showPolyData.cxx
+	test/testEndCapFilter1.cxx)
+target_link_libraries(testEndCapFilter1
+	vtkEndCapFilter
+	${testLibs})
+
 #add_executable(scratch
 #	test/showPolyData.cxx
 #	test/scratch.cxx)
