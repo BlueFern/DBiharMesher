@@ -64,6 +64,10 @@ target_link_libraries(vtkEndCapFilter
 	vtkFiltersGeometry
 	vtkDbiharPatchFilter)
 
+add_library(vtkSkipSegmentFilter src/vtkSkipSegmentFilter.cxx)
+target_link_libraries(vtkSkipSegmentFilter
+	vtkFiltersHybrid)
+
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/test)
 
@@ -178,6 +182,15 @@ add_executable(testEndCapFilter1
 	test/testEndCapFilter1.cxx)
 target_link_libraries(testEndCapFilter1
 	vtkEndCapFilter
+	${testLibs})
+
+add_executable(testSkipSegmentFilter1
+	src/vtkSkipSegmentFilter.cxx
+	test/testSkipSegmentFilter1.cxx)
+target_link_libraries(testSkipSegmentFilter1
+	vtkScalarRadiiToVectorsFilter
+	vtkFiltersGeometry
+	vtkSkipSegmentFilter
 	${testLibs})
 
 #add_executable(scratch
