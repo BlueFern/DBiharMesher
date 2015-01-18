@@ -34,7 +34,6 @@
 
 #include <sstream>
 #include <algorithm>
-#include <string>
 #include <vtkSmartPointer.h>
 #include <vtkIdTypeArray.h>
 #include <vtkObjectFactory.h>
