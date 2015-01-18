@@ -3,6 +3,7 @@
 
 #include <vtkAlgorithm.h>
 #include <vtkPolyDataAlgorithm.h>
+#include <vtkPriorityQueue.h>
 
 class vtkIdList;
 
@@ -12,7 +13,7 @@ public:
 	void PrintSelf(ostream& os, vtkIndent indent);
 
 	static vtkCentrelinePartitioner *New();
-	static const int minEdgePoints;
+	vtkSetObjectMacro(EndPoints, vtkIdList);
 	vtkSetMacro(PartitionLength, int);
 
 protected:
@@ -28,8 +29,10 @@ private:
 	void joinIdLists(vtkSmartPointer<vtkIdList> previous, vtkSmartPointer<vtkIdList> current,
 					   vtkSmartPointer<vtkIdList> joined);
 	void reverseIdList(vtkSmartPointer<vtkIdList> spine, vtkSmartPointer<vtkIdList> reversedSpine);
+	vtkIdType findLocalId(vtkSmartPointer<vtkIdList> list, vtkIdType pointId);
 
 	int PartitionLength;
+	vtkSmartPointer<vtkIdList> EndPoints;
 };
 
 #endif
