@@ -20,8 +20,6 @@ public:
 
 	static vtkScalarRadiiToVectorsFilter *New();
 
-	static const char *RADII_ARR_NAME;
-
 protected:
 	vtkScalarRadiiToVectorsFilter();
 	~vtkScalarRadiiToVectorsFilter() {};

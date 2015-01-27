@@ -37,7 +37,7 @@ vtkSubdivideQuadFilter::vtkSubdivideQuadFilter()
 }
 
 /**
- * Copy the values from array1 into array2. TODO: better way...
+ * Copy the values from array1 into array2.
  */
 void vtkSubdivideQuadFilter::copyPointsArray(double* array1, double* array2)
 {
@@ -46,7 +46,8 @@ void vtkSubdivideQuadFilter::copyPointsArray(double* array1, double* array2)
 		array2[i] = array1[i];
 	}
 }
-int vtkSubdivideQuadFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkInformationVector **inputVector, vtkInformationVector *outputVector)
+int vtkSubdivideQuadFilter::RequestData(vtkInformation *vtkNotUsed(request),
+		vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
 	// Get the input and output.
 	vtkPolyData* input = vtkPolyData::GetData(inputVector[0], 0);
@@ -59,8 +60,6 @@ int vtkSubdivideQuadFilter::RequestData(vtkInformation *vtkNotUsed(request), vtk
 		vtkErrorMacro("Must set both Columns and Rows to positive integers.");
 		exit(EXIT_FAILURE);
 	}
-
-	// TODO: More testing.
 
 	vtkSmartPointer<vtkPoints> splineInputPoints = vtkSmartPointer<vtkPoints>::New();
 	vtkSmartPointer<vtkAppendPoints> appendPoints = vtkSmartPointer<vtkAppendPoints>::New();
@@ -143,5 +142,6 @@ int vtkSubdivideQuadFilter::RequestData(vtkInformation *vtkNotUsed(request), vtk
 void vtkSubdivideQuadFilter::PrintSelf(ostream &os, vtkIndent indent)
 {
 	this->Superclass::PrintSelf(os, indent);
-	os << indent << "\n"; // TODO: some stuff.
+	os << indent << "Number of rows: " << this->Rows << "\n";
+	os << indent << "Number of columns: " << this->Columns << "\n";
 }

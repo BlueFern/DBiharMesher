@@ -6,7 +6,6 @@
 #include <algorithm>
 
 #include <vtkObjectFactory.h>
-#include <vtkStreamingDemandDrivenPipeline.h>
 #include <vtkInformationVector.h>
 #include <vtkInformation.h>
 #include <vtkDataObject.h>
@@ -29,7 +28,8 @@ vtkRescaleUnits::vtkRescaleUnits()
 	this->Scale = 1;
 }
 
-int vtkRescaleUnits::RequestData(vtkInformation *vtkNotUsed(request), vtkInformationVector **inputVector, vtkInformationVector *outputVector)
+int vtkRescaleUnits::RequestData(vtkInformation *vtkNotUsed(request),
+		vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
 	// Get the input and output.
 	vtkPolyData* input = vtkPolyData::GetData(inputVector[0], 0);

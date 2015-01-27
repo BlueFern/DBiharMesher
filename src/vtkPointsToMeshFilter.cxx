@@ -41,14 +41,13 @@
 #include <vtkPoints.h>
 #include <vtkCellData.h>
 #include <vtkIntArray.h>
-
 #include <vtkCallbackCommand.h>
 
+#include "vtkDbiharStatic.h"
 #include "vtkPointsToMeshFilter.h"
 
 vtkStandardNewMacro(vtkPointsToMeshFilter);
 
-const char *vtkPointsToMeshFilter::CELL_DATA_ARR_NAME = {"branchId"};
 
 vtkPointsToMeshFilter::vtkPointsToMeshFilter()
 {
@@ -185,7 +184,6 @@ int vtkPointsToMeshFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 				quadPosition++;
 			}
 			reversedStart -= halfLoop;
-
 		}
 
 		// End early if in last iteration of loop.
@@ -207,12 +205,12 @@ int vtkPointsToMeshFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 		// Duplicating points between branches is intended. Move back half a loop for every branch we've passed.
 		branchStart -= branch * halfLoop;
 
-		reversedStart = branchStart + (2 * halfLoop * (Dimensions->GetValue(branch+1) + 1)) - 1;
+		reversedStart = branchStart + (2 * halfLoop * (Dimensions->GetValue(branch + 1) + 1)) - 1;
 
 		quadPosition += numPointsLoop;
 
 	}
-	cellData->SetName(vtkPointsToMeshFilter::CELL_DATA_ARR_NAME);
+	cellData->SetName(vtkDbiharStatic::CELL_DATA_ARR_NAME);
 	result->GetCellData()->SetScalars(cellData);
 	result->SetPoints(points);
 	result->SetPolys(quads);

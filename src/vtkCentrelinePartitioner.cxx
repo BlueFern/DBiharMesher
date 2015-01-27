@@ -47,30 +47,20 @@
 #include <vtkPriorityQueue.h>
 #include <vtkPointData.h>
 
+#include "vtkDbiharStatic.h"
 #include "vtkCentrelinePartitioner.h"
 
 vtkStandardNewMacro(vtkCentrelinePartitioner);
+vtkCxxSetObjectMacro(vtkCentrelinePartitioner, EndPoints, vtkIdList);
 
 vtkCentrelinePartitioner::vtkCentrelinePartitioner()
 {
 	this->SetNumberOfInputPorts(1);
 	this->SetNumberOfOutputPorts(1);
+	this->EndPoints = vtkIdList::New();
+	this->PartitionLength = 0;
 }
 
-/**
- * Finds the local Id of a global Id and the cell it belongs to.
- */
-vtkIdType vtkCentrelinePartitioner::findLocalId(vtkSmartPointer<vtkIdList> list, vtkIdType pointId)
-{
-	for (vtkIdType id = 0; id < list->GetNumberOfIds(); id++)
-	{
-		if (list->GetId(id) == pointId)
-		{
-			return id;
-		}
-	}
-	return -1;
-}
 /**
  * Fills a second list (reversedSpine) with the IDs in the first (spine), in reverse order.
  */
@@ -107,6 +97,7 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 										vtkInformationVector **inputVector,
 										vtkInformationVector *outputVector)
 {
+
 	vtkPolyData *input = vtkPolyData::GetData(inputVector[0],0);
 	input->BuildLinks();
 
@@ -114,6 +105,7 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 
 	output->SetPoints(input->GetPoints());
 	output->GetPointData()->SetScalars(input->GetPointData()->GetScalars());
+	output->GetPointData()->SetVectors(input->GetPointData()->GetVectors());
 
 	vtkSmartPointer<vtkCellArray> segments = vtkSmartPointer<vtkCellArray>::New();
 
@@ -126,7 +118,7 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 	vtkSmartPointer<vtkIdList> connectedCellIds = vtkSmartPointer<vtkIdList>::New();
 	vtkSmartPointer<vtkIdList> nextEndPoint = vtkSmartPointer<vtkIdList>::New();
 	vtkSmartPointer<vtkIdList> endPointsTmp = vtkSmartPointer<vtkIdList>::New();
-	vtkSmartPointer<vtkIdList> endPointsCopy = vtkSmartPointer<vtkIdList>::New(); // For printing after endpoints are popped off.
+	vtkSmartPointer<vtkIdList> endPointsCopy = vtkSmartPointer<vtkIdList>::New();
 	vtkSmartPointer<vtkIdList> startingCell = vtkSmartPointer<vtkIdList>::New();
 
 	if (this->EndPoints->GetNumberOfIds() == 0)
@@ -144,17 +136,18 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 	vtkIdType branchId = startingCell->GetId(0); // Start point. 0 if unspecified by user.
 
 	cellIdList = input->GetCell(branchId)->GetPointIds();
-	vtkIdType localId = findLocalId(cellIdList, endPointsCopy->GetId(0));
+	vtkIdType localId = vtkDbiharStatic::GetPosition(cellIdList, endPointsCopy->GetId(0));
 	assert(localId != -1);
 	endPointsCopy->DeleteId(endPointsCopy->GetId(0));
 
 	vtkIdType localEndPoint = 0;
 
+
 	endPointsTmp->DeepCopy(endPointsCopy);
 	endPointsTmp->IntersectWith(cellIdList);
 	if (endPointsTmp->GetNumberOfIds() == 1) // Still another end point on this cell.
 	{
-		localEndPoint = findLocalId(cellIdList, endPointsTmp->GetId(0));
+		localEndPoint = vtkDbiharStatic::GetPosition(cellIdList, endPointsTmp->GetId(0));
 		endPointsCopy->DeleteId(endPointsTmp->GetId(0));
 	}
 	else

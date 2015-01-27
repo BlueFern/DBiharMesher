@@ -16,7 +16,6 @@ public:
 	vtkSetMacro(Columns, int);
 	vtkSetMacro(Rows, int);
 
-
 protected:
 	vtkSubdivideQuadFilter();
 	~vtkSubdivideQuadFilter() {};

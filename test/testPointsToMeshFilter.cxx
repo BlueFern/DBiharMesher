@@ -49,7 +49,7 @@ int main(int argc, char* argv[]) {
 #if 1
 	vtkSmartPointer<vtkXMLPolyDataWriter> meshWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
 	meshWriter->SetInputConnection(pointsToMeshFilter->GetOutputPort());
-	meshWriter->SetFileName("outputMeshTEST_0.vtp");
+	meshWriter->SetFileName("mesh0.vtp");
 	//meshWriter->SetFileName("outputMeshTEST_1.vtp");
 	//meshWriter->SetFileName("outputMeshTEST_2.vtp");
 	meshWriter->Update();

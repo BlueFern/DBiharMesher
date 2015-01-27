@@ -19,8 +19,6 @@ public:
 	vtkSetMacro(Outlet, bool);
 	vtkSetMacro(PointId, vtkIdType);
 
-	static const char *RADII_ARR_NAME;
-
 protected:
 	vtkSkipSegmentFilter();
 	~vtkSkipSegmentFilter() {};

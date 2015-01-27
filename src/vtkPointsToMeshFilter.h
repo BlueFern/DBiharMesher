@@ -16,7 +16,6 @@ public:
 	void PrintSelf(ostream& os, vtkIndent indent);
 
 	static vtkPointsToMeshFilter *New();
-	static const char *CELL_DATA_ARR_NAME;
 
 	vtkSetObjectMacro(Dimensions, vtkUnsignedIntArray);
 

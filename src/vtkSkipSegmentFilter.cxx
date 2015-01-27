@@ -31,16 +31,13 @@
 #include <vtkTriangleFilter.h>
 #include <vtkStructuredGrid.h>
 #include <vtkStructuredGridGeometryFilter.h>
-
-#include "vtkSkipSegmentFilter.h"
-
 #include <vtkTransform.h>
-
 #include <vtkMath.h>
 
-vtkStandardNewMacro(vtkSkipSegmentFilter);
+#include "vtkSkipSegmentFilter.h"
+#include "vtkDbiharStatic.h"
 
-const char *vtkSkipSegmentFilter::RADII_ARR_NAME = {"radiiVectors"};
+vtkStandardNewMacro(vtkSkipSegmentFilter);
 
 vtkSkipSegmentFilter::vtkSkipSegmentFilter()
 {
@@ -86,7 +83,8 @@ int vtkSkipSegmentFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 
 	// Build ring of points around point specified.
 
-	vtkSmartPointer<vtkDoubleArray> radiiArray = vtkDoubleArray::SafeDownCast(input->GetPointData()->GetVectors(RADII_ARR_NAME));
+	vtkSmartPointer<vtkDoubleArray> radiiArray =
+			vtkDoubleArray::SafeDownCast(input->GetPointData()->GetVectors(vtkDbiharStatic::RADII_VECTORS_ARR_NAME));
 
 	// Temporary buffers.
 	double r[3];
@@ -160,6 +158,7 @@ int vtkSkipSegmentFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 
 		transformPoints->SetTransform(translateTransform);
 		transformPoints->Update();
+
 
 		appendPoints->AddInputData(transformPoints->GetOutput());
 

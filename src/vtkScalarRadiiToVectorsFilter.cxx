@@ -9,7 +9,6 @@
 #include <vtkInformation.h>
 #include <vtkDataObject.h>
 #include <vtkSmartPointer.h>
-
 #include <vtkMath.h>
 #include <vtkTransform.h>
 #include <vtkDoubleArray.h>
@@ -17,29 +16,12 @@
 #include <vtkCellArray.h>
 #include <vtkIdList.h>
 
+#include "vtkDbiharStatic.h"
 #include "vtkScalarRadiiToVectorsFilter.h"
 
 #define PRINT_DEBUG 0
 
 vtkStandardNewMacro(vtkScalarRadiiToVectorsFilter);
-
-const char *vtkScalarRadiiToVectorsFilter::RADII_ARR_NAME = {"radiiVectors"};
-
-// TODO: Move to a lib. Code is duplicated.
-void DoubleCross(const double v0[3], const double c0[3], const double v1[3], double c1[3])
-{
-	vtkMath::Cross(c0, v0, c1);
-	vtkMath::Cross(v1, c1, c1);
-}
-
-// TODO: Move to a lib. Code is duplicated.
-// This is taken from vtkMath class in VTK Nightly in October 2014.
-double AngleBetweenVectors(const double v1[3], const double v2[3])
-{
-  double cross[3];
-  vtkMath::Cross(v1, v2, cross);
-  return atan2(vtkMath::Norm(cross), vtkMath::Dot(v1, v2));
-}
 
 vtkScalarRadiiToVectorsFilter::vtkScalarRadiiToVectorsFilter()
 {
@@ -125,7 +107,7 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 	vtkSmartPointer<vtkDoubleArray> radiiVectors = vtkSmartPointer<vtkDoubleArray>::New();
 	radiiVectors->SetNumberOfComponents(3);
 	radiiVectors->SetNumberOfTuples(input->GetNumberOfPoints());
-	radiiVectors->SetName(RADII_ARR_NAME);
+	radiiVectors->SetName(vtkDbiharStatic::RADII_VECTORS_ARR_NAME);
 
 	// TODO: Check this can be removed safely. For now, populate it just in case some tuples get missed.
 	for(int i = 0; i < radiiVectors->GetNumberOfTuples(); i++)
@@ -201,7 +183,7 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 
 			GetDirectionVector(it->first, pId, v1);
 
-			DoubleCross(v0, c0, v1, c1);
+			vtkDbiharStatic::DoubleCross1(v0, c0, v1, c1);
 			vtkMath::Normalize(c1);
 
 			// Store radius vector at point pId. This is only for the inlet.
@@ -216,16 +198,16 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 				radiiVectors->GetTuple(lineIds->GetId(0), c0);
 				GetDirectionVector(it->first, 0, v0);
 				double tmp[3];
-				DoubleCross(v0, c0, v1, tmp);
+				vtkDbiharStatic::DoubleCross1(v0, c0, v1, tmp);
 
-				twistAngles[it->first] = vtkMath::DegreesFromRadians(AngleBetweenVectors(tmp, c1));
+				twistAngles[it->first] = vtkMath::DegreesFromRadians(vtkDbiharStatic::AngleBetweenVectors(tmp, c1));
 
 				// Figure out twist direction.
 				vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
 				transform->RotateWXYZ(twistAngles[it->first], v1);
 				transform->TransformPoint(tmp, tmp);
 
-				if(vtkMath::DegreesFromRadians(AngleBetweenVectors(tmp, c1)) < angleTolerance)
+				if(vtkMath::DegreesFromRadians(vtkDbiharStatic::AngleBetweenVectors(tmp, c1)) < angleTolerance)
 				{
 					twistAngles[it->first] *= -1.0;
 				}
@@ -278,7 +260,7 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 			GetDirectionVector(it->first, pId, v1);
 			vtkMath::MultiplyScalar(v1, -1);
 
-			DoubleCross(v0, c0, v1, c1);
+			vtkDbiharStatic::DoubleCross1(v0, c0, v1, c1);
 			vtkMath::Normalize(c1);
 
 			// Add the twist for segments ending in bifurcations.
@@ -326,7 +308,7 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 				GetDirectionVector(it->first, pId, v0);
 				GetDirectionVector(it->first, pId + 1, v1);
 
-				DoubleCross(v0, c0, v1, c1);
+				vtkDbiharStatic::DoubleCross1(v0, c0, v1, c1);
 
 				vtkMath::Normalize(c1);
 				vtkMath::Add(c0, c1, c0);
