@@ -36,6 +36,10 @@ foreach(vtkLib ${VTK_LIBRARIES})
 	message(STATUS ${vtkLib})
 endforeach(vtkLib)
 
+add_library(vtkDbiharStatic src/vtkDbiharStatic.cxx)
+target_link_libraries(vtkDbiharStatic
+	vtkCommonCore)
+
 add_library(vtkDbiharPatchFilter src/vtkDbiharPatchFilter.cxx)
 target_link_libraries(vtkDbiharPatchFilter
 	dbihar
@@ -43,6 +47,7 @@ target_link_libraries(vtkDbiharPatchFilter
 
 add_library(vtkScalarRadiiToVectorsFilter src/vtkScalarRadiiToVectorsFilter.cxx)
 target_link_libraries(vtkScalarRadiiToVectorsFilter
+	vtkDbiharStatic
 	vtkFiltersHybrid)
 
 add_library(vtkEndPointIdsToDbiharPatchFilter src/vtkEndPointIdsToDbiharPatchFilter.cxx)
@@ -51,10 +56,12 @@ target_link_libraries(vtkEndPointIdsToDbiharPatchFilter
 
 add_library(vtkPointsToMeshFilter src/vtkPointsToMeshFilter.cxx)
 target_link_libraries(vtkPointsToMeshFilter
+	vtkDbiharStatic
 	vtkFiltersHybrid)
 
 add_library(vtkCentrelinePartitioner src/vtkCentrelinePartitioner.cxx)
 target_link_libraries(vtkCentrelinePartitioner
+	vtkDbiharStatic
 	vtkFiltersExtraction
 	vtkFiltersHybrid)
 
@@ -66,6 +73,24 @@ target_link_libraries(vtkEndCapFilter
 
 add_library(vtkSkipSegmentFilter src/vtkSkipSegmentFilter.cxx)
 target_link_libraries(vtkSkipSegmentFilter
+	vtkDbiharStatic
+	vtkFiltersHybrid)
+	
+add_library(vtkCentrelineToDbiharPatch src/vtkCentrelineToDbiharPatch.cxx)
+target_link_libraries(vtkCentrelineToDbiharPatch
+	vtkDbiharStatic
+	vtkFiltersHybrid)
+	
+add_library(vtkSubdivideQuadFilter src/vtkSubdivideQuadFilter.cxx)
+target_link_libraries(vtkSubdivideQuadFilter
+	vtkFiltersHybrid)
+	
+add_library(vtkSubdivideMeshDynamic src/vtkSubdivideMeshDynamic.cxx)
+target_link_libraries(vtkSubdivideMeshDynamic
+	vtkFiltersHybrid)
+	
+add_library(vtkRescaleUnits src/vtkRescaleUnits.cxx)
+target_link_libraries(vtkRescaleUnits
 	vtkFiltersHybrid)
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
@@ -145,6 +170,7 @@ add_executable(testEndPointIdsToDbiharPatchFilter1
 	test/showPolyData.cxx
 	test/testEndPointIdsToDbiharPatchFilter1.cxx)
 target_link_libraries(testEndPointIdsToDbiharPatchFilter1
+	vtkDbiharStatic
 	vtkFiltersGeometry
 	vtkScalarRadiiToVectorsFilter
 	vtkEndPointIdsToDbiharPatchFilter
@@ -156,6 +182,7 @@ add_executable(testEndPointIdsToDbiharPatchFilter2
 	test/showPolyData.cxx
 	test/testEndPointIdsToDbiharPatchFilter2.cxx)
 target_link_libraries(testEndPointIdsToDbiharPatchFilter2
+	vtkDbiharStatic
 	vtkFiltersGeometry
 	vtkScalarRadiiToVectorsFilter
 	vtkEndPointIdsToDbiharPatchFilter
@@ -191,6 +218,54 @@ target_link_libraries(testSkipSegmentFilter1
 	vtkScalarRadiiToVectorsFilter
 	vtkFiltersGeometry
 	vtkSkipSegmentFilter
+	${testLibs})
+	
+add_executable(testCentrelineToDbiharPatch
+	src/vtkCentrelineToDbiharPatch.cxx
+	test/showPolyData.cxx
+	test/testCentrelineToDbiharPatch.cxx)
+target_link_libraries(testCentrelineToDbiharPatch
+	vtkScalarRadiiToVectorsFilter
+	vtkCentrelineToDbiharPatch
+	vtkFiltersGeometry
+	vtkDbiharPatchFilter
+	vtkCentrelinePartitioner
+	${testLibs})
+	
+add_executable(testSubdivideQuadFilter
+	src/vtkSubdivideQuadFilter.cxx
+	test/testSubdivideQuadFilter.cxx)
+target_link_libraries(testSubdivideQuadFilter
+	vtkScalarRadiiToVectorsFilter
+	vtkFiltersGeometry
+	vtkSubdivideQuadFilter
+	${testLibs})
+	
+add_executable(testSubdivideMeshStatic
+	src/vtkSubdivideQuadFilter.cxx
+	test/testSubdivideMeshStatic.cxx)
+target_link_libraries(testSubdivideMeshStatic
+	vtkScalarRadiiToVectorsFilter
+	vtkFiltersGeometry
+	vtkSubdivideQuadFilter
+	${testLibs})
+	
+add_executable(testSubdivideMeshDynamic
+	src/vtkSubdivideQuadFilter.cxx
+	src/vtkSubdivideMeshDynamic.cxx
+	test/testSubdivideMeshDynamic.cxx)
+target_link_libraries(testSubdivideMeshDynamic
+	vtkScalarRadiiToVectorsFilter
+	vtkFiltersGeometry
+	vtkSubdivideQuadFilter
+	vtkSubdivideMeshDynamic
+	${testLibs})
+	
+add_executable(testRescaleUnits
+	src/vtkRescaleUnits.cxx
+	test/testRescaleUnits.cxx)
+target_link_libraries(testRescaleUnits
+	vtkRescaleUnits
 	${testLibs})
 
 #add_executable(scratch
