@@ -35,26 +35,34 @@ import math
 
 branchAngle = math.pi / 4.0
 
-segmentList0 = [20,[(20,0),None,None],[(20,45),None,None]]
-segmentList1 = [16,[8,[4,[2,None,None],[2,None,None]],None],[8,[4,None,None],None]]
-segmentList2 = [20,[(20,60),[(20,80),None,None],[20,None,None]],[(20,135),None,None]]
+segmentList0 = [20,  
+               [(20,60),[(30,35),None,None],[(20,105),None,None]],   
+               [(20,150),[(40,105),None,None],[(30,150),[(30,105),None,None],[(40,150),None,None]]]]
+               
+segmentList1 = [20,  
+               [(20,60),[(20,15),       [(30,350),None,None],[(30,60),None,None]]          ,[(40,105),None,None]],   
+               [(20,150),[(50,105),None,None],[(30,150),[(40,105),None,None],[(60,150),None,None]]]]
+                
+segmentList2 = [16,[8,[4,[2,None,None],[2,None,None]],None],[8,[4,None,None],None]]
+segmentList3 = [20,[(20,60),[(20,80),None,None],[20,None,None]],[(20,135),None,None]]
 
 # Paremeters specifying the properties of the generated centrelines.
 
 scaling = 1.0
 step = 0.1
-radiusBase = 2.0
-radiusDelta = 0.0025
-
+radiusBase = 2.5
+radiusDelta = 0.001
+endRadius = 0.5
 # If sphereRadius is set to None, the centreline is generated in the XY plane.
 # Otherwise the centreline is wrapped on a sphere of the specified radius.
-sphereRadius = None
-
+sphereRadius = 50
 points = vtk.vtkPoints()
 lines = vtk.vtkCellArray()
 radii = vtk.vtkDoubleArray()
+radii.SetName("radiiScalars")
+centreline = vtk.vtkPolyData()
 
-def buildCentreline(segmentList, firstId = 0, firstPt = (0.0,0.0,0.0), direction = 0.0, radius = radiusBase):
+def buildCentreline(segmentList, firstId = 0, firstPt = (0.0,0.0,0.0), direction = 0.0):
     print 'Processing centreline:', segmentList
     
     domain = None
@@ -114,39 +122,148 @@ def buildCentreline(segmentList, firstId = 0, firstPt = (0.0,0.0,0.0), direction
             
             line.GetPointIds().InsertNextId(nextId)
             
-            if firstId == 0 or pId > 0:
-                radiusVal = radius - (radiusDelta * pId)
-                radii.InsertNextTuple((radiusVal,))
+#            if firstId == 0 or pId > 0:
+#                if not isinstance(leftBranch, list) and not isinstance(rightBranch, list):
+#                    
+#                    newRadiusDelta = (radius - endRadus) / (domainLength / step)
+#                    radiusVal = radius - (newRadiusDelta * pId)
+#                else:
+#                    radiusVal = radius - (radiusDelta * pId)
+#                radii.InsertNextTuple((radiusVal,))
     
     lines.InsertNextCell(line)
     
     if isinstance(leftBranch, list):
-        buildCentreline(leftBranch, nextId, nextPt, 1.0, radiusVal)
+        buildCentreline(leftBranch, nextId, nextPt, 1.0)
 
     if isinstance(rightBranch, list):
-        buildCentreline(rightBranch, nextId, nextPt, -1.0, radiusVal)
+        buildCentreline(rightBranch, nextId, nextPt, -1.0)
+        
+        
+def treeTraversal(startingCell):
+    
+    branchesToExplore = vtk.vtkPriorityQueue()
+    points1 = vtk.vtkGenericCell()
+    cellIds = vtk.vtkIdList()
+    priority = int(lines.GetNumberOfCells())
+    
+    path = [startingCell]
+    paths = []
+    traversal = []    
+    
+    lengths = [0] * int(lines.GetNumberOfCells())  
+    branchesToExplore.Insert(priority, startingCell)
+    priority -= 1
+    
+        
+    centreline.GetCell(startingCell, points1)
+    lengths[startingCell] = int(points1.GetNumberOfPoints() - 1)
+    currentId = startingCell
+    
+    while branchesToExplore.GetNumberOfItems() != 0:
+        points2 = vtk.vtkGenericCell()
+   
+        centreline.GetCell(currentId, points2)
+        
+        endPointId = int(points2.GetPointId(points2.GetNumberOfPoints() - 1))
+        
+        centreline.GetPointCells(endPointId, cellIds)
+        
+        if cellIds.GetNumberOfIds() > 1:
+            for pos in range(1, cellIds.GetNumberOfIds()):
+                branchesToExplore.Insert(priority, cellIds.GetId(pos))
+                priority -= 1
+                
+                centreline.GetCell(cellIds.GetId(pos), points2)
+                lengths[cellIds.GetId(pos)] = int(points2.GetNumberOfPoints() - 1 + lengths[currentId])
+
+                paths.append(path[:] + [int(cellIds.GetId(pos))])
+                
+        else:
+            traversal.append([path,lengths[currentId]])
+            
+        currentId = int(branchesToExplore.Pop())
+        if len(paths) != 0:    
+            path = paths.pop()
+        
+    traversal.sort(key = lambda x: x[1], reverse = True)
+    
+    return traversal
+ 
+
+def buildRadiiScalars():
+    
+    radii.InsertValue(0, radiusBase)
+    alreadyBuilt = []
+    bifurcationValues = dict()
+    distanceCovered = 0
+    traversal = treeTraversal(0)
+    
+    for path, length in traversal: # for every path, starting from longest route
+    
+        distanceCovered = 0
+        
+        for cellId in path: # for each cellId in path, check hasn't already been done
+        
+            connectedCellIds = vtk.vtkIdList()            
+            ids = vtk.vtkGenericCell()
+            centreline.GetCell(cellId, ids)
+        
+            newId = ids.GetPointId(0)
+            centreline.GetPointCells(newId, connectedCellIds)
+        
+            if connectedCellIds.GetNumberOfIds() > 1:
+                minCellId = connectedCellIds.GetId(0)
+        
+                for i in range(1, connectedCellIds.GetNumberOfIds()):
+                    minCellId = min(minCellId, connectedCellIds.GetId(i))
+                
+                scalarValue = bifurcationValues[minCellId]
+                
+            else: # for first iteration (inlet)
+                scalarValue = radiusBase
+            
+                
+            if cellId not in alreadyBuilt:
+                decrement = (scalarValue - endRadius) / (length - distanceCovered)                
+                
+                start = int(ids.GetPointId(1))
+                end = int(ids.GetNumberOfPoints()) + start - 1
+                for pointId in range(start, end): # - 1 or noT?!?!?
+                    
+                    scalarValue -= decrement
+                    radii.SetValue(pointId, scalarValue)
+            
+                bifurcationValues[cellId] = scalarValue
+                alreadyBuilt.append(cellId)
+                
+            distanceCovered += int(ids.GetNumberOfPoints() - 1)
+              
 
 def main():
-    buildCentreline(segmentList2)
+    buildCentreline(segmentList1)
     
     print "Number of points in the centreline:", points.GetNumberOfPoints()
-    
-    centreline = vtk.vtkPolyData()
-    centreline.SetPoints(points)
+    radii.SetNumberOfValues(points.GetNumberOfPoints())
+    centreline.SetPoints(points)    
     centreline.SetLines(lines)
+    
+    
+    
+    buildRadiiScalars()
+    
     centreline.GetPointData().SetScalars(radii)
 
-
-    if sphereRadius != None:
-        origin = centreline.GetPoint(0)
-        transform = vtk.vtkTransform()
-        transform.Translate(-origin[0],-origin[1],-origin[2])
-        transformFilter = vtk.vtkTransformPolyDataFilter()
-        transformFilter.SetInput(centreline)
-        transformFilter.SetTransform(transform)
-        
-        transformFilter.Update()
-        centreline = transformFilter.GetOutput()
+#    if sphereRadius != None:
+#        origin = centreline.GetPoint(0)
+#        transform = vtk.vtkTransform()
+#        transform.Translate(-origin[0],-origin[1],-origin[2])
+#        transformFilter = vtk.vtkTransformPolyDataFilter()
+#        transformFilter.SetInput(centreline)
+#        transformFilter.SetTransform(transform)
+#        
+#        transformFilter.Update()
+#        centreline = transformFilter.GetOutput()
     
     writer = vtk.vtkPolyDataWriter()
     writer.SetInput(centreline)
@@ -161,6 +278,7 @@ def main():
     actor.SetMapper(mapper)
     
     renderer = vtk.vtkRenderer()
+    renderer.SetBackground(1,1,1)
     renderer.AddActor(actor)
     
     rendererWindow = vtk.vtkRenderWindow()
