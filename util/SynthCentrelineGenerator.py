@@ -225,22 +225,32 @@ def buildRadiiScalars():
             
                 
             if cellId not in alreadyBuilt:
-                decrement = (scalarValue - endRadius) / (length - distanceCovered)                
+                            
                 
                 start = int(ids.GetPointId(1))
                 end = int(ids.GetNumberOfPoints()) + start - 1
-                for pointId in range(start, end): # - 1 or noT?!?!?
+
+                p = length - distanceCovered
+                i = 1
+                
+                for pointId in range(start, end):
+                    k = (math.log(0.5)-math.log(scalarValue))/p
+                    x0 = math.exp(math.log(0.5)-k*p)
+                    x = x0 * math.exp(k*i)   
+                                    
+                    radii.SetValue(pointId, x)
+                    i += 1
                     
-                    scalarValue -= decrement
-                    radii.SetValue(pointId, scalarValue)
-            
-                bifurcationValues[cellId] = scalarValue
+                bifurcationValues[cellId] = x
                 alreadyBuilt.append(cellId)
                 
             distanceCovered += int(ids.GetNumberOfPoints() - 1)
               
 
 def main():
+    
+    global centreline
+    
     buildCentreline(segmentList1)
     
     print "Number of points in the centreline:", points.GetNumberOfPoints()
@@ -248,22 +258,20 @@ def main():
     centreline.SetPoints(points)    
     centreline.SetLines(lines)
     
-    
-    
     buildRadiiScalars()
     
     centreline.GetPointData().SetScalars(radii)
 
-#    if sphereRadius != None:
-#        origin = centreline.GetPoint(0)
-#        transform = vtk.vtkTransform()
-#        transform.Translate(-origin[0],-origin[1],-origin[2])
-#        transformFilter = vtk.vtkTransformPolyDataFilter()
-#        transformFilter.SetInput(centreline)
-#        transformFilter.SetTransform(transform)
-#        
-#        transformFilter.Update()
-#        centreline = transformFilter.GetOutput()
+    if sphereRadius != None:
+        origin = centreline.GetPoint(0)
+        transform = vtk.vtkTransform()
+        transform.Translate(-origin[0],-origin[1],-origin[2])
+        transformFilter = vtk.vtkTransformPolyDataFilter()
+        transformFilter.SetInput(centreline)
+        transformFilter.SetTransform(transform)
+        
+        transformFilter.Update()
+        centreline = transformFilter.GetOutput()
     
     writer = vtk.vtkPolyDataWriter()
     writer.SetInput(centreline)
