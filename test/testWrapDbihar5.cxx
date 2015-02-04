@@ -1,3 +1,7 @@
+/**
+ * 1/3rd of a Bifurcation: The Saddle.
+ */
+
 #include <stdlib.h>
 
 #include <vtkSmartPointer.h>

@@ -1,3 +1,7 @@
+/**
+ * 1/6th of a Bifurcation Patch Generation: Half of the Trunk.
+ */
+
 #include <stdlib.h>
 
 #include <vtkSmartPointer.h>

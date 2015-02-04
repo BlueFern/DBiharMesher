@@ -1,3 +1,7 @@
+/**
+ * 1/3rd of a Dbihar Patch: Half the Trunk + the Underside of the Saddle.
+ */
+
 #include <stdlib.h>
 
 #include <vtkSmartPointer.h>

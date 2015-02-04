@@ -1,3 +1,7 @@
+/*
+ * Rectangular Dbihar Patch Generation.
+ */
+
 #include <stdlib.h>
 
 #include <vtkSmartPointer.h>

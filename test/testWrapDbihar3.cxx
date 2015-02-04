@@ -1,3 +1,7 @@
+/*
+ * 1/6th of a Bifurcation Patch Generation: Half of the Saddle.
+ */
+
 #include <stdlib.h>
 
 #include <vtkSmartPointer.h>

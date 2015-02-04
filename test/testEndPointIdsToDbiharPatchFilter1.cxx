@@ -41,6 +41,7 @@ int main(int argc, char* argv[]) {
 	vtkPolyData *vesselCentreline = vtkPolyData::SafeDownCast(vesselCentrelineReader->GetOutput());
 
 	vtkSmartPointer<vtkCentrelineData> centrelineSegmentSource = vtkSmartPointer<vtkCentrelineData>::New();
+	centrelineSegmentSource->SetEdgeLength(4 * 65e-3);
 	centrelineSegmentSource->SetCentrelineData(vesselCentreline);
 
 	vtkPolyData *resampledVesselCentreline = centrelineSegmentSource->GetOutput();
@@ -55,7 +56,7 @@ int main(int argc, char* argv[]) {
 
 #if 1
 	endPointIdsList->InsertNextId(32);
-	endPointIdsList->InsertNextId(120);
+	endPointIdsList->InsertNextId(100);//120);
 	endPointIdsList->InsertNextId(196);
 #else
 	endPointIdsList->InsertNextId(0);
