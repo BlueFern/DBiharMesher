@@ -32,6 +32,39 @@ endif()
 
 add_subdirectory(libFortran/dbihar)
 
+find_package(Doxygen)
+
+find_Package(Graphviz)
+if(DOXYGEN_DOT_EXECUTABLE)
+	set(HAVE_DOT "YES")
+	set(CALL_GRAPH "YES")
+	set(CALLER_GRAPH "YES")
+else(DOXYGEN_DOT_EXECUTABLE)
+	set(HAVE_DOT "NO")
+	set(CALL_GRAPH "NO")
+	set(CALLER_GRAPH "NO")
+endif(DOXYGEN_DOT_EXECUTABLE)
+
+set(DOXY_INPUT_DIR ${PROJECT_SOURCE_DIR}/src)
+set(DOXY_BASE_DIR ${PROJECT_SOURCE_DIR}/doc)
+set(DOXY_OUTPUT_DIR ${PROJECT_BINARY_DIR}/doc)
+file(MAKE_DIRECTORY ${DOXY_OUTPUT_DIR})
+
+set(DOXY_API_LINK_TAGS ${DOXY_OUTPUT_DIR}/DoxyLink.tag)
+
+configure_file(
+	${PROJECT_SOURCE_DIR}/doc/Doxyfile.in
+	${PROJECT_BINARY_DIR}/Doxyfile
+	@ONLY)
+
+if(DOXYGEN_FOUND)
+	add_custom_target(doxyDocs
+	COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
+	WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+	COMMENT "Generating API documentation with Doxygen" VERBATIM)
+endif(DOXYGEN_FOUND)
+
+
 foreach(vtkLib ${VTK_LIBRARIES})
 	message(STATUS ${vtkLib})
 endforeach(vtkLib)
@@ -91,6 +124,10 @@ target_link_libraries(vtkSubdivideMeshDynamic
 	
 add_library(vtkRescaleUnits src/vtkRescaleUnits.cxx)
 target_link_libraries(vtkRescaleUnits
+	vtkFiltersHybrid)
+	
+add_library(vtkCentrelineResampler src/vtkCentrelineResampler.cxx)
+target_link_libraries(vtkCentrelineResampler
 	vtkFiltersHybrid)
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
@@ -269,7 +306,6 @@ target_link_libraries(testRescaleUnits
 	${testLibs})
 	
 add_executable(testPipelineBifurcation1
-	src/vtkCentrelineData.cxx
 	test/showPolyData.cxx
 	test/testPipelineBifurcation1.cxx)
 target_link_libraries(testPipelineBifurcation1
@@ -284,10 +320,10 @@ target_link_libraries(testPipelineBifurcation1
 	vtkSkipSegmentFilter
 	vtkEndCapFilter
 	vtkRescaleUnits
+	vtkCentrelineResampler
 	${testLibs})
 	
 add_executable(testPipelineFull1
-	src/vtkCentrelineData.cxx
 	test/showPolyData.cxx
 	test/testPipelineFull1.cxx)
 target_link_libraries(testPipelineFull1
@@ -302,6 +338,7 @@ target_link_libraries(testPipelineFull1
 	vtkSkipSegmentFilter
 	vtkEndCapFilter
 	vtkRescaleUnits
+	vtkCentrelineResampler
 	${testLibs})
 
 #add_executable(scratch
