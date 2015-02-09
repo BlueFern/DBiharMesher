@@ -33,7 +33,7 @@
 #include "vtkSubdivideMeshDynamic.h"
 #include "vtkSkipSegmentFilter.h"
 #include "vtkEndCapFilter.h"
-#include "vtkCentrelineData.h"
+#include "vtkCentrelineResampler.h"
 #include "wrapDbiharConfig.h"
 
 int main(int argc, char* argv[]) {
@@ -48,13 +48,14 @@ int main(int argc, char* argv[]) {
 
 	vtkSmartPointer<vtkRescaleUnits> rescaleUnits = vtkSmartPointer<vtkRescaleUnits>::New();
 	rescaleUnits->SetInputData(vesselCentreline);
-	rescaleUnits->SetScale(1000); // mm to µ
+	rescaleUnits->SetScale(1000); // mm to µm
 	rescaleUnits->Update();
 
-	vtkSmartPointer<vtkCentrelineData> centrelineSegmentSource = vtkSmartPointer<vtkCentrelineData>::New();
+	vtkSmartPointer<vtkCentrelineResampler> centrelineSegmentSource = vtkSmartPointer<vtkCentrelineResampler>::New();
 	centrelineSegmentSource->DebugOn();
 	centrelineSegmentSource->SetEdgeLength(vtkDbiharStatic::EC_AXIAL * 4);
-	centrelineSegmentSource->SetCentrelineData(rescaleUnits->GetOutput());
+	centrelineSegmentSource->SetInputData(rescaleUnits->GetOutput());
+	centrelineSegmentSource->Update();
 
 	vtkPolyData *resampledVesselCentreline = centrelineSegmentSource->GetOutput();
 	vtkSmartPointer<vtkDoubleArray> scalars = vtkSmartPointer<vtkDoubleArray>::New();
@@ -83,6 +84,8 @@ int main(int argc, char* argv[]) {
 	vtkSmartPointer<vtkScalarRadiiToVectorsFilter> scalarRadiiToVectorsFilter = vtkSmartPointer<vtkScalarRadiiToVectorsFilter>::New();
 	scalarRadiiToVectorsFilter->SetInputData(resampledVesselCentreline);
 	scalarRadiiToVectorsFilter->Update();
+
+
 
 	vtkSmartPointer<vtkCentrelinePartitioner> centrelinePartitioner = vtkSmartPointer<vtkCentrelinePartitioner>::New();
 	centrelinePartitioner->SetInputData(scalarRadiiToVectorsFilter->GetOutput());
@@ -170,8 +173,6 @@ int main(int argc, char* argv[]) {
 	}
 	appendPolyData->Update();
 
-
-
 	vtkSmartPointer<vtkXMLPolyDataWriter> writer0 = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
 	writer0->SetInputData(appendPolyData->GetOutput());
 	writer0->SetFileName("quadMeshFull.vtp");
@@ -215,7 +216,6 @@ int main(int argc, char* argv[]) {
 		// Only inlet on first iteration.
 		skipSegmentFilter->SetInlet(i == 0);
 		skipSegmentFilter->SetOutlet(i != 0);
-
 		skipSegmentFilter->SetSkipSize(10);
 		skipSegmentFilter->SetPointId(endPointIds->GetId(i));
 		skipSegmentFilter->SetNumberOfRadialQuads(28);

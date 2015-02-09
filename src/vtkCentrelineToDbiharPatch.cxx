@@ -339,7 +339,7 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 		double leftAngleNp1 = vtkMath::DegreesFromRadians(vtkDbiharStatic::AngleBetweenVectors(derivNp1, derivN));
 
 		// TODO: This constant is to be examined closer.
-		double rotationCoeff = 1.1;
+		double rotationCoeff = 0.1;
 
 		// Traversing the "right" edge of the patch from bifurcation backwards.
 		for (int ptId = bifurcationPos - 1, derivId = rightBifurcationDerivId - 1; ptId > 0; ptId--, derivId--)
@@ -462,7 +462,7 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 
 	std::cout << inputPatch->GetNumberOfPoints() << " =?= " << numPtIds << std::endl;
 
-	showPolyData(inputPatch, NULL, 0.1);
+	//showPolyData(inputPatch, NULL, 0.1);
 
 	vtkSmartPointer<vtkDbiharPatchFilter> patchFilter = vtkSmartPointer<vtkDbiharPatchFilter>::New();
 
@@ -480,12 +480,14 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 	patchFilter->SetInputData(inputPatch);
 	patchFilter->Update();
 
-	#if 0
-	vtkSmartPointer<vtkPolyData> outputPatch = vtkSmartPointer<vtkPolyData>::New();
-	outputPatch->DeepCopy(patchFilter->GetOutput());
-	vtkSmartPointer<vtkPoints> outputPoints = vtkSmartPointer<vtkPoints>::New();
-	outputPoints->DeepCopy(outputPatch->GetPoints());
-	#endif
+
+
+	output->DeepCopy(patchFilter->GetOutput());
+	return 1;
+
+
+
+
 
 	vtkSmartPointer<vtkStructuredGrid> structuredGrid = vtkSmartPointer<vtkStructuredGrid>::New();
 	structuredGrid->SetDimensions(this->NumberOfRadialQuads + 1, spineLength, 1);
@@ -514,7 +516,7 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 
 	appendPolyDataFilter->AddInputData(inputPatch);
 
-
+	#if 0
 	// TODO: Remove this.
 	appendPolyDataFilter->Update();
 	showPolyData(appendPolyDataFilter->GetOutput(), NULL, 0.1);
@@ -529,7 +531,7 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 	std::cout << "points after clean: " << polyDataCleaner->GetOutput()->GetNumberOfPoints() << std::endl;
 
 	showGrids(outputGrids, input);
-
+	#endif
 	return 1;
 }
 

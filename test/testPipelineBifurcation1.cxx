@@ -33,7 +33,7 @@
 #include "vtkSubdivideMeshDynamic.h"
 #include "vtkSkipSegmentFilter.h"
 #include "vtkEndCapFilter.h"
-#include "vtkCentrelineData.h"
+#include "vtkCentrelineResampler.h"
 #include "wrapDbiharConfig.h"
 
 int main(int argc, char* argv[]) {
@@ -51,11 +51,11 @@ int main(int argc, char* argv[]) {
 	rescaleUnits->SetScale(1000); // mm to µ
 	rescaleUnits->Update();
 
-	vtkSmartPointer<vtkCentrelineData> centrelineSegmentSource = vtkSmartPointer<vtkCentrelineData>::New();
+	vtkSmartPointer<vtkCentrelineResampler> centrelineSegmentSource = vtkSmartPointer<vtkCentrelineResampler>::New();
 	centrelineSegmentSource->DebugOn();
 	centrelineSegmentSource->SetEdgeLength(vtkDbiharStatic::EC_AXIAL * 4);
-	centrelineSegmentSource->SetCentrelineData(rescaleUnits->GetOutput());
-
+	centrelineSegmentSource->SetInputData(rescaleUnits->GetOutput());
+	centrelineSegmentSource->Update();
 	vtkPolyData *resampledVesselCentreline = centrelineSegmentSource->GetOutput();
 	vtkSmartPointer<vtkDoubleArray> scalars = vtkSmartPointer<vtkDoubleArray>::New();
 	vtkSmartPointer<vtkIdList> endPointIds = vtkSmartPointer<vtkIdList>::New();
