@@ -6,6 +6,14 @@
 
 class vtkIdList;
 
+/**
+ * Builds a cap around an end point at a location specified by a vtkPolyLine.
+ *
+ * \param vtkPolyData Assumed to have only one cell - a vtkPolyLine that is a ring.
+ *
+ * \return vtkPolyData that is an end cap as a triangular mesh.
+ *
+ */
 class vtkEndCapFilter : public vtkPolyDataAlgorithm {
 public:
 	vtkTypeMacro(vtkEndCapFilter,vtkPolyDataAlgorithm);

@@ -1,7 +1,3 @@
-/**
- * Program: vtkScalarRadiiToVectorsFilter.
- */
-
 #include <vtkObjectFactory.h>
 #include <vtkCallbackCommand.h>
 #include <vtkStreamingDemandDrivenPipeline.h>

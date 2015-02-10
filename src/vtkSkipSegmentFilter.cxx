@@ -1,16 +1,3 @@
-/**
- * This filter accepts a centreline and builds a skip segment mesh from a specified point.
- * SkipSize determines how many rings of points the skip segment will contain. Inlet and
- * Outlet are boolean flags that specify if the specified point ID is on an inlet or outlet.
- * This determines the direction the skip segment travels out, and PointId specifies where
- * the start of the skip segment should be centred around.
- *
- * vtkPolyData that contains points around the skip segment, a triangular mesh
- * around the surface of this segment and one line that that is the final ring of points
- * (which is useful later for building caps) is returned.
- *
- */
-
 #include <vtkObjectFactory.h>
 #include <vtkStreamingDemandDrivenPipeline.h>
 #include <vtkInformationVector.h>

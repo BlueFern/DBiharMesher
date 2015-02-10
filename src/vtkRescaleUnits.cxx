@@ -1,8 +1,3 @@
-/**
- * Rescales a data set (as vtkPolyData) by a specified amount. This includes both the points
- * and point data.
- */
-
 #include <algorithm>
 
 #include <vtkObjectFactory.h>

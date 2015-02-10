@@ -1,10 +1,3 @@
-/**
- * This filter subdivides a quad mesh into smaller quads (roughly) of a specified size. The average
- * length and height of the existing quads are used to calculate how many new cells will fit inside
- * each one, which are then passed to vtkSubdivideQuadFilter.
- * Returned is a complete mesh with new quads, as vtkPolyData.
- */
-
 #include <algorithm>
 #include <cmath>
 #include <vtkObjectFactory.h>

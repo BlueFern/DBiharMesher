@@ -1,7 +1,3 @@
-/**
- * This is a class for storing string and numeric constants as well as shared static methods.
- */
-
 #include <cmath>
 #include <vtkMath.h>
 #include <vtkIdList.h>

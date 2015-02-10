@@ -5,6 +5,9 @@
 
 class vtkIdList;
 
+/**
+ * This is a class for storing string and numeric constants as well as shared static methods.
+ */
 class vtkDbiharStatic : public vtkObject {
 public:
 
@@ -21,7 +24,6 @@ public:
 	static const int SMC_AXIAL;
 	static const int EC_CIRC;
 	static const int EC_AXIAL;
-
 };
 
 #endif

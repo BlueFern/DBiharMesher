@@ -6,6 +6,17 @@
 
 class vtkIdList;
 
+/**
+ * Re-scales a data set by a specified amount. This includes both the points
+ * and point data.
+ *
+ * \param vtkPolyData Centreline data.
+ *
+ * \param Scale Apecifies the amount to scale the input.
+ *
+ * \return vtkPolyData exactly the same as the input, only scaled by a given amount.
+ *
+ */
 class vtkRescaleUnits : public vtkPolyDataAlgorithm {
 public:
 	vtkTypeMacro(vtkRescaleUnits,vtkPolyDataAlgorithm);

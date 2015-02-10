@@ -1,37 +1,3 @@
-/**
- * This filter partitions given vtkPolyData into segments using a user set partition
- * length as a guide. This bound should represent how many points (roughly) are to be
- * included to or from a bifurcation point to avoid having non-smooth boundaries between
- * branches. Therefore the segment size for a spine over such a bifurcation will be
- * closer to twice the partition length.
- *
- * Less important are the straight segments at the ends or between bifurcations. Their
- * size will be roughly the input bound, and always greater than the minimum number
- * of points the dbihar patch filter requires to build an edge (so long as the input
- * data has enough points in each cell).
- *
- * The size of the segments is only ever rough due to the requirement for each segment
- * to have odd length. Using the given bound, the program attempts to divide a cell/branch
- * into a number of segments of that size (odd length). As a result of this process
- * the sizes tend to be less than or equal to the partition length in all cases other
- * than spines over bifurcations and end points.
- *
- * Both straight sections and their reverses are added as cells. Bifurcations
- * are traversed by going down one branch (towards the bifurcation), and up the next.
- * This means there are as many segments/spines created as there are cells attached
- * to the bifurcation, and there will be duplication of points between cells.
- *
- * EndPoints is an optional Id list that specifies points to build segments between.
- * The first point is where the partitioner should start, and all others are used as new
- * end points for the associated cell. The user is responsible for giving sensible end
- * points so that the cell sizes are still all odd. If points are given that belong
- * in cells that branched out before the given starting point they will be ignored.
- *
- * vtkPolyData is returned which has cells/lines as these segments, and points and
- * point data identical to the input.
- *
- */
-
 #include <sstream>
 #include <algorithm>
 #include <vtkSmartPointer.h>
@@ -89,10 +55,6 @@ void vtkCentrelinePartitioner::joinIdLists(vtkSmartPointer<vtkIdList> previous, 
 	}
 }
 
-/**
- * Main logic of the filter. Iteratively traverses the input centreline data and builds up cells that are roughly
- * similarly sized segments.
- */
 int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 										vtkInformationVector **inputVector,
 										vtkInformationVector *outputVector)

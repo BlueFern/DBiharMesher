@@ -1,4 +1,3 @@
-
 #include <algorithm>
 
 #include <vtkObjectFactory.h>
@@ -12,7 +11,6 @@
 #include <vtkPoints.h>
 #include <vtkCellData.h>
 #include <vtkCell.h>
-
 #include <vtkPointData.h>
 #include <vtkPointSet.h>
 #include <vtkParametricSpline.h>
@@ -21,11 +19,10 @@
 #include <vtkAppendPolyData.h>
 #include <vtkStructuredGrid.h>
 #include <vtkStructuredGridGeometryFilter.h>
-#include <vtkSubdivideQuadFilter.h>
 
+#include "vtkSubdivideQuadFilter.h"
 
 vtkStandardNewMacro(vtkSubdivideQuadFilter);
-
 
 vtkSubdivideQuadFilter::vtkSubdivideQuadFilter()
 {

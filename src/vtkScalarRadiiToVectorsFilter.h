@@ -1,7 +1,3 @@
-/**
- * Program: vtkScalarRadiiToVectorsFilter.
- */
-
 #ifndef __vtkScalarRadiiToVectorsFilter_h
 #define __vtkScalarRadiiToVectorsFilter_h
 
@@ -13,6 +9,16 @@
 
 class vtkIdList;
 
+/**
+ * From the radiiScalars point data this filter creates radiiVectors that are vectors from each point
+ * in the centreline out to the surface of the vessel.
+ *
+ * \param vtkPolyData A centreline.
+ *
+ * \param angleTolerance An optional parameter that specifies the tolerance between angles.
+ *
+ * \return vtkPolyData with an extra array of point data, radiiVectors.
+ */
 class vtkScalarRadiiToVectorsFilter: public vtkPolyDataAlgorithm {
 public:
 	vtkTypeMacro(vtkScalarRadiiToVectorsFilter,vtkPolyDataAlgorithm);

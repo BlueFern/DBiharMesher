@@ -1,0 +1,42 @@
+/*! \mainpage Dbihar Project - Generating Meshes from Centrelines.
+\section pipelineOverview Pipeline Overview.
+Input vessel centrelines are represented as vtkPolyData objects, where the connectivity between points
+is defined with vtkPolyLine objects, one poly-line per vessel branch. For bifurcations the last point
+in the parent vessel is shared between the branching vessels. Each point in the vtkPolyData has a 
+scalar radius associated with it. 
+
+After reading in this data, the pipeline begins by converting input centrelines to nanometres from
+arbitrary units, i.e. millimetres or metres (vtkRescaleUnits). It then resamples the centreline so that each line has 
+an odd number of points and so there is an even (and specified) distance between them (vtkCentrelineResampler). 
+
+Next vtkScalarRadiiToVectorsFilter builds a radiiVector array using radiiScalars. These are vectors 
+from each point to the surface of the vessel.
+
+Then the centreline is partitioned so that the cells/lines have a particular length (vtkCentrelinePartitioner).
+This is important for a few reasons, firstly if the boundarys are too large (created later in the pipeline) the dbihar 
+equations fail to calculate the correct points. Secondly to create smooth boundaries in the meshes over 
+bifurcations cells participating in bifurcations must have a number of points before and after them.
+
+Then, for each cell in the newly partitioned centreline, points are generated using vtkCentrelineToDbiharPatch
+(which internally uses vtkDbiharPatchFilter).
+
+Using all the points created in the above filter a quad mesh is created (vtkPointsToMeshFilter):
+
+Next is creating endothelial and smooth muscle cells - their sizes are specified in vtkDbiharStatic which is a static 
+class that holds numerical and string constants, and shared methods. These cells are created using vtkSubdivideMeshDynamic,
+which can be quite expensive to run. For both endothelial and smooth muscle cells output from vtkSubdivideMeshDynamic is
+saved.
+
+Skip segments and end caps are then created as triangular meshes and added to the non-subdivided quad mesh. These are saved as 
+.stl files and are used for computational fluid dynamics simulations.
+
+<br>
+ <div id="image1"> 
+ 	\image html boundaryVectors.png "Boundary and associated vectors." 
+ </div> 
+ 
+ <div id="image2"> 
+ 	\image html pointsToMesh.png "Quad mesh and radii vectors."
+ </div>
+ 
+*/
