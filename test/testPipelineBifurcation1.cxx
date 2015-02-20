@@ -1,15 +1,6 @@
-#include <map>
-
 #include <vtkSmartPointer.h>
 #include <vtkPolyData.h>
 #include <vtkGenericDataObjectReader.h>
-#include <vtkMath.h>
-#include <vtkPolyDataMapper.h>
-#include <vtkActor.h>
-#include <vtkRenderWindow.h>
-#include <vtkRenderer.h>
-#include <vtkRenderWindowInteractor.h>
-#include <vtkInteractorStyleSwitch.h>
 #include <vtkXMLPolyDataWriter.h>
 #include <vtkSTLWriter.h>
 #include <vtkDoubleArray.h>
@@ -21,7 +12,7 @@
 #include <vtkAppendPoints.h>
 #include <vtkAppendPolyData.h>
 #include <vtkTriangleFilter.h>
-#include <vtkXMLStructuredGridReader.h>
+
 #include "showPolyData.h"
 #include "vtkDbiharStatic.h"
 #include "vtkRescaleUnits.h"
@@ -40,33 +31,26 @@ int main(int argc, char* argv[]) {
 
 	std::cout << "Starting " << __FILE__ << std::endl;
 
-	vtkSmartPointer<vtkGenericDataObjectReader> vesselCentrelineReader = vtkSmartPointer<vtkGenericDataObjectReader>::New();
-	vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/centreline.vtk").c_str());
-	vesselCentrelineReader->Update();
+	vtkSmartPointer<vtkGenericDataObjectReader> centrelineReader = vtkSmartPointer<vtkGenericDataObjectReader>::New();
+	centrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/centreline.vtk").c_str());
+	centrelineReader->Update();
 
-	vtkPolyData *vesselCentreline = vtkPolyData::SafeDownCast(vesselCentrelineReader->GetOutput());
+	vtkPolyData *centreline = vtkPolyData::SafeDownCast(centrelineReader->GetOutput());
 
 	vtkSmartPointer<vtkRescaleUnits> rescaleUnits = vtkSmartPointer<vtkRescaleUnits>::New();
-	rescaleUnits->SetInputData(vesselCentreline);
-	rescaleUnits->SetScale(1000); // mm to µ
+	rescaleUnits->SetInputData(centreline);
+	rescaleUnits->SetScale(1000); // Rescale from mm to µm.
 	rescaleUnits->Update();
 
 	vtkSmartPointer<vtkCentrelineResampler> centrelineSegmentSource = vtkSmartPointer<vtkCentrelineResampler>::New();
-	centrelineSegmentSource->DebugOn();
 	centrelineSegmentSource->SetEdgeLength(vtkDbiharStatic::EC_AXIAL * 4);
 	centrelineSegmentSource->SetInputData(rescaleUnits->GetOutput());
 	centrelineSegmentSource->Update();
-	vtkPolyData *resampledVesselCentreline = centrelineSegmentSource->GetOutput();
-	vtkSmartPointer<vtkDoubleArray> scalars = vtkSmartPointer<vtkDoubleArray>::New();
-	vtkSmartPointer<vtkIdList> endPointIds = vtkSmartPointer<vtkIdList>::New();
-	vtkSmartPointer<vtkIdList> startingCell = vtkSmartPointer<vtkIdList>::New();
 
-	int check1 = resampledVesselCentreline->GetNumberOfCells();
-	int lastId = 0;
-	int totalNumberOfPoints = 0;
+	vtkPolyData *resampledCentreline = centrelineSegmentSource->GetOutput();
 
 	vtkSmartPointer<vtkScalarRadiiToVectorsFilter> scalarRadiiToVectorsFilter = vtkSmartPointer<vtkScalarRadiiToVectorsFilter>::New();
-	scalarRadiiToVectorsFilter->SetInputData(resampledVesselCentreline);
+	scalarRadiiToVectorsFilter->SetInputData(resampledCentreline);
 	scalarRadiiToVectorsFilter->Update();
 
 	vtkSmartPointer<vtkCentrelinePartitioner> centrelinePartitioner = vtkSmartPointer<vtkCentrelinePartitioner>::New();
@@ -76,43 +60,27 @@ int main(int argc, char* argv[]) {
 
 	vtkPolyData *partitionedCentreline = centrelinePartitioner->GetOutput();
 
-	vtkSmartPointer<vtkGenericCell> cell1 = vtkSmartPointer<vtkGenericCell>::New();
-	vtkSmartPointer<vtkGenericCell> cell2 = vtkSmartPointer<vtkGenericCell>::New();
-
-	partitionedCentreline->GetCell(3, cell1);
-
-	endPointIds->InsertNextId(cell1->GetPointId(0));
-
-	partitionedCentreline->GetCell(4, cell2);
-
-	endPointIds->InsertNextId(cell2->GetPointId(0));
-	endPointIds->InsertNextId(cell2->GetPointId(cell2->GetNumberOfPoints() - 1));
-
-
-	vtkSmartPointer<vtkAppendPolyData> appendPolyData = vtkSmartPointer<vtkAppendPolyData>::New();
-
-	vtkSmartPointer<vtkAppendPoints> appendPoints = vtkSmartPointer<vtkAppendPoints>::New();
-	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
-	vtkSmartPointer<vtkPoints> previousPoints = vtkSmartPointer<vtkPoints>::New();
 	double lengths[3] = {0.0};
+	vtkSmartPointer<vtkAppendPoints> appendPoints = vtkSmartPointer<vtkAppendPoints>::New();
 
+	// Working with centreline partitions 3, 4, 5.
 	for (int i = 3; i < 6; i++)
 	{
-		vtkSmartPointer<vtkCentrelineToDbiharPatch> test = vtkSmartPointer<vtkCentrelineToDbiharPatch>::New();
-		test->SetInputData(partitionedCentreline);
-		test->SetNumberOfRadialQuads(28);
-		test->SetSpineId(i);
-		test->Update();
+		vtkSmartPointer<vtkCentrelineToDbiharPatch> dbiharPatchFilter = vtkSmartPointer<vtkCentrelineToDbiharPatch>::New();
+		dbiharPatchFilter->SetInputData(partitionedCentreline);
+		dbiharPatchFilter->SetNumberOfRadialQuads(28);
+		dbiharPatchFilter->SetSpineId(i);
+		dbiharPatchFilter->Update();
 
 		lengths[i] = partitionedCentreline->GetCell(i)->GetNumberOfPoints();
-		appendPoints->AddInputData(test->GetOutput());
+		appendPoints->AddInputData(dbiharPatchFilter->GetOutput());
 	}
 
 	appendPoints->Update();
 	vtkSmartPointer<vtkUnsignedIntArray> dimensions = vtkSmartPointer<vtkUnsignedIntArray>::New();
 	dimensions->InsertNextValue(28);
 
-	// Solving simultaneous equations for each branch sections length
+	// Solving simultaneous equations for each branch sections length.
 	dimensions->InsertNextValue((lengths[3] - lengths[4] + lengths[5]) / 2);
 	dimensions->InsertNextValue((lengths[3] + lengths[4] - lengths[5]) / 2);
 	dimensions->InsertNextValue((-lengths[3] + lengths[4] + lengths[5]) / 2);
@@ -121,51 +89,58 @@ int main(int argc, char* argv[]) {
 	pointsToMeshFilter->SetInputData(appendPoints->GetOutput());
 	pointsToMeshFilter->SetDimensions(dimensions);
 	pointsToMeshFilter->Update();
-	appendPolyData->AddInputData(pointsToMeshFilter->GetOutput());
 
-	appendPolyData->Update();
+	vtkSmartPointer<vtkXMLPolyDataWriter> quadMeshWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+	quadMeshWriter->SetInputData(pointsToMeshFilter->GetOutput());
+	quadMeshWriter->SetFileName("quadMeshBifurcation.vtp");
+	quadMeshWriter->Write();
 
-	vtkSmartPointer<vtkXMLPolyDataWriter> writer0 = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-	writer0->SetInputData(appendPolyData->GetOutput());
-	writer0->SetFileName("quadMeshBifurcation.vtp");
-	writer0->Write();
+#if 1
+	// Very expensive to run.
+	vtkSmartPointer<vtkSubdivideMeshDynamic> dynamicECMesher = vtkSmartPointer<vtkSubdivideMeshDynamic>::New();
+	dynamicECMesher->SetInputData(pointsToMeshFilter->GetOutput());
+	dynamicECMesher->SetHeight(vtkDbiharStatic::EC_CIRC);
+	dynamicECMesher->SetLength(vtkDbiharStatic::EC_AXIAL);
+	dynamicECMesher->Update();
 
-#if 0 // Very Expensive to run.
+	vtkSmartPointer<vtkXMLPolyDataWriter> ECMeshWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+	ECMeshWriter->SetInputData(dynamicECMesher->GetOutput());
+	ECMeshWriter->SetFileName("ECquadMeshBifurcation.vtp");
+	ECMeshWriter->Write();
 
-	vtkSmartPointer<vtkSubdivideMeshDynamic> subdivideMeshDynamic = vtkSmartPointer<vtkSubdivideMeshDynamic>::New();
-	subdivideMeshDynamic->SetInputData(appendPolyData->GetOutput());
-	subdivideMeshDynamic->SetHeight(vtkDbiharStatic::EC_CIRC);
-	subdivideMeshDynamic->SetLength(vtkDbiharStatic::EC_AXIAL);
-	subdivideMeshDynamic->Update();
+	vtkSmartPointer<vtkSubdivideMeshDynamic> dynamicSMCMesher = vtkSmartPointer<vtkSubdivideMeshDynamic>::New();
+	dynamicSMCMesher->SetInputData(pointsToMeshFilter->GetOutput());
+	dynamicSMCMesher->SetHeight(vtkDbiharStatic::SMC_CIRC);
+	dynamicSMCMesher->SetLength(vtkDbiharStatic::SMC_AXIAL);
+	dynamicSMCMesher->Update();
 
-	vtkSmartPointer<vtkXMLPolyDataWriter> writer1 = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-	writer1->SetInputData(subdivideMeshDynamic->GetOutput());
-	writer1->SetFileName("ECquadMeshBifurcation.vtp");
-	writer1->Write();
-
-
-	vtkSmartPointer<vtkSubdivideMeshDynamic> subdivideMeshDynamic2 = vtkSmartPointer<vtkSubdivideMeshDynamic>::New();
-	subdivideMeshDynamic2->SetInputData(appendPolyData->GetOutput());
-	subdivideMeshDynamic2->SetHeight(vtkDbiharStatic::SMC_CIRC);
-	subdivideMeshDynamic2->SetLength(vtkDbiharStatic::SMC_AXIAL);
-	subdivideMeshDynamic2->Update();
-
-	vtkSmartPointer<vtkXMLPolyDataWriter> writer2 = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-	writer2->SetInputData(subdivideMeshDynamic2->GetOutput());
-	writer2->SetFileName("SMCquadMeshBifurcation.vtp");
-	writer2->Write();
-
+	vtkSmartPointer<vtkXMLPolyDataWriter> SMCMeshWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+	SMCMeshWriter->SetInputData(dynamicSMCMesher->GetOutput());
+	SMCMeshWriter->SetFileName("SMCquadMeshBifurcation.vtp");
+	SMCMeshWriter->Write();
 #endif
 
-	vtkSmartPointer<vtkAppendPolyData> appendPolyData2 = vtkSmartPointer<vtkAppendPolyData>::New();
-	vtkSmartPointer<vtkAppendPolyData> appendPolyData3 = vtkSmartPointer<vtkAppendPolyData>::New();
+	// Create and assemble the triangulated mesh, including the triangulated quad mesh
+	// along with skip segments and end caps. This is just for visualisation.
+	vtkSmartPointer<vtkTriangleFilter> triangleFilter = vtkSmartPointer<vtkTriangleFilter>::New();
+	triangleFilter->SetInputData(pointsToMeshFilter->GetOutput());
+	triangleFilter->Update();
 
-	appendPolyData2->AddInputData(appendPolyData->GetOutput());
+	vtkSmartPointer<vtkAppendPolyData> appendTriMesh = vtkSmartPointer<vtkAppendPolyData>::New();
+	appendTriMesh->AddInputData(triangleFilter->GetOutput());
+
+	// Working with centreline partitions 3, 4, 5.
+	vtkSmartPointer<vtkIdList> endPointIds = vtkSmartPointer<vtkIdList>::New();
+	for (int i = 3; i < 6; i++)
+	{
+		endPointIds->InsertNextId(partitionedCentreline->GetCell(i)->GetPointId(0));
+	}
 
 	for (int i = 0; i < endPointIds->GetNumberOfIds(); i++)
 	{
 		vtkSmartPointer<vtkSkipSegmentFilter> skipSegmentFilter = vtkSmartPointer<vtkSkipSegmentFilter>::New();
 		skipSegmentFilter->SetInputData(scalarRadiiToVectorsFilter->GetOutput());
+
 		// Only inlet on first iteration.
 		skipSegmentFilter->SetInlet(i == 0);
 		skipSegmentFilter->SetOutlet(i != 0);
@@ -174,27 +149,21 @@ int main(int argc, char* argv[]) {
 		skipSegmentFilter->SetPointId(endPointIds->GetId(i));
 		skipSegmentFilter->SetNumberOfRadialQuads(28);
 		skipSegmentFilter->Update();
-		appendPolyData2->AddInputData(skipSegmentFilter->GetOutput());
+
+		appendTriMesh->AddInputData(skipSegmentFilter->GetOutput());
 
 		vtkSmartPointer<vtkEndCapFilter> endCapFilter = vtkSmartPointer<vtkEndCapFilter>::New();
 		endCapFilter->SetInputData(skipSegmentFilter->GetOutput());
 		endCapFilter->Update();
-		appendPolyData2->AddInputData(endCapFilter->GetOutput());
+
+		appendTriMesh->AddInputData(endCapFilter->GetOutput());
 	}
-	appendPolyData2->Update();
-	appendPolyData3->AddInputData(appendPolyData2->GetOutput());
+	appendTriMesh->Update();
 
-	vtkSmartPointer<vtkTriangleFilter> triangleFilter = vtkSmartPointer<vtkTriangleFilter>::New();
-	triangleFilter->SetInputData(appendPolyData->GetOutput());
-	triangleFilter->Update();
-	appendPolyData3->AddInputData(triangleFilter->GetOutput());
-
-	appendPolyData3->Update();
-
-	vtkSmartPointer<vtkSTLWriter> writer3 = vtkSmartPointer<vtkSTLWriter>::New();
-	writer3->SetInputData(appendPolyData3->GetOutput());
-	writer3->SetFileName("triMeshWithCapsBifurcation.stl");
-	writer3->Write();
+	vtkSmartPointer<vtkSTLWriter> triMeshWriter = vtkSmartPointer<vtkSTLWriter>::New();
+	triMeshWriter->SetInputData(appendTriMesh->GetOutput());
+	triMeshWriter->SetFileName("triMeshWithCapsBifurcation.stl");
+	triMeshWriter->Write();
 
 	return EXIT_SUCCESS;
 }
