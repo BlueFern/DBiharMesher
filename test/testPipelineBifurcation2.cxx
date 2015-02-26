@@ -53,8 +53,14 @@ int main(int argc, char* argv[]) {
 	scalarRadiiToVectorsFilter->SetInputData(resampledCentreline);
 	scalarRadiiToVectorsFilter->Update();
 
+	vtkSmartPointer<vtkIdList> endPoints = vtkSmartPointer<vtkIdList>::New();
+	endPoints->InsertNextId(124);
+	endPoints->InsertNextId(184);
+	endPoints->InsertNextId(426);
+
 	vtkSmartPointer<vtkCentrelinePartitioner> centrelinePartitioner = vtkSmartPointer<vtkCentrelinePartitioner>::New();
 	centrelinePartitioner->SetInputData(scalarRadiiToVectorsFilter->GetOutput());
+	centrelinePartitioner->SetEndPoints(endPoints);
 	centrelinePartitioner->SetPartitionLength(100);
 	centrelinePartitioner->Update();
 
@@ -64,7 +70,7 @@ int main(int argc, char* argv[]) {
 	vtkSmartPointer<vtkAppendPoints> appendPoints = vtkSmartPointer<vtkAppendPoints>::New();
 
 	// Working with centreline partitions 3, 4, 5.
-	for (int i = 3; i < 6; i++)
+	for (int i = 0; i < 3; i++)
 	{
 		vtkSmartPointer<vtkCentrelineToDbiharPatch> dbiharPatchFilter = vtkSmartPointer<vtkCentrelineToDbiharPatch>::New();
 		dbiharPatchFilter->SetInputData(partitionedCentreline);
@@ -72,7 +78,6 @@ int main(int argc, char* argv[]) {
 		dbiharPatchFilter->SetSpineId(i);
 		dbiharPatchFilter->Update();
 
-		// WARNING: This statement is overwriting memory, because the size of lengths is only 3. Here we are writing past 3.
 		lengths[i] = partitionedCentreline->GetCell(i)->GetNumberOfPoints();
 		appendPoints->AddInputData(dbiharPatchFilter->GetOutput());
 	}
@@ -83,9 +88,9 @@ int main(int argc, char* argv[]) {
 	dimensions->InsertNextValue(28);
 
 	// Solving simultaneous equations for each branch sections length.
-	dimensions->InsertNextValue((lengths[3] - lengths[4] + lengths[5]) / 2);
-	dimensions->InsertNextValue((lengths[3] + lengths[4] - lengths[5]) / 2);
-	dimensions->InsertNextValue((-lengths[3] + lengths[4] + lengths[5]) / 2);
+	dimensions->InsertNextValue((lengths[0] - lengths[1] + lengths[2]) / 2);
+	dimensions->InsertNextValue((lengths[0] + lengths[1] - lengths[2]) / 2);
+	dimensions->InsertNextValue((-lengths[0] + lengths[1] + lengths[2]) / 2);
 
 	vtkSmartPointer<vtkPointsToMeshFilter> pointsToMeshFilter = vtkSmartPointer<vtkPointsToMeshFilter>::New();
 	pointsToMeshFilter->SetInputData(appendPoints->GetOutput());
@@ -96,7 +101,7 @@ int main(int argc, char* argv[]) {
 
 	vtkSmartPointer<vtkXMLPolyDataWriter> quadMeshWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
 	quadMeshWriter->SetInputData(pointsToMeshFilter->GetOutput());
-	quadMeshWriter->SetFileName("quadMeshBifurcation1.vtp");
+	quadMeshWriter->SetFileName("quadMeshBifurcation2.vtp");
 	quadMeshWriter->Write();
 
 #if 0
@@ -109,7 +114,7 @@ int main(int argc, char* argv[]) {
 
 	vtkSmartPointer<vtkXMLPolyDataWriter> ECMeshWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
 	ECMeshWriter->SetInputData(dynamicECMesher->GetOutput());
-	ECMeshWriter->SetFileName("ECquadMeshBifurcation1.vtp");
+	ECMeshWriter->SetFileName("ECquadMeshBifurcation2.vtp");
 	ECMeshWriter->Write();
 
 	vtkSmartPointer<vtkSubdivideMeshDynamic> dynamicSMCMesher = vtkSmartPointer<vtkSubdivideMeshDynamic>::New();
@@ -120,7 +125,7 @@ int main(int argc, char* argv[]) {
 
 	vtkSmartPointer<vtkXMLPolyDataWriter> SMCMeshWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
 	SMCMeshWriter->SetInputData(dynamicSMCMesher->GetOutput());
-	SMCMeshWriter->SetFileName("SMCquadMeshBifurcation1.vtp");
+	SMCMeshWriter->SetFileName("SMCquadMeshBifurcation2.vtp");
 	SMCMeshWriter->Write();
 #endif
 
@@ -166,7 +171,7 @@ int main(int argc, char* argv[]) {
 
 	vtkSmartPointer<vtkSTLWriter> triMeshWriter = vtkSmartPointer<vtkSTLWriter>::New();
 	triMeshWriter->SetInputData(appendTriMesh->GetOutput());
-	triMeshWriter->SetFileName("triMeshWithCapsBifurcation1.stl");
+	triMeshWriter->SetFileName("triMeshWithCapsBifurcation2.stl");
 	triMeshWriter->Write();
 
 	return EXIT_SUCCESS;

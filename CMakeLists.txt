@@ -322,7 +322,25 @@ target_link_libraries(testPipelineBifurcation1
 	vtkRescaleUnits
 	vtkCentrelineResampler
 	${testLibs})
-	
+
+add_executable(testPipelineBifurcation2
+	test/showPolyData.cxx
+	test/testPipelineBifurcation2.cxx)
+target_link_libraries(testPipelineBifurcation2
+	vtkScalarRadiiToVectorsFilter
+	vtkFiltersGeometry
+	vtkSubdivideMeshDynamic
+	vtkSubdivideQuadFilter
+	vtkCentrelineToDbiharPatch
+	vtkDbiharPatchFilter
+	vtkCentrelinePartitioner
+	vtkPointsToMeshFilter
+	vtkSkipSegmentFilter
+	vtkEndCapFilter
+	vtkRescaleUnits
+	vtkCentrelineResampler
+	${testLibs})
+
 add_executable(testPipelineFull1
 	test/showPolyData.cxx
 	test/testPipelineFull1.cxx)

@@ -39,8 +39,8 @@ vtkCentrelineToDbiharPatch::vtkCentrelineToDbiharPatch()
 	this->SetNumberOfInputPorts(1);
 	this->SetNumberOfOutputPorts(1);
 
-	this->cEdgeScaling = 4.0;
-	this->yEdgeScaling = 6.0;
+	this->cEdgeScaling = 8.0;
+	this->yEdgeScaling = 4.0;
 }
 
 int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
@@ -87,12 +87,13 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 		vtkIdType ptId = pointIdList->GetId(ptPos);
 		input->GetPointCells(ptId, cells);
 
-		std::cout << "### " << cells->GetNumberOfIds() << std::endl;
-
-		if (cells->GetNumberOfIds() > 2) // Bifurcation point will involve (at least) 3 spines.
+		// TODO: This is a temporary work around here. Bifurcation points need to be stored as a collection of vertices.
+		if (cells->GetNumberOfIds() == 3) // Bifurcation point will involve (at least) 3 spines.
 		{
 			bifurcation = true;
 			bifurcationPos = ptPos;
+			// TODO: Need to go through all points in this spine and make sure there is not more than one bifurcation.
+			// Throw an error (vtkErrorMacro) if this is not the case.
 			//break;
 		}
 	}
@@ -122,7 +123,7 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 	// TODO: This content should appear in the filter documentation.
 
 	// Set Dirichlet and Neumann boundary conditions. Both boundary conditions are stored in a vtkPolyData object.
-	// The Diriclet boundary values are stored as the ordered set of points.
+	// The Dirichlet boundary values are stored as the ordered set of points.
 	// The Neumann boundary values are stored as vectors associated with each corresponding point.
 	// What is called 'spineIds' in this case are just lists of point ids corresponding to segments of centrelines which are to be used for producing surface meshes.
 	// For a non-bifurcating surface mesh there are two list of point ids, one per input patch for the Dbihar filter.
@@ -130,10 +131,10 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 	// The code walks the given point id list starting at the first point. For this centreline point id an arch consisting of points obtained through radius rotation around this centreline point is inserted into the Dirichlet boundary condition point set.
 	// Then the centreline point id list is traversed forward, where for each point id and the corresponding radius vector a point is added into the Dirichlet boundary condition point set.
 	// When the last centreline point id is reached, an arch consisting of points obtained through radius rotation around this centreline point is inserted into the Dirichlet boundary condition point set.
-	// Then the centreline point id list is traversed backcward, where for each point id and the corresponding radius vector a point is added into the Dirichlet boundary condition point set.
+	// Then the centreline point id list is traversed backward, where for each point id and the corresponding radius vector a point is added into the Dirichlet boundary condition point set.
 	// The Neumann boundary conditions are inserted for every point during the centreline point id list traversal. For the arches the direction of the derivatives is parallel to the direction of the centreline at the start and end points of the centreline segment.
 	// For the other two edges of the patch the derivatives are oriented perpendicular to both the vector radius and the corresponding centreline edge. The magnitudes of the derivative vectors are proportional to the radius of the centreline at the given point.
-	// While the code is in the debugg stage, the patches with the initialised boundary conditions are shown for visual verification.
+	// While the code is in the debug stage, the patches with the initialised boundary conditions are shown for visual verification.
 
 	// TODO: Interpolate the derivatives (similar to what we do with radii) between adjacent points. Alternatively, we should try
 	// calculating the derivatives only for the centreline and translating them to both edges. They would still have to be interpolated.
@@ -148,7 +149,7 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 			// Inserting the first (lower edge) arc.
 
 			vtkIdType localId = ptId;
-			std::cout << "LC: " << localId << std::endl;
+			//// std::cout << "LC: " << localId << std::endl;
 
 			double parametricCoord = localId / (double)this->NumberOfRadialQuads;
 
@@ -185,7 +186,8 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 				vtkMath::Normalize(deriv);
 				// Scale derivative vector magnitude.
 				// TODO: Vector magnitude should be proportional to the length of the patch?
-				vtkMath::MultiplyScalar(deriv, cEdgeScaling);
+				double scaling = vtkMath::Norm(r) * cEdgeScaling;
+				vtkMath::MultiplyScalar(deriv, scaling);
 			}
 		}
 		else if(ptId < this->NumberOfRadialQuads + spineLength - 1)
@@ -193,7 +195,7 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 			// Inserting along the "left" patch edge.
 
 			vtkIdType localId = ptId - this->NumberOfRadialQuads;
-			std::cout << "LS: " << localId << std::endl;
+			//// std::cout << "LS: " << localId << std::endl;
 
 			// Translation comes from the first point.
 			input->GetPoint(pointIdList->GetId(localId), p0);
@@ -229,7 +231,7 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 			// Inserting the second (upper edge) arc.
 
 			vtkIdType localId = ptId - this->NumberOfRadialQuads - (spineLength - 1);
-			std::cout << "UC: " << localId << std::endl;
+			//// std::cout << "UC: " << localId << std::endl;
 
 			double parametricCoord = localId / (double)this->NumberOfRadialQuads;
 
@@ -267,7 +269,8 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 				vtkMath::Normalize(deriv);
 				// Scale derivative vector magnitude.
 				// TODO: Vector magnitude should be proportional to the length of the patch?
-				vtkMath::MultiplyScalar(deriv, cEdgeScaling);
+				double scaling = vtkMath::Norm(r) * cEdgeScaling;
+				vtkMath::MultiplyScalar(deriv, scaling);
 			}
 		}
 		else
@@ -276,7 +279,7 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 
 			vtkIdType localId = ptId - this->NumberOfRadialQuads * 2  - (spineLength - 1);
 			localId = std::fabs(localId - (spineLength - 1));
-			std::cout << "RS: " << localId << std::endl;
+			//// std::cout << "RS: " << localId << std::endl;
 
 			// Translation comes from the first point.
 			input->GetPoint(pointIdList->GetId(localId), p0);
@@ -313,11 +316,12 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 
 		patchBoundary->GetPointIds()->InsertNextId(ptId);
 		derivatives->InsertNextTuple(deriv);
+		//// std::cout << "*** Deriv norm: " << vtkMath::Norm(deriv) << std::endl;
 	}
 	patchBoundary->GetPointIds()->InsertNextId(0);
 
 	// Adjust the angles of derivatives for bifurcation segments.
-	if (bifurcation)
+	if(bifurcation)
 	{
 		radiiArray->GetTuple(pointIdList->GetId(bifurcationPos), r);
 		double scaling = vtkMath::Norm(r) * yEdgeScaling;
@@ -358,14 +362,14 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 		{
 			// Fraction of the rotation angle.
 			double currentFraction = ptId / (double)(bifurcationPos - 1);
-			std::cout << "** LB; ptId: " << ptId << ", currentFraction: " << currentFraction << std::endl;
+			//// std::cout << "** LB; ptId: " << ptId << ", currentFraction: " << currentFraction << std::endl;
 
 			// Rotate derivative around radius by fraction of the angle.
 			radiiArray->GetTuple(pointIdList->GetId(ptId), r);
 			vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
 			double angle = -rightAngleNm1 * rotationCoeff * currentFraction;
 			transform->RotateWXYZ(angle, r);
-			std::cout << angle << std::endl;
+			//// std::cout << angle << std::endl;
 
 			double deriv0[3];
 			derivatives->GetTuple(derivId, deriv0);
@@ -376,7 +380,7 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 			double norm1 = norm / cos(vtkMath::RadiansFromDegrees(std::fabs(angle)));
 			double ratio = norm1/norm;
 			vtkMath::MultiplyScalar(deriv1, ratio);
-			std::cout << norm << ", " << norm1 << ", " << ratio << std::endl;
+			//// std::cout << norm << ", " << norm1 << ", " << ratio << std::endl;
 
 			derivatives->SetTuple(derivId, deriv1);
 		}
@@ -386,14 +390,14 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 		{
 			// Fraction of the rotation angle.
 			double currentFraction = ptId / (double)(bifurcationPos - 1);
-			std::cout << "++ LB; ptId: " << ptId << ", currentFraction: " << currentFraction << std::endl;
+			//// std::cout << "++ LB; ptId: " << ptId << ", currentFraction: " << currentFraction << std::endl;
 
 			// Rotate derivative around radius by fraction of the angle.
 			radiiArray->GetTuple(pointIdList->GetId(ptId), r);
 			vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
 			double angle = -leftAngleNm1 * rotationCoeff * currentFraction;
 			transform->RotateWXYZ(angle, r);
-			std::cout << angle << std::endl;
+			//// std::cout << angle << std::endl;
 
 			double deriv0[3];
 			derivatives->GetTuple(derivId, deriv0);
@@ -404,7 +408,7 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 			double norm1 = norm / cos(vtkMath::RadiansFromDegrees(std::fabs(angle)));
 			double ratio = norm1/norm;
 			vtkMath::MultiplyScalar(deriv1, ratio);
-			std::cout << norm << ", " << norm1 << ", " << ratio << std::endl;
+			//// std::cout << norm << ", " << norm1 << ", " << ratio << std::endl;
 
 			derivatives->SetTuple(derivId, deriv1);
 		}
@@ -414,14 +418,14 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 		{
 			// Fraction of the rotation angle.
 			double currentFraction = (spineLength - 1 - ptId) / (double)(spineLength - 1 - bifurcationPos);
-			std::cout << "== LA; ptId: " << ptId << ", currentFraction: " << currentFraction << std::endl;
+			//// std::cout << "== LA; ptId: " << ptId << ", currentFraction: " << currentFraction << std::endl;
 
 			// Rotate derivative around radius by fraction of the angle.
 			radiiArray->GetTuple(pointIdList->GetId(ptId), r);
 			vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
 			double angle = rightAngleNm1 * rotationCoeff * currentFraction;
 			transform->RotateWXYZ(angle, r);
-			std::cout << angle << std::endl;
+			//// std::cout << angle << std::endl;
 
 			double deriv0[3];
 			derivatives->GetTuple(derivId, deriv0);
@@ -432,7 +436,7 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 			double norm1 = norm / cos(vtkMath::RadiansFromDegrees(std::fabs(angle)));
 			double ratio = norm1/norm;
 			vtkMath::MultiplyScalar(deriv1, ratio);
-			std::cout << norm << ", " << norm1 << ", " << ratio << std::endl;
+			//// std::cout << norm << ", " << norm1 << ", " << ratio << std::endl;
 
 			derivatives->SetTuple(derivId, deriv1);
 		}
@@ -442,14 +446,14 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 		{
 			// Fraction of the rotation angle.
 			double currentFraction = (spineLength - 1 - ptId) / (double)(spineLength - 1 - bifurcationPos);
-			std::cout << "-- RA; ptId: " << ptId << ", currentFraction: " << currentFraction << std::endl;
+			//// std::cout << "-- RA; ptId: " << ptId << ", currentFraction: " << currentFraction << std::endl;
 
 			// Rotate derivative around radius by fraction of the angle.
 			radiiArray->GetTuple(pointIdList->GetId(ptId), r);
 			vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
 			double angle = leftAngleNm1 * rotationCoeff * currentFraction;
 			transform->RotateWXYZ(angle, r);
-			std::cout << angle << std::endl;
+			//// std::cout << angle << std::endl;
 
 			double deriv0[3];
 			derivatives->GetTuple(derivId, deriv0);
@@ -460,7 +464,7 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 			double norm1 = norm / cos(vtkMath::RadiansFromDegrees(std::fabs(angle)));
 			double ratio = norm1/norm;
 			vtkMath::MultiplyScalar(deriv1, ratio);
-			std::cout << norm << ", " << norm1 << ", " << ratio << std::endl;
+			//// std::cout << norm << ", " << norm1 << ", " << ratio << std::endl;
 
 			derivatives->SetTuple(derivId, deriv1);
 		}
@@ -477,7 +481,7 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 	// Sanity check.
 	assert(inputPatch->GetNumberOfPoints() == numPtIds);
 
-	showPolyData(inputPatch, NULL, 0.1);
+	showPolyData(inputPatch, NULL, 1.0);
 
 	vtkSmartPointer<vtkDbiharPatchFilter> patchFilter = vtkSmartPointer<vtkDbiharPatchFilter>::New();
 
