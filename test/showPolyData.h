@@ -21,3 +21,8 @@ void showPolyData1(vtkPolyData *input, double vectorScaling = 1.0);
  * Show grids with optional centreline.
  */
 void showGrids(std::vector<vtkSmartPointer<vtkStructuredGrid> > grids, vtkSmartPointer<vtkPolyData> centreline = NULL);
+
+/**
+ * Write polydata in XML format.
+ */
+void writePolyData(vtkPolyData *input, std::string fileName);

@@ -22,6 +22,7 @@
 
 #include <vtkWindowToImageFilter.h>
 #include <vtkPNGWriter.h>
+#include <vtkXMLPolyDataWriter.h>
 
 #include <vtkAxesActor.h>
 #include <vtkTransform.h>
@@ -198,9 +199,11 @@ void showPolyData1(vtkPolyData *input, double vectorScaling)
 
 	inputActor = vtkSmartPointer<vtkActor>::New();
 	inputActor->SetMapper(inputMapper);
-	inputActor->GetProperty()->SetColor(1,0,0);
+	//inputActor->GetProperty()->SetColor(1,0,0);
 	inputActor->GetProperty()->SetLineWidth(1.5);
 	inputActor->GetProperty()->SetPointSize(5);
+	inputActor->GetProperty()->SetRepresentationToSurface();
+	inputActor->GetProperty()->SetEdgeVisibility(true);
 
 	vtkDataArray *vectors = input->GetPointData()->GetVectors();
 	if(vectors != 0)
@@ -340,4 +343,14 @@ void showGrids(std::vector<vtkSmartPointer<vtkStructuredGrid> > grids, vtkSmartP
 	renderWindowInteractor->Start();
 
 	renderWindow->Finalize();
+}
+
+void writePolyData(vtkPolyData *input, std::string fileName)
+{
+	std::clog << "*** Writing file: " << fileName << std::endl;
+	vtkSmartPointer<vtkXMLPolyDataWriter> writer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+	writer->SetInputData(input);
+	writer->SetFileName(fileName.c_str());
+	writer->Update();
+
 }
