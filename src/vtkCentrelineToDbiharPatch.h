@@ -27,6 +27,8 @@ public:
 
 	static vtkCentrelineToDbiharPatch *New();
 
+	vtkSetMacro(ArchDerivScale, double);
+	vtkSetMacro(EdgeDerivScale, double);
 	vtkSetMacro(NumberOfRadialQuads, unsigned int);
 	vtkSetMacro(SpineId, unsigned int);
 
@@ -42,8 +44,8 @@ private:
 
 	unsigned int NumberOfRadialQuads;
 	unsigned int SpineId;
-	double cEdgeScaling;
-	double yEdgeScaling;
+	double ArchDerivScale;
+	double EdgeDerivScale;
 
 };
 

@@ -76,6 +76,8 @@ int main(int argc, char* argv[]) {
 		dbiharPatchFilter->SetInputData(partitionedCentreline);
 		dbiharPatchFilter->SetNumberOfRadialQuads(28);
 		dbiharPatchFilter->SetSpineId(i);
+		dbiharPatchFilter->SetArchDerivScale(3.2);
+		dbiharPatchFilter->SetEdgeDerivScale(4.0);
 		dbiharPatchFilter->Update();
 
 		lengths[i] = partitionedCentreline->GetCell(i)->GetNumberOfPoints();

@@ -6,6 +6,7 @@
 #include <vtkDoubleArray.h>
 #include <vtkUnsignedIntArray.h>
 #include <vtkCell.h>
+#include <vtkCellArray.h>
 #include <vtkGenericCell.h>
 #include <vtkPoints.h>
 #include <vtkPointData.h>
@@ -55,21 +56,35 @@ int main(int argc, char* argv[]) {
 
 	vtkSmartPointer<vtkCentrelinePartitioner> centrelinePartitioner = vtkSmartPointer<vtkCentrelinePartitioner>::New();
 	centrelinePartitioner->SetInputData(scalarRadiiToVectorsFilter->GetOutput());
-	centrelinePartitioner->SetPartitionLength(100);
+	centrelinePartitioner->SetPartitionLength(30);
 	centrelinePartitioner->Update();
+
+#if 0
+	vtkSmartPointer<vtkXMLPolyDataWriter> tmpWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+	tmpWriter->SetFileName("tmpCentreline.vtp");
+	tmpWriter->SetInputData(centrelinePartitioner->GetOutput());
+	tmpWriter->Update();
+
+	std::cout << "Exiting " << __FUNCTION__ << " in " << __FILE__ << ":" << __LINE__ << std::endl;
+	exit(EXIT_FAILURE);
+#endif
 
 	vtkPolyData *partitionedCentreline = centrelinePartitioner->GetOutput();
 
-	double lengths[3] = {0.0};
+	//double lengths[partitionedCentreline->GetLines()->GetNumberOfCells()] = {0.0};
+	std::vector<double> lengths(partitionedCentreline->GetLines()->GetNumberOfCells());
+
 	vtkSmartPointer<vtkAppendPoints> appendPoints = vtkSmartPointer<vtkAppendPoints>::New();
 
 	// Working with centreline partitions 3, 4, 5.
-	for (int i = 3; i < 6; i++)
+	for (int i = 9; i < 12; i++)
 	{
 		vtkSmartPointer<vtkCentrelineToDbiharPatch> dbiharPatchFilter = vtkSmartPointer<vtkCentrelineToDbiharPatch>::New();
 		dbiharPatchFilter->SetInputData(partitionedCentreline);
 		dbiharPatchFilter->SetNumberOfRadialQuads(28);
 		dbiharPatchFilter->SetSpineId(i);
+		dbiharPatchFilter->SetArchDerivScale(3.2);
+		dbiharPatchFilter->SetEdgeDerivScale(4.0);
 		dbiharPatchFilter->Update();
 
 		// WARNING: This statement is overwriting memory, because the size of lengths is only 3. Here we are writing past 3.
@@ -83,9 +98,9 @@ int main(int argc, char* argv[]) {
 	dimensions->InsertNextValue(28);
 
 	// Solving simultaneous equations for each branch sections length.
-	dimensions->InsertNextValue((lengths[3] - lengths[4] + lengths[5]) / 2);
-	dimensions->InsertNextValue((lengths[3] + lengths[4] - lengths[5]) / 2);
-	dimensions->InsertNextValue((-lengths[3] + lengths[4] + lengths[5]) / 2);
+	dimensions->InsertNextValue((lengths[9] - lengths[10] + lengths[11]) / 2);
+	dimensions->InsertNextValue((lengths[9] + lengths[10] - lengths[11]) / 2);
+	dimensions->InsertNextValue((-lengths[9] + lengths[10] + lengths[11]) / 2);
 
 	vtkSmartPointer<vtkPointsToMeshFilter> pointsToMeshFilter = vtkSmartPointer<vtkPointsToMeshFilter>::New();
 	pointsToMeshFilter->SetInputData(appendPoints->GetOutput());

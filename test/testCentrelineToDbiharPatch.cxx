@@ -54,19 +54,19 @@ int main(int argc, char* argv[]) {
 	centrelinePartitioner->SetEndPoints(EndPoints);
 	centrelinePartitioner->Update();
 
-	vtkSmartPointer<vtkCentrelineToDbiharPatch> test = vtkSmartPointer<vtkCentrelineToDbiharPatch>::New();
-	test->SetInputData(centrelinePartitioner->GetOutput());
-	test->SetNumberOfRadialQuads(28);
-	test->SetSpineId(0);
-	test->Update();
+	vtkSmartPointer<vtkCentrelineToDbiharPatch> dbiharPatchFilter = vtkSmartPointer<vtkCentrelineToDbiharPatch>::New();
+	dbiharPatchFilter->SetInputData(centrelinePartitioner->GetOutput());
+	dbiharPatchFilter->SetNumberOfRadialQuads(28);
+	dbiharPatchFilter->SetSpineId(0);
+	dbiharPatchFilter->SetArchDerivScale(3.2);
+	dbiharPatchFilter->SetEdgeDerivScale(4.0);
+	dbiharPatchFilter->Update();
+
 	vtkSmartPointer<vtkPolyDataWriter> writer = vtkSmartPointer<vtkPolyDataWriter>::New();
-	writer->SetInputData(test->GetOutput());
+	writer->SetInputData(dbiharPatchFilter->GetOutput());
 	writer->SetFileName("TEST_.vtk");
 	writer->SetFileTypeToASCII();
 	writer->Write();
-
-
-
 
 	return EXIT_SUCCESS;
 }

@@ -68,6 +68,7 @@ int main(int argc, char* argv[]) {
 	int totalNumberOfPoints = 0;
 
 	endPointIds->InsertNextId(0);
+
 	for (int i = 0; i < resampledVesselCentreline->GetNumberOfCells(); i++)
 	{
 		vtkSmartPointer<vtkGenericCell> cell = vtkSmartPointer<vtkGenericCell>::New();
@@ -85,11 +86,9 @@ int main(int argc, char* argv[]) {
 	scalarRadiiToVectorsFilter->SetInputData(resampledVesselCentreline);
 	scalarRadiiToVectorsFilter->Update();
 
-
-
 	vtkSmartPointer<vtkCentrelinePartitioner> centrelinePartitioner = vtkSmartPointer<vtkCentrelinePartitioner>::New();
 	centrelinePartitioner->SetInputData(scalarRadiiToVectorsFilter->GetOutput());
-	centrelinePartitioner->SetPartitionLength(100);
+	centrelinePartitioner->SetPartitionLength(30);
 	centrelinePartitioner->Update();
 
 	vtkPolyData *partitionedCentreline = centrelinePartitioner->GetOutput();
@@ -114,14 +113,16 @@ int main(int argc, char* argv[]) {
 
 		for (int i = 0; i < 3; i++)
 		{
-			vtkSmartPointer<vtkCentrelineToDbiharPatch> test = vtkSmartPointer<vtkCentrelineToDbiharPatch>::New();
-			test->SetInputData(partitionedCentreline);
-			test->SetNumberOfRadialQuads(28);
-			test->SetSpineId(k);
-			test->Update();
+			vtkSmartPointer<vtkCentrelineToDbiharPatch> dbiharPatchFilter = vtkSmartPointer<vtkCentrelineToDbiharPatch>::New();
+			dbiharPatchFilter->SetInputData(partitionedCentreline);
+			dbiharPatchFilter->SetNumberOfRadialQuads(28);
+			dbiharPatchFilter->SetSpineId(k);
+			dbiharPatchFilter->SetArchDerivScale(3.2);
+			dbiharPatchFilter->SetEdgeDerivScale(4.1);
+			dbiharPatchFilter->Update();
 
 			lengths[i] = partitionedCentreline->GetCell(k)->GetNumberOfPoints();
-			appendPoints->AddInputData(test->GetOutput());
+			appendPoints->AddInputData(dbiharPatchFilter->GetOutput());
 
 			k++;
 
@@ -172,6 +173,10 @@ int main(int argc, char* argv[]) {
 
 	}
 	appendPolyData->Update();
+
+	std::cout << "Showing the whole thing..." << std::endl;
+
+	showPolyData1(appendPolyData->GetOutput());
 
 	vtkSmartPointer<vtkXMLPolyDataWriter> writer0 = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
 	writer0->SetInputData(appendPolyData->GetOutput());
