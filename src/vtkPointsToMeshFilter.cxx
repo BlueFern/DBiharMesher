@@ -29,9 +29,12 @@ vtkPointsToMeshFilter::vtkPointsToMeshFilter()
 	// but in this case it indicates memory problems. This issue needs to be tested further.
 	// this->Dimensions = vtkSmartPointer<vtkUnsignedIntArray>::New(); // Error.
 
+#if 0
 	vtkSmartPointer<vtkCallbackCommand> progressCallback = vtkSmartPointer<vtkCallbackCommand>::New();
 	progressCallback->SetCallback(this->ProgressFunction);
 	this->AddObserver(vtkCommand::ProgressEvent, progressCallback);
+#endif
+
 }
 
 int vtkPointsToMeshFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkInformationVector **inputVector, vtkInformationVector *outputVector)

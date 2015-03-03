@@ -22,6 +22,7 @@
 #include <vtkAppendPolyData.h>
 #include <vtkTriangleFilter.h>
 #include <vtkXMLStructuredGridReader.h>
+
 #include "showPolyData.h"
 #include "vtkDbiharStatic.h"
 #include "vtkRescaleUnits.h"
@@ -52,7 +53,6 @@ int main(int argc, char* argv[]) {
 	rescaleUnits->Update();
 
 	vtkSmartPointer<vtkCentrelineResampler> centrelineSegmentSource = vtkSmartPointer<vtkCentrelineResampler>::New();
-	centrelineSegmentSource->DebugOn();
 	centrelineSegmentSource->SetEdgeLength(vtkDbiharStatic::EC_AXIAL * 4);
 	centrelineSegmentSource->SetInputData(rescaleUnits->GetOutput());
 	centrelineSegmentSource->Update();
@@ -118,7 +118,7 @@ int main(int argc, char* argv[]) {
 			dbiharPatchFilter->SetNumberOfRadialQuads(28);
 			dbiharPatchFilter->SetSpineId(k);
 			dbiharPatchFilter->SetArchDerivScale(3.2);
-			dbiharPatchFilter->SetEdgeDerivScale(4.1);
+			dbiharPatchFilter->SetEdgeDerivScale(4.0);
 			dbiharPatchFilter->Update();
 
 			lengths[i] = partitionedCentreline->GetCell(k)->GetNumberOfPoints();
@@ -183,7 +183,7 @@ int main(int argc, char* argv[]) {
 	writer0->SetFileName("quadMeshFull.vtp");
 	writer0->Write();
 
-#if 0 // Very Expensive to run.
+#if 1 // Very Expensive to run.
 
 	vtkSmartPointer<vtkSubdivideMeshDynamic> subdivideMeshDynamic = vtkSmartPointer<vtkSubdivideMeshDynamic>::New();
 	subdivideMeshDynamic->SetInputData(appendPolyData->GetOutput());

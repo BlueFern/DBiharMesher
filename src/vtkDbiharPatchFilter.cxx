@@ -48,9 +48,12 @@ vtkDbiharPatchFilter::vtkDbiharPatchFilter()
 	this->Tol = 1e-3;
 	this->ITCG = 10;
 
+#if 0
 	vtkSmartPointer<vtkCallbackCommand> progressCallback = vtkSmartPointer<vtkCallbackCommand>::New();
 	progressCallback->SetCallback(this->ProgressFunction);
 	this->AddObserver(vtkCommand::ProgressEvent, progressCallback);
+#endif
+
 }
 
 int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkInformationVector **inputVector, vtkInformationVector *outputVector)

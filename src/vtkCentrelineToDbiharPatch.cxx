@@ -27,8 +27,31 @@
 #include "vtkDbiharPatchFilter.h"
 #include "showPolyData.h"
 
-vtkStandardNewMacro(vtkCentrelineToDbiharPatch);
+double expBase = 1.6;
 
+double inputMap[] = {60, 7.0};
+
+double scaleMap(double input, double *inputMap)
+{
+	double input1 = inputMap[1] / inputMap[0] * std::abs(input);
+
+	double expOut1 = std::pow(expBase, input1) - 1;
+
+	double exp0ut2 = expOut1 / std::pow(expBase, inputMap[1]);
+
+	return exp0ut2;
+}
+
+#if 0
+double abc0[] = {0.000493, 0, 0};
+
+double quadraticFunction(double x, double *abc)
+{
+	return abc[0] * x * x + abc[1] * x + abc[2];
+}
+#endif
+
+vtkStandardNewMacro(vtkCentrelineToDbiharPatch);
 
 #if 1
 #define SSTR( x ) dynamic_cast< std::ostringstream & >( ( std::ostringstream() << std::dec << x ) ).str()
@@ -336,7 +359,9 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 	// Adjust the angles of derivatives for bifurcation segments.
 	if(bifurcation)
 	{
-		radiiArray->GetTuple(pointIdList->GetId(bifurcationPos), r);
+
+		// TODO: Perhaps this constant needs to be a parameter?
+		const double rotationCoeff = 0.1;
 
 		double derivNm1[3];
 		double derivNp1[3];
@@ -348,13 +373,19 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 		// Take the mean of those vectors.
 		vtkMath::Add(derivNm1, derivNp1, derivN);
 		vtkMath::Normalize(derivN);
-		vtkMath::MultiplyScalar(derivN, vtkMath::Norm(derivatives->GetTuple(rightBifurcationDerivId)));
+		// vtkMath::MultiplyScalar(derivN, vtkMath::Norm(derivatives->GetTuple(rightBifurcationDerivId)));
 		// Store the scaled derivative vector.
-		derivatives->SetTuple(rightBifurcationDerivId, derivN);
+		// derivatives->SetTuple(rightBifurcationDerivId, derivN);
 
 		// Figure out the angles between the vectors at bifurcations and the adjacent vectors.
 		double rightAngleNm1 = vtkMath::DegreesFromRadians(vtkDbiharStatic::AngleBetweenVectors(derivNm1, derivN));
 		double rightAngleNp1 = vtkMath::DegreesFromRadians(vtkDbiharStatic::AngleBetweenVectors(derivNp1, derivN));
+
+		//double tmpR = ((rightAngleNm1 + rightAngleNp1) * rotationCoeff) / 2.0;
+		//double scalingR = quadraticFunction((rightAngleNm1 + rightAngleNp1) / 2.0, abc0);
+		//double scalingR = scaleMap((rightAngleNm1 + rightAngleNp1) / 2.0, inputMap);
+		vtkMath::MultiplyScalar(derivN, vtkMath::Norm(derivatives->GetTuple(rightBifurcationDerivId)) + vtkMath::Norm(derivatives->GetTuple(rightBifurcationDerivId))); // * scalingR); // * this->EdgeDerivScale);
+		derivatives->SetTuple(rightBifurcationDerivId, derivN);
 
 		// For the "right" bifurcation point get the adjacent vectors.
 		derivatives->GetTuple(leftBifurcationDerivId - 1, derivNp1);
@@ -362,16 +393,29 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 		// Take the mean of those vectors.
 		vtkMath::Add(derivNm1, derivNp1, derivN);
 		vtkMath::Normalize(derivN);
-		vtkMath::MultiplyScalar(derivN, vtkMath::Norm(derivatives->GetTuple(leftBifurcationDerivId)));
+		// vtkMath::MultiplyScalar(derivN, vtkMath::Norm(derivatives->GetTuple(leftBifurcationDerivId)));
 		// Store the scaled derivative vector.
-		derivatives->SetTuple(leftBifurcationDerivId, derivN);
+		// derivatives->SetTuple(leftBifurcationDerivId, derivN);
 
 		// Figure out the angles between the vectors at bifurcations and the adjacent vectors.
 		double leftAngleNm1 = vtkMath::DegreesFromRadians(vtkDbiharStatic::AngleBetweenVectors(derivNm1, derivN));
 		double leftAngleNp1 = vtkMath::DegreesFromRadians(vtkDbiharStatic::AngleBetweenVectors(derivNp1, derivN));
 
-		// TODO: This constant is to be examined closer.
-		double rotationCoeff = 0.1;
+		//double tmpL = ((leftAngleNm1 + leftAngleNp1) * rotationCoeff) / 2.0;
+		//double scalingL = quadraticFunction((leftAngleNm1 + leftAngleNp1) / 2.0, abc0);
+		//double scalingL = scaleMap((leftAngleNm1 + leftAngleNp1) / 2.0, inputMap);
+		vtkMath::MultiplyScalar(derivN, vtkMath::Norm(derivatives->GetTuple(leftBifurcationDerivId)) + vtkMath::Norm(derivatives->GetTuple(leftBifurcationDerivId))); // * scalingL); // * this->EdgeDerivScale);
+		derivatives->SetTuple(leftBifurcationDerivId, derivN);
+
+		//std::cout << "**************** tmpR: " << tmpR << ", tmpL: " << tmpL << std::endl;
+		//std::cout << "******************** scalingR: " << scalingR << ", scalingL: " << scalingL << std::endl;
+
+		std::cout << "*** " << this->SpineId << std::endl;
+		std::cout << rightAngleNm1 << ", " << rightAngleNp1 << ", " << leftAngleNm1 << ", " << leftAngleNp1 << std::endl;
+
+		radiiArray->GetTuple(pointIdList->GetId(bifurcationPos), r);
+
+		double m = 4.0 / 60.0;
 
 		// Traversing the "right" edge of the patch from bifurcation backwards.
 		for (int ptId = bifurcationPos - 1, derivId = rightBifurcationDerivId - 1; ptId > 0; ptId--, derivId--)
@@ -383,7 +427,9 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 			// Rotate derivative around radius by fraction of the angle.
 			radiiArray->GetTuple(pointIdList->GetId(ptId), r);
 			vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
-			double angle = -rightAngleNm1 * rotationCoeff * currentFraction;
+			// double angle = -rightAngleNm1 * rotationCoeff * currentFraction;
+			double angle = -rightAngleNm1 * currentFraction;
+			angle += -rightAngleNm1 * m * currentFraction;
 			transform->RotateWXYZ(angle, r);
 			//// std::cout << angle << std::endl;
 
@@ -392,11 +438,16 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 			double deriv1[3];
 			transform->TransformPoint(deriv0, deriv1);
 
-			double norm = vtkMath::Norm(deriv1);
-			double norm1 = norm / cos(vtkMath::RadiansFromDegrees(std::fabs(angle)));
-			double ratio = norm1/norm;
-			vtkMath::MultiplyScalar(deriv1, ratio);
+			//double norm = vtkMath::Norm(deriv1);
+			//double norm1 = norm / cos(vtkMath::RadiansFromDegrees(std::fabs(angle)));
+			//double ratio = norm1/norm;
+			//vtkMath::MultiplyScalar(deriv1, ratio);
 			//// std::cout << norm << ", " << norm1 << ", " << ratio << std::endl;
+			//std::cout << "ratio: " << ratio << ", angle: " << angle << std::endl;
+			//std::cout << "angle: " << angle << std::endl;
+
+			vtkMath::Normalize(deriv1);
+			vtkMath::MultiplyScalar(deriv1, vtkMath::Norm(deriv0) + vtkMath::Norm(deriv0) * scaleMap(angle, inputMap));
 
 			derivatives->SetTuple(derivId, deriv1);
 		}
@@ -411,7 +462,9 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 			// Rotate derivative around radius by fraction of the angle.
 			radiiArray->GetTuple(pointIdList->GetId(ptId), r);
 			vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
-			double angle = -leftAngleNm1 * rotationCoeff * currentFraction;
+			// double angle = -leftAngleNm1 * rotationCoeff * currentFraction;
+			double angle = -leftAngleNm1 * currentFraction;
+			angle += -leftAngleNm1 * m * currentFraction;
 			transform->RotateWXYZ(angle, r);
 			//// std::cout << angle << std::endl;
 
@@ -420,11 +473,16 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 			double deriv1[3];
 			transform->TransformPoint(deriv0, deriv1);
 
-			double norm = vtkMath::Norm(deriv1);
-			double norm1 = norm / cos(vtkMath::RadiansFromDegrees(std::fabs(angle)));
-			double ratio = norm1/norm;
-			vtkMath::MultiplyScalar(deriv1, ratio);
+			//double norm = vtkMath::Norm(deriv1);
+			//double norm1 = norm / cos(vtkMath::RadiansFromDegrees(std::fabs(angle)));
+			//double ratio = norm1/norm;
+			//vtkMath::MultiplyScalar(deriv1, ratio);
 			//// std::cout << norm << ", " << norm1 << ", " << ratio << std::endl;
+			//std::cout << "ratio: " << ratio << ", angle: " << angle << std::endl;
+			//std::cout << "angle: " << angle << std::endl;
+
+			vtkMath::Normalize(deriv1);
+			vtkMath::MultiplyScalar(deriv1, vtkMath::Norm(deriv0) + vtkMath::Norm(deriv0) * scaleMap(angle, inputMap));
 
 			derivatives->SetTuple(derivId, deriv1);
 		}
@@ -439,7 +497,9 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 			// Rotate derivative around radius by fraction of the angle.
 			radiiArray->GetTuple(pointIdList->GetId(ptId), r);
 			vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
-			double angle = rightAngleNm1 * rotationCoeff * currentFraction;
+			// double angle = rightAngleNm1 * rotationCoeff * currentFraction;
+			double angle = rightAngleNm1 * currentFraction;
+			angle += rightAngleNm1 * m * currentFraction;
 			transform->RotateWXYZ(angle, r);
 			//// std::cout << angle << std::endl;
 
@@ -448,11 +508,16 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 			double deriv1[3];
 			transform->TransformPoint(deriv0, deriv1);
 
-			double norm = vtkMath::Norm(deriv1);
-			double norm1 = norm / cos(vtkMath::RadiansFromDegrees(std::fabs(angle)));
-			double ratio = norm1/norm;
-			vtkMath::MultiplyScalar(deriv1, ratio);
+			//double norm = vtkMath::Norm(deriv1);
+			//double norm1 = norm / cos(vtkMath::RadiansFromDegrees(std::fabs(angle)));
+			//double ratio = norm1/norm;
+			//vtkMath::MultiplyScalar(deriv1, ratio);
 			//// std::cout << norm << ", " << norm1 << ", " << ratio << std::endl;
+			//std::cout << "ratio: " << ratio << ", angle: " << angle << std::endl;
+			//std::cout << "angle: " << angle << std::endl;
+
+			vtkMath::Normalize(deriv1);
+			vtkMath::MultiplyScalar(deriv1, vtkMath::Norm(deriv0) + vtkMath::Norm(deriv0) * scaleMap(angle, inputMap));
 
 			derivatives->SetTuple(derivId, deriv1);
 		}
@@ -467,7 +532,9 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 			// Rotate derivative around radius by fraction of the angle.
 			radiiArray->GetTuple(pointIdList->GetId(ptId), r);
 			vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
-			double angle = leftAngleNm1 * rotationCoeff * currentFraction;
+			// double angle = leftAngleNm1 * rotationCoeff * currentFraction;
+			double angle = leftAngleNm1 * currentFraction;
+			angle += leftAngleNm1 * m * currentFraction;
 			transform->RotateWXYZ(angle, r);
 			//// std::cout << angle << std::endl;
 
@@ -476,11 +543,16 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 			double deriv1[3];
 			transform->TransformPoint(deriv0, deriv1);
 
-			double norm = vtkMath::Norm(deriv1);
-			double norm1 = norm / cos(vtkMath::RadiansFromDegrees(std::fabs(angle)));
-			double ratio = norm1/norm;
-			vtkMath::MultiplyScalar(deriv1, ratio);
+			//double norm = vtkMath::Norm(deriv1);
+			//double norm1 = norm / cos(vtkMath::RadiansFromDegrees(std::fabs(angle)));
+			//double ratio = norm1/norm;
+			//vtkMath::MultiplyScalar(deriv1, ratio);
 			//// std::cout << norm << ", " << norm1 << ", " << ratio << std::endl;
+			//std::cout << "ratio: " << ratio << ", angle: " << angle << std::endl;
+			//std::cout << "angle: " << angle << std::endl;
+
+			vtkMath::Normalize(deriv1);
+			vtkMath::MultiplyScalar(deriv1, vtkMath::Norm(deriv0) + vtkMath::Norm(deriv0) * scaleMap(angle, inputMap));
 
 			derivatives->SetTuple(derivId, deriv1);
 		}
