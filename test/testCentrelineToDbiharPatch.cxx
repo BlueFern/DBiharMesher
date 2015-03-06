@@ -28,7 +28,6 @@
 #include "vtkCentrelinePartitioner.h"
 #include "vtkScalarRadiiToVectorsFilter.h"
 
-#include "vtkCentrelineData.h"
 #include "wrapDbiharConfig.h"
 
 int main(int argc, char* argv[]) {

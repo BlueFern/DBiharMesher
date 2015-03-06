@@ -73,6 +73,17 @@ add_library(vtkDbiharStatic src/vtkDbiharStatic.cxx)
 target_link_libraries(vtkDbiharStatic
 	vtkCommonCore)
 
+add_library(vtkCentrelineResampler src/vtkCentrelineResampler.cxx)
+target_link_libraries(vtkCentrelineResampler
+	vtkDbiharStatic
+	vtkFiltersHybrid)
+
+add_library(vtkCentrelinePartitioner src/vtkCentrelinePartitioner.cxx)
+target_link_libraries(vtkCentrelinePartitioner
+	vtkDbiharStatic
+	vtkFiltersExtraction
+	vtkFiltersHybrid)
+
 add_library(vtkDbiharPatchFilter src/vtkDbiharPatchFilter.cxx)
 target_link_libraries(vtkDbiharPatchFilter
 	dbihar
@@ -83,19 +94,9 @@ target_link_libraries(vtkScalarRadiiToVectorsFilter
 	vtkDbiharStatic
 	vtkFiltersHybrid)
 
-add_library(vtkEndPointIdsToDbiharPatchFilter src/vtkEndPointIdsToDbiharPatchFilter.cxx)
-target_link_libraries(vtkEndPointIdsToDbiharPatchFilter
-	vtkFiltersHybrid)
-
 add_library(vtkPointsToMeshFilter src/vtkPointsToMeshFilter.cxx)
 target_link_libraries(vtkPointsToMeshFilter
 	vtkDbiharStatic
-	vtkFiltersHybrid)
-
-add_library(vtkCentrelinePartitioner src/vtkCentrelinePartitioner.cxx)
-target_link_libraries(vtkCentrelinePartitioner
-	vtkDbiharStatic
-	vtkFiltersExtraction
 	vtkFiltersHybrid)
 
 add_library(vtkEndCapFilter src/vtkEndCapFilter.cxx)
@@ -126,10 +127,6 @@ add_library(vtkRescaleUnits src/vtkRescaleUnits.cxx)
 target_link_libraries(vtkRescaleUnits
 	vtkFiltersHybrid)
 	
-add_library(vtkCentrelineResampler src/vtkCentrelineResampler.cxx)
-target_link_libraries(vtkCentrelineResampler
-	vtkFiltersHybrid)
-
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/test)
 
@@ -185,45 +182,21 @@ target_link_libraries(testWrapDbihar6
 	vtkDbiharPatchFilter
 	${testLibs})
 
-add_executable(testCentrelineData1
-	src/vtkCentrelineData.cxx
+add_executable(testCentrelineResampler
+	src/vtkCentrelineResampler.cxx
 	test/showPolyData.cxx
-	test/testCentrelineData1.cxx)
-target_link_libraries(testCentrelineData1
-	vtkDbiharPatchFilter
+	test/testCentrelineResampler.cxx)
+target_link_libraries(testCentrelineResampler
+	vtkCentrelineResampler
 	${testLibs})
 
 add_executable(testScalarRadiiToVectorsFilter1
-	src/vtkCentrelineData.cxx
+	src/vtkCentrelineResampler.cxx
 	test/showPolyData.cxx
 	test/testScalarRadiiToVectorsFilter1.cxx)
 target_link_libraries(testScalarRadiiToVectorsFilter1
 	vtkDbiharPatchFilter
 	vtkScalarRadiiToVectorsFilter
-	${testLibs})
-
-add_executable(testEndPointIdsToDbiharPatchFilter1
-	src/vtkCentrelineData.cxx
-	test/showPolyData.cxx
-	test/testEndPointIdsToDbiharPatchFilter1.cxx)
-target_link_libraries(testEndPointIdsToDbiharPatchFilter1
-	vtkDbiharStatic
-	vtkFiltersGeometry
-	vtkScalarRadiiToVectorsFilter
-	vtkEndPointIdsToDbiharPatchFilter
-	vtkDbiharPatchFilter
-	${testLibs})
-
-add_executable(testEndPointIdsToDbiharPatchFilter2
-	src/vtkCentrelineData.cxx
-	test/showPolyData.cxx
-	test/testEndPointIdsToDbiharPatchFilter2.cxx)
-target_link_libraries(testEndPointIdsToDbiharPatchFilter2
-	vtkDbiharStatic
-	vtkFiltersGeometry
-	vtkScalarRadiiToVectorsFilter
-	vtkEndPointIdsToDbiharPatchFilter
-	vtkDbiharPatchFilter
 	${testLibs})
 
 add_executable(testPointsToMeshFilter1
@@ -234,8 +207,9 @@ target_link_libraries(testPointsToMeshFilter1
 	${testLibs})
 
 add_executable(testCentrelinePartitioner1
-	src/vtkCentrelineData.cxx
+	src/vtkCentrelineResampler.cxx
 	src/vtkCentrelinePartitioner.cxx
+	test/showPolyData.cxx
 	test/testCentrelinePartitioner1.cxx)
 target_link_libraries(testCentrelinePartitioner1
 	vtkCentrelinePartitioner

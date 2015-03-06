@@ -14,7 +14,6 @@
 #include "showPolyData.h"
 #include "vtkDbiharStatic.h"
 #include "vtkRescaleUnits.h"
-#include "vtkCentrelineData.h"
 #include "vtkCentrelinePartitioner.h"
 #include "vtkScalarRadiiToVectorsFilter.h"
 #include "vtkCentrelineToDbiharPatch.h"
