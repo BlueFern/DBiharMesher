@@ -1,13 +1,6 @@
-#include <vtkMath.h>
 #include <vtkSmartPointer.h>
 #include <vtkPolyData.h>
 #include <vtkGenericDataObjectReader.h>
-#include <vtkPolyDataMapper.h>
-#include <vtkActor.h>
-#include <vtkRenderWindow.h>
-#include <vtkRenderer.h>
-#include <vtkRenderWindowInteractor.h>
-#include <vtkInteractorStyleSwitch.h>
 #include <vtkDoubleArray.h>
 #include <vtkUnsignedIntArray.h>
 #include <vtkCell.h>

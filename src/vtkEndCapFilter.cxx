@@ -48,8 +48,6 @@ int vtkEndCapFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkInforma
 	dbhInputPatch->SetPoints(dbhInputPoints);
 	dbhInputPatch->SetLines(dbhInputBoundaries);
 
-	dbhInputPatch->Print(std::cout);
-
 	vtkSmartPointer<vtkDbiharPatchFilter> patchFilter = vtkSmartPointer<vtkDbiharPatchFilter>::New();
 	// Set the bounds of the UV space.
 	patchFilter->SetA(0.0);
