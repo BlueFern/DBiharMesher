@@ -1,17 +1,13 @@
-#include <map>
-
+#include <vtkMath.h>
 #include <vtkSmartPointer.h>
 #include <vtkPolyData.h>
 #include <vtkGenericDataObjectReader.h>
-#include <vtkMath.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkActor.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderer.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkInteractorStyleSwitch.h>
-#include <vtkXMLPolyDataWriter.h>
-#include <vtkSTLWriter.h>
 #include <vtkDoubleArray.h>
 #include <vtkUnsignedIntArray.h>
 #include <vtkCell.h>
@@ -21,7 +17,6 @@
 #include <vtkAppendPoints.h>
 #include <vtkAppendPolyData.h>
 #include <vtkTriangleFilter.h>
-#include <vtkXMLStructuredGridReader.h>
 
 #include "showPolyData.h"
 #include "vtkDbiharStatic.h"
@@ -39,7 +34,7 @@
 
 int main(int argc, char* argv[]) {
 
-	std::cout << "Starting " << __FILE__ << std::endl;
+	std::clog << getTimeStamp() << ": Starting " << __FILE__ << std::endl;
 
 	vtkSmartPointer<vtkGenericDataObjectReader> vesselCentrelineReader = vtkSmartPointer<vtkGenericDataObjectReader>::New();
 	vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/centreline.vtk").c_str());
@@ -49,7 +44,7 @@ int main(int argc, char* argv[]) {
 
 	vtkSmartPointer<vtkRescaleUnits> rescaleUnits = vtkSmartPointer<vtkRescaleUnits>::New();
 	rescaleUnits->SetInputData(vesselCentreline);
-	rescaleUnits->SetScale(1000); // mm to µm
+	rescaleUnits->SetScale(1000); // Convert from mm to µm.
 	rescaleUnits->Update();
 
 	vtkSmartPointer<vtkCentrelineResampler> centrelineSegmentSource = vtkSmartPointer<vtkCentrelineResampler>::New();
@@ -59,28 +54,7 @@ int main(int argc, char* argv[]) {
 
 	vtkPolyData *resampledVesselCentreline = centrelineSegmentSource->GetOutput();
 	vtkSmartPointer<vtkDoubleArray> scalars = vtkSmartPointer<vtkDoubleArray>::New();
-	vtkSmartPointer<vtkIdList> endPointIds = vtkSmartPointer<vtkIdList>::New();
-	vtkSmartPointer<vtkIdList> startingCell = vtkSmartPointer<vtkIdList>::New();
 	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
-
-	int check1 = resampledVesselCentreline->GetNumberOfCells();
-	int lastId = 0;
-	int totalNumberOfPoints = 0;
-
-	endPointIds->InsertNextId(0);
-
-	for (int i = 0; i < resampledVesselCentreline->GetNumberOfCells(); i++)
-	{
-		vtkSmartPointer<vtkGenericCell> cell = vtkSmartPointer<vtkGenericCell>::New();
-		resampledVesselCentreline->GetCell(i, cell);
-		int localEndId = cell->GetPointId(cell->GetNumberOfPoints() - 1);
-
-		resampledVesselCentreline->GetPointCells(localEndId, startingCell);
-		if (startingCell->GetNumberOfIds() == 1)
-		{
-			endPointIds->InsertNextId(localEndId);
-		}
-	}
 
 	vtkSmartPointer<vtkScalarRadiiToVectorsFilter> scalarRadiiToVectorsFilter = vtkSmartPointer<vtkScalarRadiiToVectorsFilter>::New();
 	scalarRadiiToVectorsFilter->SetInputData(resampledVesselCentreline);
@@ -93,14 +67,14 @@ int main(int argc, char* argv[]) {
 
 	vtkPolyData *partitionedCentreline = centrelinePartitioner->GetOutput();
 
-	vtkSmartPointer<vtkAppendPolyData> appendPolyData = vtkSmartPointer<vtkAppendPolyData>::New();
+	vtkSmartPointer<vtkAppendPolyData> fullMeshJoiner = vtkSmartPointer<vtkAppendPolyData>::New();
 
 	bool straightSection = true;
-	int k = 0;
+	int cellId = 0;
 
 	while (true)
 	{
-		if (k >= partitionedCentreline->GetNumberOfCells())
+		if (cellId >= partitionedCentreline->GetNumberOfCells())
 		{
 			break;
 		}
@@ -111,36 +85,37 @@ int main(int argc, char* argv[]) {
 		double lengths[3], p0[3], p1[3] = {0.0};
 		straightSection = false;
 
+		// TODO: This code will need to be reworked when bifurcation points in centrelines are recorded as vertices.
 		for (int i = 0; i < 3; i++)
 		{
 			vtkSmartPointer<vtkCentrelineToDbiharPatch> dbiharPatchFilter = vtkSmartPointer<vtkCentrelineToDbiharPatch>::New();
 			dbiharPatchFilter->SetInputData(partitionedCentreline);
 			dbiharPatchFilter->SetNumberOfRadialQuads(28);
-			dbiharPatchFilter->SetSpineId(k);
+			dbiharPatchFilter->SetSpineId(cellId);
 			dbiharPatchFilter->SetArchDerivScale(3.2);
 			dbiharPatchFilter->SetEdgeDerivScale(4.0);
 			dbiharPatchFilter->Update();
 
-			lengths[i] = partitionedCentreline->GetCell(k)->GetNumberOfPoints();
+			lengths[i] = partitionedCentreline->GetCell(cellId)->GetNumberOfPoints();
 			appendPoints->AddInputData(dbiharPatchFilter->GetOutput());
 
-			k++;
+			cellId++;
 
-			if (i == 1) //check if just straight, if so break.
+			if (i == 1) // Check if processing a straight segment, if so break.
 			{
 				vtkSmartPointer<vtkGenericCell> cell1 = vtkSmartPointer<vtkGenericCell>::New();
 				vtkSmartPointer<vtkGenericCell> cell2 = vtkSmartPointer<vtkGenericCell>::New();
-				partitionedCentreline->GetCell(k - 2, cell1);
+				partitionedCentreline->GetCell(cellId - 2, cell1);
 
 				previousPoints = cell1->GetPoints();
-				partitionedCentreline->GetCell(k - 1, cell2);
+				partitionedCentreline->GetCell(cellId - 1, cell2);
 				points = cell2->GetPoints();
 				int tmp = points->GetNumberOfPoints() - 1;
 				int tmp2 = previousPoints->GetNumberOfPoints() - 1;
 				previousPoints->GetPoint(0, p0);
 				points->GetPoint(tmp, p1);
 
-				if (p0[0] == p1[0] && p0[1] == p1[1] && p0[2] == p1[2]) // TODO: Check
+				if (p0[0] == p1[0] && p0[1] == p1[1] && p0[2] == p1[2]) // TODO: Check // TODO: Check what?
 				{
 					straightSection = true;
 					break;
@@ -169,21 +144,16 @@ int main(int argc, char* argv[]) {
 		pointsToMeshFilter->SetInputData(appendPoints->GetOutput());
 		pointsToMeshFilter->SetDimensions(dimensions);
 		pointsToMeshFilter->Update();
-		appendPolyData->AddInputData(pointsToMeshFilter->GetOutput());
+		fullMeshJoiner->AddInputData(pointsToMeshFilter->GetOutput());
 
 	}
-	appendPolyData->Update();
+	fullMeshJoiner->Update();
 
-	std::cout << "Showing the whole thing..." << std::endl;
+	showPolyData1(fullMeshJoiner->GetOutput());
 
-	showPolyData1(appendPolyData->GetOutput());
+	writePolyData(fullMeshJoiner->GetOutput(), "quadMeshFull.vtp");
 
-	vtkSmartPointer<vtkXMLPolyDataWriter> writer0 = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-	writer0->SetInputData(appendPolyData->GetOutput());
-	writer0->SetFileName("quadMeshFull.vtp");
-	writer0->Write();
-
-#if 1 // Very Expensive to run.
+#if 0 // Very Expensive to run.
 
 	vtkSmartPointer<vtkSubdivideMeshDynamic> subdivideMeshDynamic = vtkSmartPointer<vtkSubdivideMeshDynamic>::New();
 	subdivideMeshDynamic->SetInputData(appendPolyData->GetOutput());
@@ -191,11 +161,7 @@ int main(int argc, char* argv[]) {
 	subdivideMeshDynamic->SetLength(vtkDbiharStatic::EC_AXIAL);
 	subdivideMeshDynamic->Update();
 
-	vtkSmartPointer<vtkXMLPolyDataWriter> writer1 = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-	writer1->SetInputData(subdivideMeshDynamic->GetOutput());
-	writer1->SetFileName("ECquadMeshFull.vtp");
-	writer1->Write();
-
+	writePolyData(subdivideMeshDynamic->GetOutput(), "ECquadMeshFull.vtp");
 
 	vtkSmartPointer<vtkSubdivideMeshDynamic> subdivideMeshDynamic2 = vtkSmartPointer<vtkSubdivideMeshDynamic>::New();
 	subdivideMeshDynamic2->SetInputData(appendPolyData->GetOutput());
@@ -203,50 +169,69 @@ int main(int argc, char* argv[]) {
 	subdivideMeshDynamic2->SetLength(vtkDbiharStatic::SMC_AXIAL);
 	subdivideMeshDynamic2->Update();
 
-	vtkSmartPointer<vtkXMLPolyDataWriter> writer2 = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-	writer2->SetInputData(subdivideMeshDynamic2->GetOutput());
-	writer2->SetFileName("SMCquadMeshFull.vtp");
-	writer2->Write();
+	writePolyData(subdivideMeshDynamic2->GetOutput(), "SMCquadMeshFull.vtp");
 
 #endif
 
-	vtkSmartPointer<vtkAppendPolyData> appendPolyData2 = vtkSmartPointer<vtkAppendPolyData>::New();
-	vtkSmartPointer<vtkAppendPolyData> appendPolyData3 = vtkSmartPointer<vtkAppendPolyData>::New();
-	appendPolyData2->AddInputData(appendPolyData->GetOutput());
+	vtkSmartPointer<vtkIdList> endPointIds = vtkSmartPointer<vtkIdList>::New();
+	endPointIds->InsertNextId(0);
+	for (int i = 0; i < resampledVesselCentreline->GetNumberOfCells(); i++)
+	{
+		vtkSmartPointer<vtkGenericCell> cell = vtkSmartPointer<vtkGenericCell>::New();
+		resampledVesselCentreline->GetCell(i, cell);
+		int localEndId = cell->GetPointId(cell->GetNumberOfPoints() - 1);
+
+		vtkSmartPointer<vtkIdList> sharedCellIds = vtkSmartPointer<vtkIdList>::New();
+		resampledVesselCentreline->GetPointCells(localEndId, sharedCellIds);
+
+		// Terminal cells will not share their last ids with other cells.
+		if (sharedCellIds->GetNumberOfIds() == 1)
+		{
+			endPointIds->InsertNextId(localEndId);
+		}
+	}
+
+	vtkSmartPointer<vtkAppendPolyData> capJoiner = vtkSmartPointer<vtkAppendPolyData>::New();
+	capJoiner->AddInputData(fullMeshJoiner->GetOutput());
 
 	for (int i = 0; i < endPointIds->GetNumberOfIds(); i++)
 	{
 		vtkSmartPointer<vtkSkipSegmentFilter> skipSegmentFilter = vtkSmartPointer<vtkSkipSegmentFilter>::New();
 		skipSegmentFilter->SetInputData(scalarRadiiToVectorsFilter->GetOutput());
-		// Only inlet on first iteration.
+
+		// TODO: What happens in the case when we have only a single straight segment and we need both inlet and outlet caps?
+
+		// Process only inlet on first iteration.
 		skipSegmentFilter->SetInlet(i == 0);
+		// Process only outlet on consecutive iterations.
+
 		skipSegmentFilter->SetOutlet(i != 0);
 		skipSegmentFilter->SetSkipSize(10);
 		skipSegmentFilter->SetPointId(endPointIds->GetId(i));
 		skipSegmentFilter->SetNumberOfRadialQuads(28);
 		skipSegmentFilter->Update();
-		appendPolyData2->AddInputData(skipSegmentFilter->GetOutput());
+		capJoiner->AddInputData(skipSegmentFilter->GetOutput());
 
 		vtkSmartPointer<vtkEndCapFilter> endCapFilter = vtkSmartPointer<vtkEndCapFilter>::New();
 		endCapFilter->SetInputData(skipSegmentFilter->GetOutput());
 		endCapFilter->Update();
-		appendPolyData2->AddInputData(endCapFilter->GetOutput());
+		capJoiner->AddInputData(endCapFilter->GetOutput());
 	}
-	appendPolyData2->Update();
+	capJoiner->Update();
 
-	appendPolyData3->AddInputData(appendPolyData2->GetOutput());
+	vtkSmartPointer<vtkAppendPolyData> triMeshJoiner = vtkSmartPointer<vtkAppendPolyData>::New();
+	triMeshJoiner->AddInputData(capJoiner->GetOutput());
 
 	vtkSmartPointer<vtkTriangleFilter> triangleFilter = vtkSmartPointer<vtkTriangleFilter>::New();
-	triangleFilter->SetInputData(appendPolyData->GetOutput());
+	triangleFilter->SetInputData(fullMeshJoiner->GetOutput());
 	triangleFilter->Update();
-	appendPolyData3->AddInputData(triangleFilter->GetOutput());
+	triMeshJoiner->AddInputData(triangleFilter->GetOutput());
 
-	appendPolyData3->Update();
+	triMeshJoiner->Update();
 
-	vtkSmartPointer<vtkSTLWriter> writer3 = vtkSmartPointer<vtkSTLWriter>::New();
-	writer3->SetInputData(appendPolyData3->GetOutput());
-	writer3->SetFileName("triMeshWithCapsFull.stl");
-	writer3->Write();
+	writeStlData(triMeshJoiner->GetOutput(), "triMeshWithCapsFull.stl");
+
+	std::clog << getTimeStamp() << ": Exiting " << __FILE__ << std::endl;
 
 	return EXIT_SUCCESS;
 }
