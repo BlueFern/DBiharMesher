@@ -12,6 +12,7 @@
 #include <vtkAppendPoints.h>
 #include <vtkAppendPolyData.h>
 #include <vtkTriangleFilter.h>
+#include <vtkCellArray.h>
 
 #include "wrapDbiharConfig.h"
 #include "vtkDbiharStatic.h"
@@ -61,16 +62,38 @@ int main(int argc, char* argv[]) {
 	vtkSmartPointer<vtkCentrelinePartitioner> centrelinePartitioner = vtkSmartPointer<vtkCentrelinePartitioner>::New();
 	centrelinePartitioner->SetInputData(scalarRadiiToVectorsFilter->GetOutput());
 	centrelinePartitioner->SetEndPoints(endPoints);
-	centrelinePartitioner->SetPartitionLength(100);
+	centrelinePartitioner->SetPartitionLength(50);
 	centrelinePartitioner->Update();
 
 	vtkPolyData *partitionedCentreline = centrelinePartitioner->GetOutput();
 
+	vtkSmartPointer<vtkIdList> endPointIds = vtkSmartPointer<vtkIdList>::New();
+	vtkSmartPointer<vtkIdList> bifurcations = vtkSmartPointer<vtkIdList>::New();
+
+	// First cell (or two) are polyVertex cells describing endpoints (and bifurcations if applicable).
+	int offset = 1;
+
+	vtkSmartPointer<vtkCellArray> vertexArray = vtkSmartPointer<vtkCellArray>::New();
+	vertexArray =  partitionedCentreline->GetVerts();
+	vertexArray->GetNextCell(endPointIds);
+	if (vertexArray->GetNumberOfCells() == 2)
+	{
+		vertexArray->GetNextCell(bifurcations);
+		offset = 2;
+	}
+
+
+#if 0
+	writePolyData(partitionedCentreline, "tmpCentreline2.vtp");
+	std::cout << "Exiting " << __FUNCTION__ << " in " << __FILE__ << ":" << __LINE__ << std::endl;
+	exit(EXIT_FAILURE);
+#endif
+
 	double lengths[3] = {0.0};
 	vtkSmartPointer<vtkAppendPoints> appendPoints = vtkSmartPointer<vtkAppendPoints>::New();
-
+	int base = 0 + offset;
 	// Working with centreline partitions 3, 4, 5.
-	for (int i = 0; i < 3; i++)
+	for (int i = base; i < base + 3; i++)
 	{
 		vtkSmartPointer<vtkCentrelineToDbiharPatch> dbiharPatchFilter = vtkSmartPointer<vtkCentrelineToDbiharPatch>::New();
 		dbiharPatchFilter->SetInputData(partitionedCentreline);
@@ -80,7 +103,7 @@ int main(int argc, char* argv[]) {
 		dbiharPatchFilter->SetEdgeDerivScale(4.0);
 		dbiharPatchFilter->Update();
 
-		lengths[i] = partitionedCentreline->GetCell(i)->GetNumberOfPoints();
+		lengths[i - base] = partitionedCentreline->GetCell(i)->GetNumberOfPoints();
 		appendPoints->AddInputData(dbiharPatchFilter->GetOutput());
 	}
 
@@ -141,12 +164,6 @@ int main(int argc, char* argv[]) {
 	appendTriMesh->AddInputData(triangleFilter->GetOutput());
 
 	// Working with centreline partitions 3, 4, 5.
-	vtkSmartPointer<vtkIdList> endPointIds = vtkSmartPointer<vtkIdList>::New();
-	for (int i = 3; i < 6; i++)
-	{
-		endPointIds->InsertNextId(partitionedCentreline->GetCell(i)->GetPointId(0));
-	}
-
 	for (int i = 0; i < endPointIds->GetNumberOfIds(); i++)
 	{
 		vtkSmartPointer<vtkSkipSegmentFilter> skipSegmentFilter = vtkSmartPointer<vtkSkipSegmentFilter>::New();

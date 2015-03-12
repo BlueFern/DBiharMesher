@@ -28,6 +28,9 @@
 #include "vtkCentrelineResampler.h"
 #include "showPolyData.h"
 
+
+#include "vtkPolyDataWriter.h" //TODO: remove
+
 int main(int argc, char* argv[]) {
 
 	std::cout << "Starting " << __FILE__ << std::endl;
@@ -54,30 +57,43 @@ int main(int argc, char* argv[]) {
 	scalarRadiiToVectorsFilter->SetInputData(resampledCentreline);
 	scalarRadiiToVectorsFilter->Update();
 
+	vtkSmartPointer<vtkIdList> EndPoints = vtkSmartPointer<vtkIdList>::New();
+	EndPoints->InsertNextId(126);
+	EndPoints->InsertNextId(415);
+	EndPoints->InsertNextId(174);
+
 	vtkSmartPointer<vtkCentrelinePartitioner> centrelinePartitioner = vtkSmartPointer<vtkCentrelinePartitioner>::New();
 	centrelinePartitioner->SetInputData(scalarRadiiToVectorsFilter->GetOutput());
-	centrelinePartitioner->SetPartitionLength(30);
+	centrelinePartitioner->SetEndPoints(EndPoints);
+	centrelinePartitioner->SetPartitionLength(50);
 	centrelinePartitioner->Update();
 
-#if 0
-	vtkSmartPointer<vtkXMLPolyDataWriter> tmpWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-	tmpWriter->SetFileName("tmpCentreline.vtp");
-	tmpWriter->SetInputData(centrelinePartitioner->GetOutput());
-	tmpWriter->Update();
-
-	std::cout << "Exiting " << __FUNCTION__ << " in " << __FILE__ << ":" << __LINE__ << std::endl;
-	exit(EXIT_FAILURE);
-#endif
+	vtkSmartPointer<vtkCellArray> bifurcationPoints = vtkSmartPointer<vtkCellArray>::New();
+	bifurcationPoints = centrelinePartitioner->GetOutput()->GetVerts();
 
 	vtkPolyData *partitionedCentreline = centrelinePartitioner->GetOutput();
 
-	//double lengths[partitionedCentreline->GetLines()->GetNumberOfCells()] = {0.0};
+	vtkSmartPointer<vtkIdList> endPointIds = vtkSmartPointer<vtkIdList>::New();
+	vtkSmartPointer<vtkIdList> bifurcations = vtkSmartPointer<vtkIdList>::New();
+
+	// First cell (or two) are polyVertex cells describing endpoints (and bifurcations if applicable).
+	int offset = 1;
+
+	vtkSmartPointer<vtkCellArray> vertexArray = vtkSmartPointer<vtkCellArray>::New();
+	vertexArray =  partitionedCentreline->GetVerts();
+	vertexArray->GetNextCell(endPointIds);
+	if (vertexArray->GetNumberOfCells() == 2)
+	{
+		vertexArray->GetNextCell(bifurcations);
+		offset = 2;
+	}
+
 	std::vector<double> lengths(partitionedCentreline->GetLines()->GetNumberOfCells());
 
 	vtkSmartPointer<vtkAppendPoints> appendPoints = vtkSmartPointer<vtkAppendPoints>::New();
 
-	// Working with centreline partitions 3, 4, 5.
-	for (int i = 9; i < 12; i++)
+	int base  = 0 + offset;
+	for (int i = base; i < base + 3; i++)
 	{
 		vtkSmartPointer<vtkCentrelineToDbiharPatch> dbiharPatchFilter = vtkSmartPointer<vtkCentrelineToDbiharPatch>::New();
 		dbiharPatchFilter->SetInputData(partitionedCentreline);
@@ -87,8 +103,7 @@ int main(int argc, char* argv[]) {
 		dbiharPatchFilter->SetEdgeDerivScale(4.0);
 		dbiharPatchFilter->Update();
 
-		// WARNING: This statement is overwriting memory, because the size of lengths is only 3. Here we are writing past 3.
-		lengths[i] = partitionedCentreline->GetCell(i)->GetNumberOfPoints();
+		lengths[i - base] = partitionedCentreline->GetCell(i)->GetNumberOfPoints();
 		appendPoints->AddInputData(dbiharPatchFilter->GetOutput());
 	}
 
@@ -98,9 +113,9 @@ int main(int argc, char* argv[]) {
 	dimensions->InsertNextValue(28);
 
 	// Solving simultaneous equations for each branch sections length.
-	dimensions->InsertNextValue((lengths[9] - lengths[10] + lengths[11]) / 2);
-	dimensions->InsertNextValue((lengths[9] + lengths[10] - lengths[11]) / 2);
-	dimensions->InsertNextValue((-lengths[9] + lengths[10] + lengths[11]) / 2);
+	dimensions->InsertNextValue((lengths[0] - lengths[1] + lengths[2]) / 2.0);
+	dimensions->InsertNextValue((lengths[0] + lengths[1] - lengths[2]) / 2.0);
+	dimensions->InsertNextValue((-lengths[0] + lengths[1] + lengths[2]) / 2.0);
 
 	vtkSmartPointer<vtkPointsToMeshFilter> pointsToMeshFilter = vtkSmartPointer<vtkPointsToMeshFilter>::New();
 	pointsToMeshFilter->SetInputData(appendPoints->GetOutput());
@@ -149,12 +164,6 @@ int main(int argc, char* argv[]) {
 	appendTriMesh->AddInputData(triangleFilter->GetOutput());
 
 	// Working with centreline partitions 3, 4, 5.
-	vtkSmartPointer<vtkIdList> endPointIds = vtkSmartPointer<vtkIdList>::New();
-	for (int i = 3; i < 6; i++)
-	{
-		endPointIds->InsertNextId(partitionedCentreline->GetCell(i)->GetPointId(0));
-	}
-
 	for (int i = 0; i < endPointIds->GetNumberOfIds(); i++)
 	{
 		vtkSmartPointer<vtkSkipSegmentFilter> skipSegmentFilter = vtkSmartPointer<vtkSkipSegmentFilter>::New();

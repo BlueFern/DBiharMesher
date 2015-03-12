@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
 	std::cout << "Starting " << __FILE__ << std::endl;
 
 	vtkSmartPointer<vtkGenericDataObjectReader> vesselCentrelineReader = vtkSmartPointer<vtkGenericDataObjectReader>::New();
-	vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/227A_CentrelineResampled_4ECs.vtk").c_str());
+	vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/supertest.vtk").c_str());
 	vesselCentrelineReader->Update();
 
 	vtkPolyData *vesselCentreline = vtkPolyData::SafeDownCast(vesselCentrelineReader->GetOutput());
@@ -45,12 +45,13 @@ int main(int argc, char* argv[]) {
 	centrelinePartitioner->SetPartitionLength(50);
 
 	vtkSmartPointer<vtkIdList> EndPoints = vtkSmartPointer<vtkIdList>::New();
-	int x = 4;
+	int x = 0;
 	switch(x)
 	{
 		case 0:
-			EndPoints->InsertNextId(10);
-			EndPoints->InsertNextId(40); // End points on same branch.
+			EndPoints->InsertNextId(220);
+			EndPoints->InsertNextId(420); // End points on same branch.
+
 			break;
 
 		case 1:
@@ -58,9 +59,9 @@ int main(int argc, char* argv[]) {
 			break;
 
 		case 2:
-			EndPoints->InsertNextId(10);
-			EndPoints->InsertNextId(1306);
-			EndPoints->InsertNextId(1490); // Standard cropping of branches.
+			EndPoints->InsertNextId(30);
+			EndPoints->InsertNextId(54);
+			EndPoints->InsertNextId(90);
 			break;
 
 		case 3:
@@ -73,17 +74,21 @@ int main(int argc, char* argv[]) {
 			EndPoints->InsertNextId(60);
 			EndPoints->InsertNextId(1370); // End points lie next to bifurcations.
 			break;
+
+		case 5:
+			EndPoints->InsertNextId(1260); // One cell and only one specified endpoint.
+			break;
 	}
 
-	centrelinePartitioner->SetEndPoints(EndPoints);
 
+	//centrelinePartitioner->SetEndPoints(EndPoints);
 	centrelinePartitioner->Update();
 	centrelinePartitioner->Print(std::cout);
 
 	vtkSmartPointer<vtkPolyData> centrelineSegments = centrelinePartitioner->GetOutput();
 	vtkSmartPointer<vtkPolyDataWriter> writer = vtkSmartPointer<vtkPolyDataWriter>::New();
 	writer->SetInputData(centrelineSegments);
-	writer->SetFileName("TEST_227_Partitioned_new.vtk");
+	writer->SetFileName("partitionerTest.vtk");
 	writer->SetFileTypeToASCII();
 	writer->Write();
 

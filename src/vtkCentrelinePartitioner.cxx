@@ -1,6 +1,7 @@
 #include <sstream>
 #include <algorithm>
 #include <vtkSmartPointer.h>
+#include <vtkCallbackCommand.h>
 #include <vtkIdTypeArray.h>
 #include <vtkObjectFactory.h>
 #include <vtkStreamingDemandDrivenPipeline.h>
@@ -9,6 +10,8 @@
 #include <vtkDataObject.h>
 #include <vtkIdList.h>
 #include <vtkCell.h>
+#include <vtkPolyVertex.h>
+#include <vtkVertex.h>
 #include <vtkCellArray.h>
 #include <vtkPriorityQueue.h>
 #include <vtkPointData.h>
@@ -25,6 +28,11 @@ vtkCentrelinePartitioner::vtkCentrelinePartitioner()
 	this->SetNumberOfOutputPorts(1);
 	this->EndPoints = vtkIdList::New();
 	this->PartitionLength = 0;
+
+	vtkSmartPointer<vtkCallbackCommand> progressCallback = vtkSmartPointer<vtkCallbackCommand>::New();
+	progressCallback->SetCallback(this->ProgressFunction);
+	this->AddObserver(vtkCommand::ProgressEvent, progressCallback);
+
 }
 
 /**
@@ -63,6 +71,7 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 	vtkPolyData *input = vtkPolyData::GetData(inputVector[0],0);
 	input->BuildLinks();
 
+	int numOfCells = input->GetNumberOfCells();
 	vtkPolyData *output = vtkPolyData::GetData(outputVector,0);
 
 	output->SetPoints(input->GetPoints());
@@ -71,6 +80,8 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 
 	vtkSmartPointer<vtkCellArray> segments = vtkSmartPointer<vtkCellArray>::New();
 
+
+
 	vtkSmartPointer<vtkIdList> cellIdList = vtkSmartPointer<vtkIdList>::New();
 	vtkSmartPointer<vtkIdList> endSegment = vtkSmartPointer<vtkIdList>::New();
 	vtkSmartPointer<vtkIdList> previousSegment = vtkSmartPointer<vtkIdList>::New();
@@ -78,10 +89,17 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 	vtkSmartPointer<vtkIdList> joinedIdLists = vtkSmartPointer<vtkIdList>::New();
 	vtkSmartPointer<vtkIdList> reversedSpine = vtkSmartPointer<vtkIdList>::New();
 	vtkSmartPointer<vtkIdList> connectedCellIds = vtkSmartPointer<vtkIdList>::New();
+	vtkSmartPointer<vtkIdList> tmpConnectedCellIds = vtkSmartPointer<vtkIdList>::New();
+
 	vtkSmartPointer<vtkIdList> nextEndPoint = vtkSmartPointer<vtkIdList>::New();
 	vtkSmartPointer<vtkIdList> endPointsTmp = vtkSmartPointer<vtkIdList>::New();
 	vtkSmartPointer<vtkIdList> endPointsCopy = vtkSmartPointer<vtkIdList>::New();
 	vtkSmartPointer<vtkIdList> startingCell = vtkSmartPointer<vtkIdList>::New();
+
+	// For setting vertices
+	vtkSmartPointer<vtkCellArray> verticesArray = vtkSmartPointer<vtkCellArray>::New();
+	vtkSmartPointer<vtkPolyVertex> bifurcations = vtkSmartPointer<vtkPolyVertex>::New();
+	vtkSmartPointer<vtkPolyVertex> endPoints = vtkSmartPointer<vtkPolyVertex>::New();
 
 	if (this->EndPoints->GetNumberOfIds() == 0)
 	{
@@ -99,11 +117,11 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 
 	cellIdList = input->GetCell(branchId)->GetPointIds();
 	vtkIdType localId = vtkDbiharStatic::GetPosition(cellIdList, endPointsCopy->GetId(0));
+
 	assert(localId != -1);
 	endPointsCopy->DeleteId(endPointsCopy->GetId(0));
 
 	vtkIdType localEndPoint = 0;
-
 
 	endPointsTmp->DeepCopy(endPointsCopy);
 	endPointsTmp->IntersectWith(cellIdList);
@@ -117,7 +135,9 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 		localEndPoint = cellIdList->GetNumberOfIds() - 1;
 	}
 
-	vtkIdType pointId = 0;
+	vtkIdType pointId = cellIdList->GetId(localId);
+	endPoints->GetPointIds()->InsertNextId(pointId);
+
 	vtkIdType cellSize = localEndPoint + 1 - localId;
 
 	input->GetPointCells(cellIdList->GetId(localEndPoint), connectedCellIds);
@@ -125,31 +145,64 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 	bool bifurcation = true;
 	bool straightSegments = false;
 
-	// Already deleted starting point, number of Ids is 1 for single cell partition.
+	// No branches to traverse if last point it an endpoint or another specified endpoint exists in this cell.
 	bool oneCell = (connectedCellIds->GetNumberOfIds() == 1 || endPointsTmp->GetNumberOfIds() == 1);
-	int actualLength = 0;
-	int padding = 0;
+
 	int branchStartingPoint[input->GetNumberOfCells()][2];
 	int offset = 0;
+	int padding = localId;
 	int numberOfSections = 0;
+	int actualLengthCopy = 0;
+	int sectionLength = 0;
+	int stage = 1; // For rough progress tracking
+	int sections = 0;
+	int actualLength = cellSize - this->PartitionLength / 2;
+	if (actualLength <= 0)
+	{
+		sections = 1;
+	}
+	else
+	{
+		sections = actualLength / this->PartitionLength + (actualLength % this->PartitionLength != 0);
+	}
 
-	int sections = cellSize / this->PartitionLength + (cellSize % this->PartitionLength !=  0); // Ceiling division.
 
-	int sectionLength = cellSize / sections;
+	// If only dealing with one cell we do not need to account for the space before a bifurcation
+	// (this->PartitionLength / 2).
+	if (oneCell)
+	{
+		sections = cellSize / this->PartitionLength + (cellSize % this->PartitionLength !=  0);
+		straightSegments = true;
+		bifurcation = false;
+
+		// Endpoints to add to polyVertex.
+		if (connectedCellIds->GetNumberOfIds() > 1)
+		{
+			endPoints->GetPointIds()->InsertNextId(endPointsTmp->GetId(0));
+		}
+		else
+		{
+			endPoints->GetPointIds()->InsertNextId(cellIdList->GetId(localEndPoint));
+		}
+	}
+
+	if (sections == 1)
+	{
+		sectionLength = cellSize;
+	}
+	else
+	{
+		sectionLength = actualLength / sections;
+	}
+
 	if (sectionLength % 2 == 0)
 	{
 		sectionLength++;
 	}
 
-	straightSegments = sections > 1;
+	straightSegments = sections > 1 || oneCell;
 
-	if (oneCell)
-	{
-		straightSegments = true;
-		bifurcation = false;
-	}
-
-	branchStartingPoint[startingCell->GetId(0)][0] = sectionLength;
+	branchStartingPoint[startingCell->GetId(0)][0] = this->PartitionLength / 2;
 	branchStartingPoint[startingCell->GetId(0)][1] = sections;
 
 	input->GetPointCells(cellIdList->GetId(localEndPoint), connectedCellIds);
@@ -157,7 +210,7 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 	vtkSmartPointer<vtkPriorityQueue> branchesToExplore = vtkSmartPointer<vtkPriorityQueue>::New();
 
 	int priority = input->GetNumberOfCells();
-	for (int i = 1; i < numberOfBranches; i++) // First item is backwards.
+	for (int i = 1; i < numberOfBranches; i++)
 	{
 		branchesToExplore->Insert(priority,(connectedCellIds->GetId(i)));
 	}
@@ -184,7 +237,6 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 				if (oneCell)
 				{
 					actualLength = cellSize;
-					offset -= localId;
 				}
 				else
 				{
@@ -192,7 +244,8 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 				}
 			}
 
-			sections = actualLength / this->PartitionLength + (actualLength % this->PartitionLength !=  0); // Ceiling division.
+			// Number of sections NOT including reserved areas around bifurcations.
+			sections = actualLength / this->PartitionLength + (actualLength % this->PartitionLength != 0);
 			sectionLength = actualLength / sections;
 
 			if (sectionLength % 2 == 0)
@@ -202,6 +255,7 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 
 			for (int section = 0; section < sections; section++)
 			{
+				// localId is decremented for each section so that they join, offset is used to correct for this.
 				while (localId < padding + (sectionLength * (section + 1)) - offset)
 				{
 					pointId = cellIdList->GetId(localId);
@@ -219,6 +273,8 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 						currentSegment->InsertUniqueId(pointId);
 						localId++;
 					}
+					pointId = cellIdList->GetId(localId);
+
 				}
 
 				localId--;
@@ -240,6 +296,8 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 				endSegment->InsertUniqueId(pointId);
 				localId++;
 			}
+			pointId = cellIdList->GetId(localId);
+			bifurcations->GetPointIds()->InsertNextId(pointId);
 
 			previousSegment->DeepCopy(endSegment);
 
@@ -265,19 +323,46 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 					cellSize = endPointsTmp->GetId(0) - cellIdList->GetId(1) + 2;
 				}
 
-				sections = cellSize / this->PartitionLength + (cellSize % this->PartitionLength !=  0);
+				sections = (cellSize + this->PartitionLength / 2) / this->PartitionLength + (cellSize % this->PartitionLength !=  0); // Ceiling division.
 
-				// Must have at least two sections between bifurcations.
-				if (sections < 2)
+				// Does this branch end in a natural endpoint (no bifurcation)?
+				localEndPoint = cellIdList->GetNumberOfIds() - 1;
+				input->GetPointCells(cellIdList->GetId(localEndPoint), tmpConnectedCellIds);
+				int endBranches = tmpConnectedCellIds->GetNumberOfIds();
+
+
+				// Must have at least two sections between bifurcations (unless there is an endpoint).
+				// Endpoint could either be a specified endpoint or natural one.
+				if (sections == 1)
 				{
-					sections = 2;
+					// First check for endpoints to add to polyVertex.
+
+					if (endPointsTmp->GetNumberOfIds() > 0)
+					{
+						endPoints->GetPointIds()->InsertNextId(endPointsTmp->GetId(0));
+					}
+					else if (endBranches == 1)
+					{
+						endPoints->GetPointIds()->InsertNextId(cellIdList->GetId(localEndPoint));
+					}
+
+					else
+					{
+						sections = 2;
+					}
+					sectionLength = cellSize / sections;
 				}
 
-				sectionLength = cellSize / sections;
+				else
+				{
+					sectionLength = this->PartitionLength / 2;
+				}
+
 				if (sectionLength % 2 == 0)
 				{
 					sectionLength++;
 				}
+
 				branchStartingPoint[branchId][0] = sectionLength;
 				branchStartingPoint[branchId][1] = sections;
 
@@ -342,27 +427,41 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 		endPointsTmp->DeepCopy(endPointsCopy);
 		endPointsTmp->IntersectWith(cellIdList);
 
+
 		if (endPointsTmp->GetNumberOfIds() > 0)
 		{
+			// Next branch has an endpoint down it - but past the reserved area around the bifurcation
 			localEndPoint = endPointsTmp->GetId(0) - cellIdList->GetId(1) + 1;
+			endPoints->GetPointIds()->InsertNextId(cellIdList->GetId(localEndPoint));
+
 			endPointsCopy->DeleteId(endPointsTmp->GetId(0));
+
+			bifurcation = false;
 		}
 		else
 		{
 			localEndPoint = cellIdList->GetNumberOfIds() - 1;
+
+
+			// Does the next cell end in a bifurcation?
+			input->GetPointCells(cellIdList->GetId(localEndPoint), connectedCellIds);
+			numberOfBranches = connectedCellIds->GetNumberOfIds();
+
+			if (numberOfBranches == 1)
+			{
+				endPoints->GetPointIds()->InsertNextId(cellIdList->GetId(localEndPoint));
+
+			}
+
+			for (int i = 1; i < numberOfBranches; i++) // i = 0 is the previous branch.
+			{
+				branchesToExplore->Insert(priority,(connectedCellIds->GetId(i)));
+			}
+			priority--;
+
+			bifurcation = numberOfBranches > 2;
+
 		}
-
-		// Does the next cell end in a bifurcation?
-		input->GetPointCells(cellIdList->GetId(localEndPoint), connectedCellIds);
-		numberOfBranches = connectedCellIds->GetNumberOfIds();
-
-		for (int i = 1; i < numberOfBranches; i++) // First item is backwards.
-		{
-			branchesToExplore->Insert(priority,(connectedCellIds->GetId(i)));
-		}
-		priority--;
-
-		bifurcation = numberOfBranches > 2;
 
 		cellSize = localEndPoint + 1;
 
@@ -372,11 +471,27 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 		straightSegments = (numberOfSections > 2 || (numberOfSections > 1 && bifurcation == false));
 
 		padding = branchStartingPoint[branchId][0] - 1;
+
+		this->UpdateProgress(static_cast<double>(stage++) / static_cast<double>(numOfCells));
 	}
 
+
+	verticesArray->InsertNextCell(endPoints);
+	if (bifurcations->GetNumberOfPoints() > 0)
+	{
+		verticesArray->InsertNextCell(bifurcations);
+	}
+
+	output->SetVerts(verticesArray);
 	output->SetLines(segments);
 
 	return 1;
+}
+
+void vtkCentrelinePartitioner::ProgressFunction(vtkObject* caller, long unsigned int eventId, void* clientData, void* callData)
+{
+	vtkCentrelinePartitioner* filter = static_cast<vtkCentrelinePartitioner *>(caller);
+	cout << filter->GetClassName() << " progress: " << std::fixed << std::setprecision(3) << filter->GetProgress() << endl;
 }
 
 void vtkCentrelinePartitioner::PrintSelf(ostream &os, vtkIndent indent)

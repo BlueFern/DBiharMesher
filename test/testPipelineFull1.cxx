@@ -22,6 +22,8 @@
 #include <vtkAppendPolyData.h>
 #include <vtkTriangleFilter.h>
 #include <vtkXMLStructuredGridReader.h>
+#include <vtkCellArray.h>
+#include <vtkPolyDataWriter.h>
 
 #include "showPolyData.h"
 #include "vtkDbiharStatic.h"
@@ -58,29 +60,6 @@ int main(int argc, char* argv[]) {
 	centrelineSegmentSource->Update();
 
 	vtkPolyData *resampledVesselCentreline = centrelineSegmentSource->GetOutput();
-	vtkSmartPointer<vtkDoubleArray> scalars = vtkSmartPointer<vtkDoubleArray>::New();
-	vtkSmartPointer<vtkIdList> endPointIds = vtkSmartPointer<vtkIdList>::New();
-	vtkSmartPointer<vtkIdList> startingCell = vtkSmartPointer<vtkIdList>::New();
-	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
-
-	int check1 = resampledVesselCentreline->GetNumberOfCells();
-	int lastId = 0;
-	int totalNumberOfPoints = 0;
-
-	endPointIds->InsertNextId(0);
-
-	for (int i = 0; i < resampledVesselCentreline->GetNumberOfCells(); i++)
-	{
-		vtkSmartPointer<vtkGenericCell> cell = vtkSmartPointer<vtkGenericCell>::New();
-		resampledVesselCentreline->GetCell(i, cell);
-		int localEndId = cell->GetPointId(cell->GetNumberOfPoints() - 1);
-
-		resampledVesselCentreline->GetPointCells(localEndId, startingCell);
-		if (startingCell->GetNumberOfIds() == 1)
-		{
-			endPointIds->InsertNextId(localEndId);
-		}
-	}
 
 	vtkSmartPointer<vtkScalarRadiiToVectorsFilter> scalarRadiiToVectorsFilter = vtkSmartPointer<vtkScalarRadiiToVectorsFilter>::New();
 	scalarRadiiToVectorsFilter->SetInputData(resampledVesselCentreline);
@@ -88,15 +67,34 @@ int main(int argc, char* argv[]) {
 
 	vtkSmartPointer<vtkCentrelinePartitioner> centrelinePartitioner = vtkSmartPointer<vtkCentrelinePartitioner>::New();
 	centrelinePartitioner->SetInputData(scalarRadiiToVectorsFilter->GetOutput());
-	centrelinePartitioner->SetPartitionLength(30);
+
+	vtkSmartPointer<vtkIdList> EndPoints = vtkSmartPointer<vtkIdList>::New();
+
+	vtkSmartPointer<vtkIdList> bifurcations = vtkSmartPointer<vtkIdList>::New();
+	vtkSmartPointer<vtkIdList> endPointIds = vtkSmartPointer<vtkIdList>::New();
+
+	int k = 1;
+
+	//EndPoints->InsertNextId(180);
+	//centrelinePartitioner->SetEndPoints(EndPoints);
+	centrelinePartitioner->SetPartitionLength(50);
 	centrelinePartitioner->Update();
 
 	vtkPolyData *partitionedCentreline = centrelinePartitioner->GetOutput();
 
+	vtkSmartPointer<vtkCellArray> vertexArray = vtkSmartPointer<vtkCellArray>::New();
+	vertexArray =  partitionedCentreline->GetVerts();
+	vertexArray->GetNextCell(endPointIds);
+	if (vertexArray->GetNumberOfCells() == 2)
+	{
+		vertexArray->GetNextCell(bifurcations);
+		k = 2;
+	}
+
 	vtkSmartPointer<vtkAppendPolyData> appendPolyData = vtkSmartPointer<vtkAppendPolyData>::New();
 
 	bool straightSection = true;
-	int k = 0;
+
 
 	while (true)
 	{
@@ -140,7 +138,7 @@ int main(int argc, char* argv[]) {
 				previousPoints->GetPoint(0, p0);
 				points->GetPoint(tmp, p1);
 
-				if (p0[0] == p1[0] && p0[1] == p1[1] && p0[2] == p1[2]) // TODO: Check
+				if (p0[0] == p1[0] && p0[1] == p1[1] && p0[2] == p1[2])
 				{
 					straightSection = true;
 					break;
@@ -174,16 +172,16 @@ int main(int argc, char* argv[]) {
 	}
 	appendPolyData->Update();
 
-	std::cout << "Showing the whole thing..." << std::endl;
+	//std::cout << "Showing the whole thing..." << std::endl;
 
-	showPolyData1(appendPolyData->GetOutput());
+	//showPolyData1(appendPolyData->GetOutput());
 
 	vtkSmartPointer<vtkXMLPolyDataWriter> writer0 = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
 	writer0->SetInputData(appendPolyData->GetOutput());
 	writer0->SetFileName("quadMeshFull.vtp");
 	writer0->Write();
 
-#if 1 // Very Expensive to run.
+#if 0 // Very Expensive to run.
 
 	vtkSmartPointer<vtkSubdivideMeshDynamic> subdivideMeshDynamic = vtkSmartPointer<vtkSubdivideMeshDynamic>::New();
 	subdivideMeshDynamic->SetInputData(appendPolyData->GetOutput());
