@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
 
 
 	std::cout << 4 * 65e-3 << ", " << 65e-3 * 4 << std::endl;
-
+	centrelineSegmentSource->Update();
 	vtkPolyData *resampledVesselCentreline = centrelineSegmentSource->GetOutput();
 
 	std::cout << "Number of input points: " << vesselCentreline->GetNumberOfPoints() << std::endl;
@@ -67,6 +67,7 @@ int main(int argc, char* argv[]) {
 	resampledVesselCentreline->SetVerts(vertsArray);
 
 	showPolyData1(resampledVesselCentreline, 0.5);
+	centrelineSegmentSource->Print(std::cout);
 
 #if 1
 	vtkSmartPointer<vtkXMLPolyDataWriter> tmpWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();

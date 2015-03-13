@@ -3,6 +3,7 @@
 #include <vtkSmartPointer.h>
 #include <vtkObjectFactory.h>
 #include <vtkPolyLine.h>
+#include <vtkCallbackCommand.h>
 #include <vtkPolyData.h>
 #include <vtkCellArray.h>
 #include <vtkMath.h>
@@ -22,7 +23,11 @@ vtkCentrelineResampler::vtkCentrelineResampler()
 	this->SetNumberOfInputPorts(1);
 	this->SetNumberOfOutputPorts(1);
 
-	EdgeLength = 0;
+	this->EdgeLength = 0;
+
+	vtkSmartPointer<vtkCallbackCommand> progressCallback = vtkSmartPointer<vtkCallbackCommand>::New();
+	progressCallback->SetCallback(this->ProgressFunction);
+	this->AddObserver(vtkCommand::ProgressEvent, progressCallback);
 }
 
 int vtkCentrelineResampler::RequestData(vtkInformation *vtkNotUsed(request),
@@ -81,8 +86,11 @@ int vtkCentrelineResampler::RequestData(vtkInformation *vtkNotUsed(request),
 	// Mapping from segment to last point ids.
 	std::map<vtkIdType, vtkIdType> lastPointIds;
 
+
 	segmentId = 0;
 	input->GetLines()->InitTraversal();
+	int numLines = input->GetLines()->GetNumberOfCells() + 1; // For progress function.
+	int counter = 1;
 	while(input->GetLines()->GetNextCell(cellIds))
 	{
 		// 1.
@@ -103,6 +111,7 @@ int vtkCentrelineResampler::RequestData(vtkInformation *vtkNotUsed(request),
 
 			memcpy(p0, p1, sizeof(double_t) * 3);
 		}
+
 
 		// 2. Make sure each cell contains odd number of points.
 		int resolution = (int)(length / this->EdgeLength);
@@ -153,7 +162,7 @@ int vtkCentrelineResampler::RequestData(vtkInformation *vtkNotUsed(request),
 
 			memcpy(p0, p1, sizeof(double_t) * 3);
 		}
-
+		;
 		// 5.
 		vtkSmartPointer<vtkPolyLine> polyLine = vtkSmartPointer<vtkPolyLine>::New();
 		for(unsigned int i = 0; i < numOutputPoints; ++i)
@@ -196,7 +205,7 @@ int vtkCentrelineResampler::RequestData(vtkInformation *vtkNotUsed(request),
 			polyLine->GetPointIds()->InsertNextId(pId);
 
 			// Remember the last stored id for this segment.
-			if(i == numOutputPoints - 1)
+			if (i == numOutputPoints - 1)
 			{
 				lastPointIds[segmentId] = pId;
 			}
@@ -210,6 +219,7 @@ int vtkCentrelineResampler::RequestData(vtkInformation *vtkNotUsed(request),
 
 		lines->InsertNextCell(polyLine);
 		segmentId++;
+		this->UpdateProgress(static_cast<double>(counter++) / static_cast<double>(numLines));
 	}
 
 #if 0
@@ -231,4 +241,11 @@ int vtkCentrelineResampler::RequestData(vtkInformation *vtkNotUsed(request),
 void vtkCentrelineResampler::PrintSelf(ostream &os, vtkIndent indent)
 {
 	this->Superclass::PrintSelf(os, indent);
+	os << indent << "\nEdge Length: " << this->EdgeLength << "\n";
+}
+
+void vtkCentrelineResampler::ProgressFunction(vtkObject* caller, long unsigned int eventId, void* clientData, void* callData)
+{
+	vtkCentrelineResampler* filter = static_cast<vtkCentrelineResampler *>(caller);
+	cout << filter->GetClassName() << " progress: " << std::fixed << std::setprecision(3) << filter->GetProgress() << endl;
 }
