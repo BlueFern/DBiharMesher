@@ -33,8 +33,8 @@ double vtkDbiharStatic::AngleBetweenVectors(const double v1[3], const double v2[
 }
 
 /**
- * Finds a global ID in a given IdList and returns it's local position. Exits
- * if global Id is not found.
+ * Finds a global ID in a given IdList and returns it's local position. Returns -1 if
+ * not found.
  */
 vtkIdType vtkDbiharStatic::GetPosition(vtkSmartPointer<vtkIdList> IdList,vtkIdType id)
 {
@@ -46,7 +46,7 @@ vtkIdType vtkDbiharStatic::GetPosition(vtkSmartPointer<vtkIdList> IdList,vtkIdTy
 	{
 		if(localId > maxLocalId)
 		{
-			exit(EXIT_FAILURE);
+			return -1;
 		}
 		pointId = IdList->GetId(localId);
 		if(pointId == id)

@@ -16,6 +16,7 @@
 #include <vtkTransform.h>
 #include <vtkIdList.h>
 #include <vtkMath.h>
+#include <vtkGenericCell.h>
 
 #include "vtkDbiharStatic.h"
 #include "vtkCentrelineToDbiharPatch.h"
@@ -47,7 +48,7 @@ vtkCentrelineToDbiharPatch::vtkCentrelineToDbiharPatch()
 
 	this->NumberOfRadialQuads = 16;
 	this->SpineId = 0;
-
+	this->BifurcationId = -1;
 	this->ArchDerivScale = 3;
 	this->EdgeDerivScale = 4;
 }
@@ -65,6 +66,12 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 
 	bool bifurcation = false;
 	vtkIdType bifurcationPos = -1;
+	if (this->BifurcationId != -1)
+	{
+		bifurcation = true;
+		bifurcationPos = this->BifurcationId;
+	}
+
 	std::vector<vtkSmartPointer<vtkStructuredGrid> > outputGrids;
 
 	vtkSmartPointer<vtkAppendPolyData> appendPolyDataFilter = vtkSmartPointer<vtkAppendPolyData>::New();
@@ -86,26 +93,6 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 	pointIdList = input->GetCell(this->SpineId)->GetPointIds();
 
 	const int spineSize = pointIdList->GetNumberOfIds();
-
-	// Find bifurcation point (if any).
-	vtkSmartPointer<vtkIdList> cells = vtkSmartPointer<vtkIdList>::New();
-	for (int ptPos = 0; ptPos < spineSize; ptPos++)
-	{
-		// TODO: Perhaps the loop doesn't need to be broken out of, just to make sure there is
-		// a maximum of one bifurcation (if any).
-		vtkIdType ptId = pointIdList->GetId(ptPos);
-		input->GetPointCells(ptId, cells);
-
-		// TODO: This is a temporary work around here. Bifurcation points need to be stored as a collection of vertices.
-		if (cells->GetNumberOfIds() == 3) // Bifurcation point will involve (at least) 3 spines.
-		{
-			bifurcation = true;
-			bifurcationPos = ptPos;
-			// TODO: Need to go through all points in this spine and make sure there is not more than one bifurcation.
-			// Throw an error (vtkErrorMacro) if this is not the case.
-			// break;
-		}
-	}
 
 	// Number of points in the patch boundary.
 	int numPtIds = spineSize * 2 + this->NumberOfRadialQuads * 2 - 2;
