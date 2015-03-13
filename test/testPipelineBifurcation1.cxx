@@ -13,6 +13,7 @@
 #include <vtkAppendPoints.h>
 #include <vtkAppendPolyData.h>
 #include <vtkTriangleFilter.h>
+#include <vtkGenericCell.h>
 
 #include "wrapDbiharConfig.h"
 #include "vtkDbiharStatic.h"
@@ -92,6 +93,15 @@ int main(int argc, char* argv[]) {
 	vtkSmartPointer<vtkAppendPoints> appendPoints = vtkSmartPointer<vtkAppendPoints>::New();
 
 	int base  = 0 + offset;
+
+	vtkSmartPointer<vtkIdList> cellPoints = vtkSmartPointer<vtkIdList>::New();
+	vtkSmartPointer<vtkGenericCell> cell = vtkSmartPointer<vtkGenericCell>::New();
+
+	partitionedCentreline->GetCell(base, cell);
+	cellPoints = cell->GetPointIds();
+
+	vtkIdType bifurcationId = vtkDbiharStatic::GetPosition(cellPoints, bifurcations->GetId(0));
+
 	for (int i = base; i < base + 3; i++)
 	{
 		vtkSmartPointer<vtkCentrelineToDbiharPatch> dbiharPatchFilter = vtkSmartPointer<vtkCentrelineToDbiharPatch>::New();

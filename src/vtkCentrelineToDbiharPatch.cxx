@@ -16,7 +16,6 @@
 #include <vtkTransform.h>
 #include <vtkIdList.h>
 #include <vtkMath.h>
-#include <vtkGenericCell.h>
 
 #include "vtkDbiharStatic.h"
 #include "vtkCentrelineToDbiharPatch.h"
