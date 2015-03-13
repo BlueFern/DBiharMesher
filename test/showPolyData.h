@@ -26,3 +26,13 @@ void showGrids(std::vector<vtkSmartPointer<vtkStructuredGrid> > grids, vtkSmartP
  * Write polydata in XML format.
  */
 void writePolyData(vtkPolyData *input, std::string fileName);
+
+/**
+ * Write polydata in STL format.
+ */
+void writeStlData(vtkPolyData *input, std::string fileName);
+
+/**
+ * Get formatted date/time stamp as string.
+ */
+std::string getTimeStamp();

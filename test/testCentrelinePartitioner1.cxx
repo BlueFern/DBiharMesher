@@ -1,18 +1,8 @@
-#include <map>
 
 #include <vtkSmartPointer.h>
 #include <vtkPolyData.h>
 #include <vtkGenericDataObjectReader.h>
 #include <vtkDoubleArray.h>
-#include <vtkMath.h>
-
-#include <vtkPolyDataMapper.h>
-#include <vtkActor.h>
-#include <vtkRenderWindow.h>
-#include <vtkRenderer.h>
-#include <vtkRenderWindowInteractor.h>
-#include <vtkInteractorStyleSwitch.h>
-#include <vtkPolyDataWriter.h>
 #include <vtkUnsignedIntArray.h>
 #include <vtkCellArray.h>
 
@@ -23,11 +13,10 @@
 
 #include <vtkXMLStructuredGridReader.h>
 
-#include "showPolyData.h"
 #include "vtkCentrelinePartitioner.h"
-
-#include "vtkCentrelineData.h"
 #include "wrapDbiharConfig.h"
+
+#include "showPolyData.h"
 
 int main(int argc, char* argv[]) {
 
@@ -83,17 +72,11 @@ int main(int argc, char* argv[]) {
 
 	//centrelinePartitioner->SetEndPoints(EndPoints);
 	centrelinePartitioner->Update();
+
+
 	centrelinePartitioner->Print(std::cout);
 
-	vtkSmartPointer<vtkPolyData> centrelineSegments = centrelinePartitioner->GetOutput();
-	vtkSmartPointer<vtkPolyDataWriter> writer = vtkSmartPointer<vtkPolyDataWriter>::New();
-	writer->SetInputData(centrelineSegments);
-	writer->SetFileName("partitionerTest.vtk");
-	writer->SetFileTypeToASCII();
-	writer->Write();
-
-
-
+	writePolyData(centrelinePartitioner->GetOutput(), "partitionedCentreline.vtp");
 
 	return EXIT_SUCCESS;
 }

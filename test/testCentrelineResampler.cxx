@@ -22,7 +22,7 @@
 #include <vtkDoubleArray.h>
 #include <vtkMath.h>
 
-#include "vtkCentrelineData.h"
+#include "vtkCentrelineResampler.h"
 #include "showPolyData.h"
 
 #include "wrapDbiharConfig.h"
@@ -32,17 +32,17 @@ int main(int argc, char* argv[]) {
 	std::cout << "Starting " << __FILE__ << std::endl;
 
 	vtkSmartPointer<vtkGenericDataObjectReader> vesselCentrelineReader = vtkSmartPointer<vtkGenericDataObjectReader>::New();
-	//vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/227A_Centreline.vtk").c_str());
-	vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/721A_Centreline.vtk").c_str());
+	vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/227A_Centreline.vtk").c_str());
+	//vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/721A_Centreline.vtk").c_str());
 	//vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/SyntheticBifurcation_1.vtk").c_str());
 	vesselCentrelineReader->Update();
 
 	vtkPolyData *vesselCentreline = vtkPolyData::SafeDownCast(vesselCentrelineReader->GetOutput());
 
-	vtkSmartPointer<vtkCentrelineData> centrelineSegmentSource = vtkSmartPointer<vtkCentrelineData>::New();
+	vtkSmartPointer<vtkCentrelineResampler> centrelineSegmentSource = vtkSmartPointer<vtkCentrelineResampler>::New();
 	centrelineSegmentSource->DebugOn();
 	centrelineSegmentSource->SetEdgeLength(4 * 65e-3);
-	centrelineSegmentSource->SetCentrelineData(vesselCentreline);
+	centrelineSegmentSource->SetInputData(vesselCentreline);
 
 
 	std::cout << 4 * 65e-3 << ", " << 65e-3 * 4 << std::endl;
@@ -55,20 +55,31 @@ int main(int argc, char* argv[]) {
 	std::cout << "Number of output points: " << resampledVesselCentreline->GetNumberOfPoints() << std::endl;
 	std::cout << "Number of output lines: " << resampledVesselCentreline->GetNumberOfLines() << std::endl;
 
+	vtkSmartPointer<vtkIdList> verts = vtkSmartPointer<vtkIdList>::New();
+	for(vtkIdType vId = 0; vId < resampledVesselCentreline->GetNumberOfPoints(); vId++)
+	{
+		verts->InsertNextId(vId);
+	}
+
+	vtkSmartPointer<vtkCellArray> vertsArray = vtkSmartPointer<vtkCellArray>::New();
+	vertsArray->InsertNextCell(verts);
+
+	resampledVesselCentreline->SetVerts(vertsArray);
+
 	showPolyData1(resampledVesselCentreline, 0.5);
 
 #if 1
 	vtkSmartPointer<vtkXMLPolyDataWriter> tmpWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
 	tmpWriter->SetInputData(resampledVesselCentreline);
-	//tmpWriter->SetFileName("227A_CentrelineResampled_4ECs.vtp");
-	tmpWriter->SetFileName("721A_CentrelineResampled_4ECs.vtp");
+	tmpWriter->SetFileName("227A_CentrelineResampled_4ECs.vtp");
+	//tmpWriter->SetFileName("721A_CentrelineResampled_4ECs.vtp");
 	//tmpWriter->SetFileName("resampledSyntheticBifurcation_1.vtp");
 	tmpWriter->Write();
 
 	vtkSmartPointer<vtkGenericDataObjectWriter> writer = vtkSmartPointer<vtkGenericDataObjectWriter>::New();
 	writer->SetInputData(resampledVesselCentreline);
-	//writer->SetFileName("227A_CentrelineResampled_4ECs.vtk");
-	writer->SetFileName("721A_CentrelineResampled_4ECs.vtk");
+	writer->SetFileName("227A_CentrelineResampled_4ECs.vtk");
+	//writer->SetFileName("721A_CentrelineResampled_4ECs.vtk");
 	//writer->SetFileName("resampledSyntheticBifurcation_1.vtk");
 	writer->Write();
 #endif

@@ -18,7 +18,7 @@
 #include <vtkXMLPolyDataWriter.h>
 #include <vtkGenericDataObjectWriter.h>
 
-#include "vtkCentrelineData.h"
+#include "vtkCentrelineResampler.h"
 #include "vtkScalarRadiiToVectorsFilter.h"
 #include "showPolyData.h"
 
@@ -35,9 +35,9 @@ int main(int argc, char* argv[]) {
 
 	vtkPolyData *vesselCentreline = vtkPolyData::SafeDownCast(vesselCentrelineReader->GetOutput());
 
-	vtkSmartPointer<vtkCentrelineData> centrelineSegmentSource = vtkSmartPointer<vtkCentrelineData>::New();
+	vtkSmartPointer<vtkCentrelineResampler> centrelineSegmentSource = vtkSmartPointer<vtkCentrelineResampler>::New();
 	centrelineSegmentSource->SetEdgeLength(4 * 65e-3);
-	centrelineSegmentSource->SetCentrelineData(vesselCentreline);
+	centrelineSegmentSource->SetInputData(vesselCentreline);
 
 	vtkPolyData *resampledVesselCentreline = centrelineSegmentSource->GetOutput();
 

@@ -23,6 +23,7 @@
 #include <vtkWindowToImageFilter.h>
 #include <vtkPNGWriter.h>
 #include <vtkXMLPolyDataWriter.h>
+#include <vtkSTLWriter.h>
 
 #include <vtkAxesActor.h>
 #include <vtkTransform.h>
@@ -347,10 +348,34 @@ void showGrids(std::vector<vtkSmartPointer<vtkStructuredGrid> > grids, vtkSmartP
 
 void writePolyData(vtkPolyData *input, std::string fileName)
 {
-	std::clog << "*** Writing file: " << fileName << std::endl;
+	std::clog << getTimeStamp() << ": Writing file " << fileName << std::endl;
 	vtkSmartPointer<vtkXMLPolyDataWriter> writer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
 	writer->SetInputData(input);
 	writer->SetFileName(fileName.c_str());
 	writer->Update();
 
+}
+
+void writeStlData(vtkPolyData *input, std::string fileName)
+{
+	std::clog << getTimeStamp() << ": Writing file " << fileName << std::endl;
+	vtkSmartPointer<vtkSTLWriter> writer = vtkSmartPointer<vtkSTLWriter>::New();
+	writer->SetInputData(input);
+	writer->SetFileName(fileName.c_str());
+	writer->Update();
+}
+
+std::string getTimeStamp()
+{
+	time_t rawtime;
+	struct tm * timeinfo;
+	char buffer[80];
+
+	time (&rawtime);
+	timeinfo = localtime(&rawtime);
+
+	strftime(buffer,80,"%d-%m-%Y %I:%M:%S",timeinfo);
+	std::string str(buffer);
+
+	return str;
 }
