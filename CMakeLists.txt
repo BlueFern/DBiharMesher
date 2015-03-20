@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 2.6)
 
 project(WrapDbihar)
 
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake ${CMAKE_MODULE_PATH})
+
 set(TEST_DATA_DIR ${PROJECT_SOURCE_DIR}/data CACHE PATH "Location of input data for the test drivers.")
 configure_file(
 	${PROJECT_SOURCE_DIR}/wrapDbiharConfig.h.in
@@ -333,9 +335,9 @@ target_link_libraries(testPipelineFull1
 	vtkCentrelineResampler
 	${testLibs})
 
-#add_executable(scratch
-#	test/showPolyData.cxx
-#	test/scratch.cxx)
-#target_link_libraries(scratch
-#	${testLibs}
-#	vtkIOLegacy)
+add_executable(scratch
+	test/showPolyData.cxx
+	test/scratch.cxx)
+target_link_libraries(scratch
+	${testLibs}
+	vtkIOLegacy)
