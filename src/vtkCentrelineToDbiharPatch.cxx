@@ -317,8 +317,8 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 		vtkMath::Normalize(derivN);
 
 		// Figure out the angles between the vectors at bifurcations and the adjacent vectors.
-		double rightAngleNm1 = vtkMath::DegreesFromRadians(vtkDbiharStatic::AngleBetweenVectors(derivNm1, derivN));
-		double rightAngleNp1 = vtkMath::DegreesFromRadians(vtkDbiharStatic::AngleBetweenVectors(derivNp1, derivN));
+		double rightAngleNm1 = vtkMath::DegreesFromRadians(vtkMath::AngleBetweenVectors(derivNm1, derivN));
+		double rightAngleNp1 = vtkMath::DegreesFromRadians(vtkMath::AngleBetweenVectors(derivNp1, derivN));
 
 		vtkMath::MultiplyScalar(derivN, vtkMath::Norm(derivatives->GetTuple(rightBifurcationDerivId)) + vtkMath::Norm(derivatives->GetTuple(rightBifurcationDerivId))); // * scalingR); // * this->EdgeDerivScale);
 		derivatives->SetTuple(rightBifurcationDerivId, derivN);
@@ -331,8 +331,8 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 		vtkMath::Normalize(derivN);
 
 		// Figure out the angles between the vectors at bifurcations and the adjacent vectors.
-		double leftAngleNm1 = vtkMath::DegreesFromRadians(vtkDbiharStatic::AngleBetweenVectors(derivNm1, derivN));
-		double leftAngleNp1 = vtkMath::DegreesFromRadians(vtkDbiharStatic::AngleBetweenVectors(derivNp1, derivN));
+		double leftAngleNm1 = vtkMath::DegreesFromRadians(vtkMath::AngleBetweenVectors(derivNm1, derivN));
+		double leftAngleNp1 = vtkMath::DegreesFromRadians(vtkMath::AngleBetweenVectors(derivNp1, derivN));
 
 		vtkMath::MultiplyScalar(derivN, vtkMath::Norm(derivatives->GetTuple(leftBifurcationDerivId)) + vtkMath::Norm(derivatives->GetTuple(leftBifurcationDerivId))); // * scalingL); // * this->EdgeDerivScale);
 		derivatives->SetTuple(leftBifurcationDerivId, derivN);

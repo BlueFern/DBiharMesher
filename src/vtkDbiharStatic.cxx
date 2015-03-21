@@ -23,20 +23,12 @@ void vtkDbiharStatic::DoubleCross1(const double v0[3], const double c0[3], const
 }
 
 /**
- * Note: For VTK 6.2 this function exists in vtkMath class.
+ * Find a global ID in a given IdList and return it's local position. Return -1 if not found.
+ *
+ * TODO: This method is redundant as there is equivalent functionality in vtkIdType vtkIdList::IsId(vtkIdType vtkid).
+ *
  */
-double vtkDbiharStatic::AngleBetweenVectors(const double v1[3], const double v2[3])
-{
-  double cross[3];
-  vtkMath::Cross(v1, v2, cross);
-  return atan2(vtkMath::Norm(cross), vtkMath::Dot(v1, v2));
-}
-
-/**
- * Finds a global ID in a given IdList and returns it's local position. Returns -1 if
- * not found.
- */
-vtkIdType vtkDbiharStatic::GetPosition(vtkSmartPointer<vtkIdList> IdList,vtkIdType id)
+vtkIdType vtkDbiharStatic::GetPosition(vtkSmartPointer<vtkIdList> IdList, vtkIdType id)
 {
 	vtkIdType localId = 0;
 	vtkIdType pointId = 0;

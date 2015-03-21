@@ -11,7 +11,6 @@ class vtkIdList;
 class vtkDbiharStatic : public vtkObject {
 public:
 
-	static double AngleBetweenVectors(const double v1[3], const double v2[3]);
 	static void DoubleCross1(const double v0[3], const double c0[3], const double v1[3], double c1[3]);
 	static vtkIdType GetPosition(vtkSmartPointer<vtkIdList> IdList,vtkIdType id);
 

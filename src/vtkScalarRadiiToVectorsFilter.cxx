@@ -196,14 +196,14 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 				double tmp[3];
 				vtkDbiharStatic::DoubleCross1(v0, c0, v1, tmp);
 
-				twistAngles[it->first] = vtkMath::DegreesFromRadians(vtkDbiharStatic::AngleBetweenVectors(tmp, c1));
+				twistAngles[it->first] = vtkMath::DegreesFromRadians(vtkMath::AngleBetweenVectors(tmp, c1));
 
 				// Figure out twist direction.
 				vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
 				transform->RotateWXYZ(twistAngles[it->first], v1);
 				transform->TransformPoint(tmp, tmp);
 
-				if(vtkMath::DegreesFromRadians(vtkDbiharStatic::AngleBetweenVectors(tmp, c1)) < angleTolerance)
+				if(vtkMath::DegreesFromRadians(vtkMath::AngleBetweenVectors(tmp, c1)) < angleTolerance)
 				{
 					twistAngles[it->first] *= -1.0;
 				}
