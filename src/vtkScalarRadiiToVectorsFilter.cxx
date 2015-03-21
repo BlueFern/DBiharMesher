@@ -24,7 +24,9 @@ vtkScalarRadiiToVectorsFilter::vtkScalarRadiiToVectorsFilter()
 	this->SetNumberOfInputPorts(1);
 	this->SetNumberOfOutputPorts(1);
 
-	angleTolerance = 1.0e-5;
+	this->angleTolerance = 1.0e-5;
+	this->inputPointerCopy = 0;
+
 
 	vtkSmartPointer<vtkCallbackCommand> progressCallback = vtkSmartPointer<vtkCallbackCommand>::New();
 	progressCallback->SetCallback(this->ProgressFunction);
@@ -37,12 +39,12 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 	unsigned int numStages = 4;
 
 	// Get the input and output.
-	input = vtkPolyData::GetData(inputVector[0], 0);
+	inputPointerCopy = vtkPolyData::GetData(inputVector[0], 0);
 	vtkPolyData* output = vtkPolyData::GetData(outputVector, 0);
 
 	// TODO: This code will get confused if the polydata has cells other than lines, i.e. vertices or polygons.
 
-	vtkSmartPointer<vtkCellArray> lines = input->GetLines();
+	vtkSmartPointer<vtkCellArray> lines = inputPointerCopy->GetLines();
 	lines->InitTraversal();
 
 	// Obtain tree structure (bifurcations and terminals) from the centreline points, lines.
@@ -57,13 +59,13 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 		lastId->InsertNextId(lineIds->GetId(lineIds->GetNumberOfIds() - 1));
 
 		// WARNING: The code in the GetCellNeighbors method changes the traversal location in the vtkCellArray. In my view it is utterly retarded.
-		vtkIdType traverseLocation = input->GetLines()->GetTraversalLocation();
+		vtkIdType traverseLocation = inputPointerCopy->GetLines()->GetTraversalLocation();
 
 		vtkSmartPointer<vtkIdList> neighbourCellIds = vtkSmartPointer<vtkIdList>::New();
-		input->GetCellNeighbors(lineId, lastId, neighbourCellIds);
+		inputPointerCopy->GetCellNeighbors(lineId, lastId, neighbourCellIds);
 
 		// Restore traversal location.
-		input->GetLines()->SetTraversalLocation(traverseLocation);
+		inputPointerCopy->GetLines()->SetTraversalLocation(traverseLocation);
 
 		//std::cout << "Line " << lineId << " shares last point with " << neighbourCellIds->GetNumberOfIds() << " cells." << std::endl;
 
@@ -102,7 +104,7 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 	// Radii vectors.
 	vtkSmartPointer<vtkDoubleArray> radiiVectors = vtkSmartPointer<vtkDoubleArray>::New();
 	radiiVectors->SetNumberOfComponents(3);
-	radiiVectors->SetNumberOfTuples(input->GetNumberOfPoints());
+	radiiVectors->SetNumberOfTuples(inputPointerCopy->GetNumberOfPoints());
 	radiiVectors->SetName(vtkDbiharStatic::RADII_VECTORS_ARR_NAME);
 
 	// TODO: Check this can be removed safely. For now, populate it just in case some tuples get missed.
@@ -285,7 +287,7 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 
 	// Root point.
 	radiiVectors->GetTuple(0, c0);
-	vtkMath::MultiplyScalar(c0, input->GetPointData()->GetScalars()->GetTuple1(0));
+	vtkMath::MultiplyScalar(c0, inputPointerCopy->GetPointData()->GetScalars()->GetTuple1(0));
 	radiiVectors->SetTuple(0, c0);
 
 	// Third pass to interpolate radii on sharp angles and set correct magnitude.
@@ -313,13 +315,13 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 				vtkMath::Normalize(c0);
 			}
 
-			vtkMath::MultiplyScalar(c0, input->GetPointData()->GetScalars()->GetTuple1(lineIds->GetId(pId)));
+			vtkMath::MultiplyScalar(c0, inputPointerCopy->GetPointData()->GetScalars()->GetTuple1(lineIds->GetId(pId)));
 			radiiVectors->SetTuple(lineIds->GetId(pId), c0);
 		}
 	}
 
 	// Shallow copy is good enough?
-	output->ShallowCopy(input);
+	output->ShallowCopy(inputPointerCopy);
 
 	// TODO: Review whether this is OK to modify/augment input data with vectors. Perhaps the old radii should be stripped from this data and maybe it is cleaner to create new polydata.
 	output->GetPointData()->SetVectors(radiiVectors);
@@ -366,8 +368,8 @@ void vtkScalarRadiiToVectorsFilter::GetDirectionVector(vtkIdType lineId, vtkIdTy
 	if(pointId != 0)
 	{
 		// TODO: This is a bit backwards, because direction vector should be obtained from points at positions n and n + 1.
-		input->GetPoint(line->GetId(pointId), p0);
-		input->GetPoint(line->GetId(pointId - 1), p1);
+		inputPointerCopy->GetPoint(line->GetId(pointId), p0);
+		inputPointerCopy->GetPoint(line->GetId(pointId - 1), p1);
 		vtkMath::Subtract(p1, p0, vector);
 	}
 	else
@@ -383,7 +385,7 @@ vtkSmartPointer<vtkIdList> vtkScalarRadiiToVectorsFilter::GetLineIds(vtkIdType l
 	// TODO: GetCellPoints might be a better-suited method to use to get line ids, but in this case the input must not have any cells other than lines.
 
 	bool lineFound = false;
-	vtkSmartPointer<vtkCellArray> lines = input->GetLines();
+	vtkSmartPointer<vtkCellArray> lines = inputPointerCopy->GetLines();
 	vtkSmartPointer<vtkIdList> line = vtkSmartPointer<vtkIdList>::New();
 	lines->InitTraversal();
 	for(vtkIdType id = 0; id < lines->GetNumberOfCells(); id++)

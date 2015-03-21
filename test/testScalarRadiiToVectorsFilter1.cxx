@@ -18,6 +18,8 @@
 #include <vtkXMLPolyDataWriter.h>
 #include <vtkGenericDataObjectWriter.h>
 
+#include "vtkDbiharStatic.h"
+#include "vtkRescaleUnits.h"
 #include "vtkCentrelineResampler.h"
 #include "vtkScalarRadiiToVectorsFilter.h"
 #include "showPolyData.h"
@@ -35,9 +37,15 @@ int main(int argc, char* argv[]) {
 
 	vtkPolyData *vesselCentreline = vtkPolyData::SafeDownCast(vesselCentrelineReader->GetOutput());
 
+	vtkSmartPointer<vtkRescaleUnits> rescaleUnits = vtkSmartPointer<vtkRescaleUnits>::New();
+	rescaleUnits->SetInputData(vesselCentreline);
+	rescaleUnits->SetScale(1000); // mm to µm
+	rescaleUnits->Update();
+
 	vtkSmartPointer<vtkCentrelineResampler> centrelineSegmentSource = vtkSmartPointer<vtkCentrelineResampler>::New();
-	centrelineSegmentSource->SetEdgeLength(4 * 65e-3);
-	centrelineSegmentSource->SetInputData(vesselCentreline);
+	centrelineSegmentSource->SetEdgeLength(vtkDbiharStatic::EC_AXIAL * 4);
+	centrelineSegmentSource->SetInputData(rescaleUnits->GetOutput());
+	centrelineSegmentSource->Update();
 
 	vtkPolyData *resampledVesselCentreline = centrelineSegmentSource->GetOutput();
 
@@ -49,6 +57,7 @@ int main(int argc, char* argv[]) {
 	showPolyData1(resampledVesselCentrelineWithRadii, 1.0);
 
 #if 1
+	// TODO: Replace this code with output methods from vtkDbiharStatic. Do the same for all cases of output in the test code.
 	vtkSmartPointer<vtkXMLPolyDataWriter> tmpWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
 	tmpWriter->SetInputData(resampledVesselCentrelineWithRadii);
 	tmpWriter->SetFileName("227A_resampledCentrelineWithRadii.vtp");

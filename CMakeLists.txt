@@ -197,7 +197,7 @@ add_executable(testScalarRadiiToVectorsFilter1
 	test/showPolyData.cxx
 	test/testScalarRadiiToVectorsFilter1.cxx)
 target_link_libraries(testScalarRadiiToVectorsFilter1
-	vtkDbiharPatchFilter
+	vtkRescaleUnits
 	vtkScalarRadiiToVectorsFilter
 	${testLibs})
 

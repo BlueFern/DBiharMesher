@@ -40,7 +40,7 @@ private:
 
 	double angleTolerance;
 
-	vtkPolyData* input;
+	vtkPolyData* inputPointerCopy;
 
 	std::map<vtkIdType, std::vector<vtkIdType> > treeInfo;
 	std::map<vtkIdType, vtkVector3d> avrgVectors;
