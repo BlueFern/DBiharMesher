@@ -26,10 +26,6 @@
 #include "vtkSkipSegmentFilter.h"
 #include "vtkEndCapFilter.h"
 #include "vtkCentrelineResampler.h"
-#include "showPolyData.h"
-
-
-#include "vtkPolyDataWriter.h" //TODO: remove
 
 int main(int argc, char* argv[]) {
 
@@ -131,7 +127,7 @@ int main(int argc, char* argv[]) {
 	pointsToMeshFilter->SetDimensions(dimensions);
 	pointsToMeshFilter->Update();
 
-	showPolyData1(pointsToMeshFilter->GetOutput());
+	vtkDbiharStatic::ShowPolyData(pointsToMeshFilter->GetOutput());
 
 	vtkSmartPointer<vtkXMLPolyDataWriter> quadMeshWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
 	quadMeshWriter->SetInputData(pointsToMeshFilter->GetOutput());

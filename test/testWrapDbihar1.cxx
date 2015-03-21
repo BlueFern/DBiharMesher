@@ -12,8 +12,7 @@
 #include <vtkPolyData.h>
 
 #include "vtkDbiharPatchFilter.h"
-#include "showPolyData.h"
-
+#include "vtkDbiharStatic.h"
 #include "wrapDbiharConfig.h"
 
 int main(int argc, char* argv[]) {
@@ -111,7 +110,7 @@ int main(int argc, char* argv[]) {
 	structuredGrid->SetDimensions(xQuads + 1, yQuads + 1, 1);
 	structuredGrid->SetPoints(outputPatch->GetPoints());
 
-	showPolyData(inputPatch, structuredGrid);
+	vtkDbiharStatic::ShowPolyDataWithGrid(inputPatch, structuredGrid);
 
 	std::cout << "Exiting " << __FILE__ << std::endl;
 

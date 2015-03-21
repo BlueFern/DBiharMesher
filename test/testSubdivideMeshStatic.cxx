@@ -8,9 +8,9 @@
 #include <vtkXMLPolyDataWriter.h>
 #include <vtkIdList.h>
 #include <vtkAppendPolyData.h>
-#include "wrapDbiharConfig.h"
-#include "showPolyData.h"
 
+#include "wrapDbiharConfig.h"
+#include "vtkDbiharStatic.h"
 
 int main(int argc, char* argv[]) {
 

@@ -6,7 +6,7 @@
 
 #include "vtkEndCapFilter.h"
 #include "wrapDbiharConfig.h"
-#include "showPolyData.h"
+#include "vtkDbiharStatic.h"
 
 int main(int argc, char* argv[]) {
 
@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
 	endCapFilter->SetInputData(reader->GetOutput());
 	endCapFilter->Update();
 
-	showPolyData(endCapFilter->GetOutput(), NULL);
+	vtkDbiharStatic::ShowPolyDataWithGrid(endCapFilter->GetOutput(), NULL);
 
 	std::cout << "Exiting " << __FILE__ << std::endl;
 

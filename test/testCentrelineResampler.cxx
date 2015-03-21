@@ -23,7 +23,7 @@
 #include <vtkMath.h>
 
 #include "vtkCentrelineResampler.h"
-#include "showPolyData.h"
+#include "vtkDbiharStatic.h"
 
 #include "wrapDbiharConfig.h"
 
@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
 
 	resampledVesselCentreline->SetVerts(vertsArray);
 
-	showPolyData1(resampledVesselCentreline, 0.5);
+	vtkDbiharStatic::ShowPolyData(resampledVesselCentreline, 0.5);
 	centrelineSegmentSource->Print(std::cout);
 
 #if 1

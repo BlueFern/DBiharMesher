@@ -23,7 +23,7 @@
 
 #include <vtkXMLStructuredGridReader.h>
 
-#include "showPolyData.h"
+#include "vtkDbiharStatic.h"
 #include "vtkCentrelineToDbiharPatch.h"
 #include "vtkCentrelinePartitioner.h"
 #include "vtkScalarRadiiToVectorsFilter.h"

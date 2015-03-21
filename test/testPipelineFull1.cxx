@@ -12,7 +12,6 @@
 #include <vtkTriangleFilter.h>
 #include <vtkCellArray.h>
 
-#include "showPolyData.h"
 #include "vtkDbiharStatic.h"
 #include "vtkRescaleUnits.h"
 #include "vtkCentrelinePartitioner.h"
@@ -180,9 +179,9 @@ int main(int argc, char* argv[]) {
 	}
 	fullMeshJoiner->Update();
 
-	showPolyData1(fullMeshJoiner->GetOutput());
+	vtkDbiharStatic::ShowPolyData(fullMeshJoiner->GetOutput());
 
-	writePolyData(fullMeshJoiner->GetOutput(), "quadMeshFull.vtp");
+	vtkDbiharStatic::WritePolyData(fullMeshJoiner->GetOutput(), "quadMeshFull.vtp");
 
 #if 0 // Very Expensive to run.
 
@@ -239,7 +238,7 @@ int main(int argc, char* argv[]) {
 
 	triMeshJoiner->Update();
 
-	writeStlData(triMeshJoiner->GetOutput(), "triMeshWithCapsFull.stl");
+	vtkDbiharStatic::WriteStlData(triMeshJoiner->GetOutput(), "triMeshWithCapsFull.stl");
 
 	return EXIT_SUCCESS;
 }

@@ -15,8 +15,7 @@
 #include <vtkMath.h>
 
 #include "vtkDbiharPatchFilter.h"
-#include "showPolyData.h"
-
+#include "vtkDbiharStatic.h"
 #include "wrapDbiharConfig.h"
 
 double radToDeg(double angleInRad)
@@ -272,7 +271,7 @@ int main(int argc, char* argv[]) {
 
 	inputPatch->GetPointData()->SetVectors(derivatives);
 
-	showPolyData(inputPatch, NULL);
+	vtkDbiharStatic::ShowPolyDataWithGrid(inputPatch, NULL);
 
 	vtkSmartPointer<vtkDbiharPatchFilter> patchFilter = vtkSmartPointer<vtkDbiharPatchFilter>::New();
 
@@ -301,7 +300,7 @@ int main(int argc, char* argv[]) {
 	structuredGrid->SetDimensions(cQuads + 1, yQuads + 1, 1);
 	structuredGrid->SetPoints(outputPatch->GetPoints());
 
-	showPolyData(inputPatch, structuredGrid);
+	vtkDbiharStatic::ShowPolyDataWithGrid(inputPatch, structuredGrid);
 
 	std::cout << "Exiting " << __FILE__ << std::endl;
 

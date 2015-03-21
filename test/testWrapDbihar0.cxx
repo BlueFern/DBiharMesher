@@ -17,7 +17,7 @@
 #include <vtkSTLWriter.h>
 
 #include "vtkDbiharPatchFilter.h"
-#include "showPolyData.h"
+#include "vtkDbiharStatic.h"
 
 #include "wrapDbiharConfig.h"
 
@@ -119,13 +119,13 @@ int main(int argc, char* argv[]) {
 	structuredGrid->SetDimensions(xQuads + 1, yQuads + 1, 1);
 	structuredGrid->SetPoints(outputPatch->GetPoints());
 
-	showPolyData(inputPatch, structuredGrid);
+	vtkDbiharStatic::ShowPolyDataWithGrid(inputPatch, structuredGrid);
 
 	vtkSmartPointer<vtkStructuredGridGeometryFilter> gridGeometryFilter = vtkSmartPointer<vtkStructuredGridGeometryFilter>::New();
 	gridGeometryFilter->SetInputData(structuredGrid);
 	gridGeometryFilter->Update();
 
-	showPolyData(gridGeometryFilter->GetOutput(), NULL);
+	vtkDbiharStatic::ShowPolyDataWithGrid(gridGeometryFilter->GetOutput(), NULL);
 
 	vtkSmartPointer<vtkXMLPolyDataWriter> polyDataWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
 	polyDataWriter->SetInputData(gridGeometryFilter->GetOutput());
@@ -136,7 +136,7 @@ int main(int argc, char* argv[]) {
 	triangulatorFilter->SetInputData(gridGeometryFilter->GetOutput());
 	triangulatorFilter->Update();
 
-	showPolyData(triangulatorFilter->GetOutput(), NULL);
+	vtkDbiharStatic::ShowPolyDataWithGrid(triangulatorFilter->GetOutput(), NULL);
 
 	polyDataWriter->SetInputData(triangulatorFilter->GetOutput());
 	polyDataWriter->SetFileName("endCapTriangles.vtp");

@@ -135,92 +135,92 @@ include_directories(${PROJECT_SOURCE_DIR}/test)
 set(testLibs vtkIOXML vtkIOLegacy vtkIOImage vtkRenderingAnnotation vtkRenderingFreeTypeOpenGL vtkInteractionStyle vtkFiltersSources)
 
 add_executable(testWrapDbihar0
-	test/showPolyData.cxx
 	test/testWrapDbihar0.cxx)
 target_link_libraries(testWrapDbihar0
+	vtkDbiharStatic
 	vtkFiltersGeometry
 	vtkDbiharPatchFilter
 	${testLibs})
 
 add_executable(testWrapDbihar1
-	test/showPolyData.cxx
 	test/testWrapDbihar1.cxx)
 target_link_libraries(testWrapDbihar1
+	vtkDbiharStatic
 	vtkDbiharPatchFilter
 	${testLibs})
 
 add_executable(testWrapDbihar2
-	test/showPolyData.cxx
 	test/testWrapDbihar2.cxx)
 target_link_libraries(testWrapDbihar2
+	vtkDbiharStatic
 	vtkDbiharPatchFilter
 	${testLibs})
 
 add_executable(testWrapDbihar3
-	test/showPolyData.cxx
 	test/testWrapDbihar3.cxx)
 target_link_libraries(testWrapDbihar3
+	vtkDbiharStatic
 	vtkDbiharPatchFilter
 	${testLibs})
 
 add_executable(testWrapDbihar4
-	test/showPolyData.cxx
 	test/testWrapDbihar4.cxx)
 target_link_libraries(testWrapDbihar4
+	vtkDbiharStatic
 	vtkDbiharPatchFilter
 	${testLibs})
 
 add_executable(testWrapDbihar5
-	test/showPolyData.cxx
 	test/testWrapDbihar5.cxx)
 target_link_libraries(testWrapDbihar5
+	vtkDbiharStatic
 	vtkDbiharPatchFilter
 	${testLibs})
 
 add_executable(testWrapDbihar6
-	test/showPolyData.cxx
 	test/testWrapDbihar6.cxx)
 target_link_libraries(testWrapDbihar6
+	vtkDbiharStatic
 	vtkDbiharPatchFilter
 	${testLibs})
 
 add_executable(testCentrelineResampler
 	src/vtkCentrelineResampler.cxx
-	test/showPolyData.cxx
 	test/testCentrelineResampler.cxx)
 target_link_libraries(testCentrelineResampler
+	vtkDbiharStatic
 	vtkCentrelineResampler
 	${testLibs})
 
 add_executable(testScalarRadiiToVectorsFilter1
 	src/vtkCentrelineResampler.cxx
-	test/showPolyData.cxx
 	test/testScalarRadiiToVectorsFilter1.cxx)
 target_link_libraries(testScalarRadiiToVectorsFilter1
+	vtkDbiharStatic
 	vtkRescaleUnits
 	vtkScalarRadiiToVectorsFilter
 	${testLibs})
 
 add_executable(testPointsToMeshFilter1
-	test/testPointsToMeshFilter.cxx
-	test/showPolyData.cxx)
+	test/testPointsToMeshFilter.cxx)
 target_link_libraries(testPointsToMeshFilter1
+	vtkDbiharStatic
 	vtkPointsToMeshFilter
 	${testLibs})
 
 add_executable(testCentrelinePartitioner1
 	src/vtkCentrelineResampler.cxx
 	src/vtkCentrelinePartitioner.cxx
-	test/showPolyData.cxx
 	test/testCentrelinePartitioner1.cxx)
 target_link_libraries(testCentrelinePartitioner1
+	vtkDbiharStatic
 	vtkCentrelinePartitioner
 	${testLibs})
 
 add_executable(testEndCapFilter1
-	test/showPolyData.cxx
 	test/testEndCapFilter1.cxx)
 target_link_libraries(testEndCapFilter1
+	vtkDbiharStatic
 	vtkEndCapFilter
 	${testLibs})
 
@@ -228,6 +228,7 @@ add_executable(testSkipSegmentFilter1
 	src/vtkSkipSegmentFilter.cxx
 	test/testSkipSegmentFilter1.cxx)
 target_link_libraries(testSkipSegmentFilter1
+	vtkDbiharStatic
 	vtkScalarRadiiToVectorsFilter
 	vtkFiltersGeometry
 	vtkSkipSegmentFilter
@@ -235,9 +236,9 @@ target_link_libraries(testSkipSegmentFilter1
 	
 add_executable(testCentrelineToDbiharPatch
 	src/vtkCentrelineToDbiharPatch.cxx
-	test/showPolyData.cxx
 	test/testCentrelineToDbiharPatch.cxx)
 target_link_libraries(testCentrelineToDbiharPatch
+	vtkDbiharStatic
 	vtkScalarRadiiToVectorsFilter
 	vtkCentrelineToDbiharPatch
 	vtkFiltersGeometry
@@ -249,6 +250,7 @@ add_executable(testSubdivideQuadFilter
 	src/vtkSubdivideQuadFilter.cxx
 	test/testSubdivideQuadFilter.cxx)
 target_link_libraries(testSubdivideQuadFilter
+	vtkDbiharStatic
 	vtkScalarRadiiToVectorsFilter
 	vtkFiltersGeometry
 	vtkSubdivideQuadFilter
@@ -258,6 +260,7 @@ add_executable(testSubdivideMeshStatic
 	src/vtkSubdivideQuadFilter.cxx
 	test/testSubdivideMeshStatic.cxx)
 target_link_libraries(testSubdivideMeshStatic
+	vtkDbiharStatic
 	vtkScalarRadiiToVectorsFilter
 	vtkFiltersGeometry
 	vtkSubdivideQuadFilter
@@ -268,6 +271,7 @@ add_executable(testSubdivideMeshDynamic
 	src/vtkSubdivideMeshDynamic.cxx
 	test/testSubdivideMeshDynamic.cxx)
 target_link_libraries(testSubdivideMeshDynamic
+	vtkDbiharStatic
 	vtkScalarRadiiToVectorsFilter
 	vtkFiltersGeometry
 	vtkSubdivideQuadFilter
@@ -278,13 +282,14 @@ add_executable(testRescaleUnits
 	src/vtkRescaleUnits.cxx
 	test/testRescaleUnits.cxx)
 target_link_libraries(testRescaleUnits
+	vtkDbiharStatic
 	vtkRescaleUnits
 	${testLibs})
 	
 add_executable(testPipelineBifurcation1
-	test/showPolyData.cxx
 	test/testPipelineBifurcation1.cxx)
 target_link_libraries(testPipelineBifurcation1
+	vtkDbiharStatic
 	vtkScalarRadiiToVectorsFilter
 	vtkFiltersGeometry
 	vtkSubdivideMeshDynamic
@@ -300,9 +305,9 @@ target_link_libraries(testPipelineBifurcation1
 	${testLibs})
 
 add_executable(testPipelineBifurcation2
-	test/showPolyData.cxx
 	test/testPipelineBifurcation2.cxx)
 target_link_libraries(testPipelineBifurcation2
+	vtkDbiharStatic
 	vtkScalarRadiiToVectorsFilter
 	vtkFiltersGeometry
 	vtkSubdivideMeshDynamic
@@ -318,9 +323,9 @@ target_link_libraries(testPipelineBifurcation2
 	${testLibs})
 
 add_executable(testPipelineFull1
-	test/showPolyData.cxx
 	test/testPipelineFull1.cxx)
 target_link_libraries(testPipelineFull1
+	vtkDbiharStatic
 	vtkScalarRadiiToVectorsFilter
 	vtkFiltersGeometry
 	vtkSubdivideMeshDynamic
@@ -335,9 +340,9 @@ target_link_libraries(testPipelineFull1
 	vtkCentrelineResampler
 	${testLibs})
 
-add_executable(scratch
-	test/showPolyData.cxx
-	test/scratch.cxx)
-target_link_libraries(scratch
-	${testLibs}
-	vtkIOLegacy)
+#add_executable(scratch
+#	test/showPolyData.cxx
+#	test/scratch.cxx)
+#target_link_libraries(scratch
+#	${testLibs}
+#	vtkIOLegacy)

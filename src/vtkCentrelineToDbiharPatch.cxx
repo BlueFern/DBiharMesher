@@ -20,7 +20,6 @@
 #include "vtkDbiharStatic.h"
 #include "vtkCentrelineToDbiharPatch.h"
 #include "vtkDbiharPatchFilter.h"
-#include "showPolyData.h"
 
 double expBase = 1.6;
 double inputMap[] = {60, 7.0};
@@ -148,7 +147,7 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 			radiiArray->GetTuple(pointIdList->GetId(0), r);
 
 			// Get the rotation axis.
-			vtkDbiharStatic::DoubleCross1(r, v0, r, c0);
+			vtkDbiharStatic::DoubleCross(r, v0, r, c0);
 
 			// Angle of rotation comes from the parametric coordinate along the arc.
 			double angle = vtkMath::Pi() * parametricCoord;
@@ -228,7 +227,7 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 			vtkMath::MultiplyScalar(r, -1.0);
 
 			// Get the rotation axis.
-			vtkDbiharStatic::DoubleCross1(r, v0, r, c0);
+			vtkDbiharStatic::DoubleCross(r, v0, r, c0);
 
 			// Angle of rotation comes from the parametric coordinate along the arc.
 			double angle = vtkMath::Pi() * parametricCoord;

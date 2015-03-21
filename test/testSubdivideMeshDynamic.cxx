@@ -10,7 +10,7 @@
 
 #include "vtkSubdivideMeshDynamic.h"
 #include "wrapDbiharConfig.h"
-#include "showPolyData.h"
+#include "vtkDbiharStatic.h"
 
 
 int main(int argc, char* argv[]) {

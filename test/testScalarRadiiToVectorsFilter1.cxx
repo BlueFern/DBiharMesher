@@ -22,8 +22,6 @@
 #include "vtkRescaleUnits.h"
 #include "vtkCentrelineResampler.h"
 #include "vtkScalarRadiiToVectorsFilter.h"
-#include "showPolyData.h"
-
 #include "wrapDbiharConfig.h"
 
 int main(int argc, char* argv[]) {
@@ -54,7 +52,7 @@ int main(int argc, char* argv[]) {
 	scalarRadiiToVectorsFilter->Update();
 
 	vtkPolyData *resampledVesselCentrelineWithRadii = scalarRadiiToVectorsFilter->GetOutput();
-	showPolyData1(resampledVesselCentrelineWithRadii, 1.0);
+	vtkDbiharStatic::ShowPolyData(resampledVesselCentrelineWithRadii, 1.0);
 
 #if 1
 	// TODO: Replace this code with output methods from vtkDbiharStatic. Do the same for all cases of output in the test code.

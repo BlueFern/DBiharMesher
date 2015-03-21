@@ -181,7 +181,7 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 
 			GetDirectionVector(it->first, pId, v1);
 
-			vtkDbiharStatic::DoubleCross1(v0, c0, v1, c1);
+			vtkDbiharStatic::DoubleCross(v0, c0, v1, c1);
 			vtkMath::Normalize(c1);
 
 			// Store radius vector at point pId. This is only for the inlet.
@@ -196,7 +196,7 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 				radiiVectors->GetTuple(lineIds->GetId(0), c0);
 				GetDirectionVector(it->first, 0, v0);
 				double tmp[3];
-				vtkDbiharStatic::DoubleCross1(v0, c0, v1, tmp);
+				vtkDbiharStatic::DoubleCross(v0, c0, v1, tmp);
 
 				twistAngles[it->first] = vtkMath::DegreesFromRadians(vtkMath::AngleBetweenVectors(tmp, c1));
 
@@ -258,7 +258,7 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 			GetDirectionVector(it->first, pId, v1);
 			vtkMath::MultiplyScalar(v1, -1);
 
-			vtkDbiharStatic::DoubleCross1(v0, c0, v1, c1);
+			vtkDbiharStatic::DoubleCross(v0, c0, v1, c1);
 			vtkMath::Normalize(c1);
 
 			// Add the twist for segments ending in bifurcations.
@@ -306,7 +306,7 @@ int vtkScalarRadiiToVectorsFilter::RequestData(vtkInformation *vtkNotUsed(reques
 				GetDirectionVector(it->first, pId, v0);
 				GetDirectionVector(it->first, pId + 1, v1);
 
-				vtkDbiharStatic::DoubleCross1(v0, c0, v1, c1);
+				vtkDbiharStatic::DoubleCross(v0, c0, v1, c1);
 
 				vtkMath::Normalize(c1);
 				vtkMath::Add(c0, c1, c0);

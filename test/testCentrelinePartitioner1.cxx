@@ -13,10 +13,9 @@
 
 #include <vtkXMLStructuredGridReader.h>
 
-#include "vtkCentrelinePartitioner.h"
 #include "wrapDbiharConfig.h"
-
-#include "showPolyData.h"
+#include "vtkDbiharStatic.h"
+#include "vtkCentrelinePartitioner.h"
 
 int main(int argc, char* argv[]) {
 
@@ -76,7 +75,7 @@ int main(int argc, char* argv[]) {
 
 	centrelinePartitioner->Print(std::cout);
 
-	writePolyData(centrelinePartitioner->GetOutput(), "partitionedCentreline.vtp");
+	vtkDbiharStatic::WritePolyData(centrelinePartitioner->GetOutput(), "partitionedCentreline.vtp");
 
 	return EXIT_SUCCESS;
 }
