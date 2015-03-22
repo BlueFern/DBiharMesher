@@ -1,8 +1,6 @@
 #include <vtkSmartPointer.h>
 #include <vtkPolyData.h>
 #include <vtkGenericDataObjectReader.h>
-#include <vtkXMLPolyDataWriter.h>
-#include <vtkSTLWriter.h>
 #include <vtkDoubleArray.h>
 #include <vtkUnsignedIntArray.h>
 #include <vtkCell.h>
@@ -130,10 +128,7 @@ int main(int argc, char* argv[]) {
 
 	vtkDbiharStatic::ShowPolyData(pointsToMeshFilter->GetOutput());
 
-	vtkSmartPointer<vtkXMLPolyDataWriter> quadMeshWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-	quadMeshWriter->SetInputData(pointsToMeshFilter->GetOutput());
-	quadMeshWriter->SetFileName("quadMeshBifurcation2.vtp");
-	quadMeshWriter->Write();
+	vtkDbiharStatic::WritePolyData(pointsToMeshFilter->GetOutput(), "quadMeshBifurcation2.vtp");
 
 #if 0
 	// Very expensive to run.
@@ -143,10 +138,7 @@ int main(int argc, char* argv[]) {
 	dynamicECMesher->SetLength(vtkDbiharStatic::EC_AXIAL);
 	dynamicECMesher->Update();
 
-	vtkSmartPointer<vtkXMLPolyDataWriter> ECMeshWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-	ECMeshWriter->SetInputData(dynamicECMesher->GetOutput());
-	ECMeshWriter->SetFileName("ECquadMeshBifurcation2.vtp");
-	ECMeshWriter->Write();
+	vtkDbiharStatic::WritePolyData(dynamicECMesher->GetOutput(), "ECquadMeshBifurcation2.vtp");
 
 	vtkSmartPointer<vtkSubdivideMeshDynamic> dynamicSMCMesher = vtkSmartPointer<vtkSubdivideMeshDynamic>::New();
 	dynamicSMCMesher->SetInputData(pointsToMeshFilter->GetOutput());
@@ -154,10 +146,7 @@ int main(int argc, char* argv[]) {
 	dynamicSMCMesher->SetLength(vtkDbiharStatic::SMC_AXIAL);
 	dynamicSMCMesher->Update();
 
-	vtkSmartPointer<vtkXMLPolyDataWriter> SMCMeshWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-	SMCMeshWriter->SetInputData(dynamicSMCMesher->GetOutput());
-	SMCMeshWriter->SetFileName("SMCquadMeshBifurcation2.vtp");
-	SMCMeshWriter->Write();
+	vtkDbiharStatic::WritePolyData(dynamicSMCMesher->GetOutput(), "SMCquadMeshBifurcation2.vtp");
 #endif
 
 	// Create and assemble the triangulated mesh, including the triangulated quad mesh
@@ -194,10 +183,7 @@ int main(int argc, char* argv[]) {
 	}
 	appendTriMesh->Update();
 
-	vtkSmartPointer<vtkSTLWriter> triMeshWriter = vtkSmartPointer<vtkSTLWriter>::New();
-	triMeshWriter->SetInputData(appendTriMesh->GetOutput());
-	triMeshWriter->SetFileName("triMeshWithCapsBifurcation2.stl");
-	triMeshWriter->Write();
+	vtkDbiharStatic::WriteStlData(appendTriMesh->GetOutput(), "triMeshWithCapsBifurcation2.stl");
 
 	return EXIT_SUCCESS;
 }
