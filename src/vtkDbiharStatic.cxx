@@ -310,31 +310,3 @@ void vtkDbiharStatic::DoubleCross(const double v0[3], const double c0[3], const 
 	vtkMath::Cross(c0, v0, c1);
 	vtkMath::Cross(v1, c1, c1);
 }
-
-/**
- * Find a global ID in a given IdList and return it's local position. Return -1 if not found.
- *
- * TODO: This method is redundant as there is equivalent functionality in vtkIdType vtkIdList::IsId(vtkIdType vtkid).
- *
- */
-vtkIdType vtkDbiharStatic::GetPosition(vtkSmartPointer<vtkIdList> IdList, vtkIdType id)
-{
-	vtkIdType localId = 0;
-	vtkIdType pointId = 0;
-	vtkIdType maxLocalId = IdList->GetNumberOfIds() - 1;
-
-	while(true)
-	{
-		if(localId > maxLocalId)
-		{
-			return -1;
-		}
-		pointId = IdList->GetId(localId);
-		if(pointId == id)
-		{
-			break;
-		}
-		localId++;
-	}
-	return localId;
-}

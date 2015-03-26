@@ -116,7 +116,7 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 	vtkIdType branchId = startingCell->GetId(0); // Start point. 0 if unspecified by user.
 
 	cellIdList = input->GetCell(branchId)->GetPointIds();
-	vtkIdType localId = vtkDbiharStatic::GetPosition(cellIdList, endPointsCopy->GetId(0));
+	vtkIdType localId =  cellIdList->IsId(endPointsCopy->GetId(0));
 
 	assert(localId != -1);
 	endPointsCopy->DeleteId(endPointsCopy->GetId(0));
@@ -127,7 +127,7 @@ int vtkCentrelinePartitioner::RequestData(vtkInformation *vtkNotUsed(request),
 	endPointsTmp->IntersectWith(cellIdList);
 	if (endPointsTmp->GetNumberOfIds() == 1) // Still another end point on this cell.
 	{
-		localEndPoint = vtkDbiharStatic::GetPosition(cellIdList, endPointsTmp->GetId(0));
+		localEndPoint = cellIdList->IsId(endPointsTmp->GetId(0));
 		endPointsCopy->DeleteId(endPointsTmp->GetId(0));
 	}
 	else
