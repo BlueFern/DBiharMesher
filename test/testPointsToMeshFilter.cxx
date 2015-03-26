@@ -20,25 +20,27 @@ int main(int argc, char* argv[]) {
 
 	vtkSmartPointer<vtkUnsignedIntArray> dimensions = vtkSmartPointer<vtkUnsignedIntArray>::New();
 
-
+	// Straight segment.
 	dimensions->InsertNextValue(32); // Use dbhPatchPoints0.vtp
 	dimensions->InsertNextValue(70);
 
+	// Even branch length bifurcations.
 	//dimensions->InsertNextValue(28);
 	//dimensions->InsertNextValue(44);
 	//dimensions->InsertNextValue(44); // Use dbhPatchPoints1.vtp
 	//dimensions->InsertNextValue(44);
 
+	// Different length branches bifurcation.
 	//dimensions->InsertNextValue(28);
 	//dimensions->InsertNextValue(70);
 	//dimensions->InsertNextValue(24); // Use dbhPatchPoints2.vtp
 	//dimensions->InsertNextValue(44);
 
 	vtkSmartPointer<vtkPointsToMeshFilter> pointsToMeshFilter = vtkSmartPointer<vtkPointsToMeshFilter>::New();
-	pointsToMeshFilter->DebugOn();
+	//pointsToMeshFilter->DebugOn();
 	pointsToMeshFilter->SetDimensions(dimensions);
 	pointsToMeshFilter->SetInputConnection(pointsReader->GetOutputPort());
-
+	pointsToMeshFilter->SetShowProgress(true);
 	pointsToMeshFilter->Update();
 
 	//showPolyData1(pointsToMeshFilter->GetOutput(), 1.0);

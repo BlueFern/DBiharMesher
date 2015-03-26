@@ -34,6 +34,10 @@ vtkSkipSegmentFilter::vtkSkipSegmentFilter()
 	this->Outlet = false;
 	this->PointId = -1;
 	this->SkipSize = -1;
+
+	vtkSmartPointer<vtkCallbackCommand> progressCallback = vtkSmartPointer<vtkCallbackCommand>::New();
+	progressCallback->SetCallback(this->ProgressFunction);
+	this->AddObserver(vtkCommand::ProgressEvent, progressCallback);
 }
 
 int vtkSkipSegmentFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkInformationVector **inputVector, vtkInformationVector *outputVector)
@@ -124,6 +128,8 @@ int vtkSkipSegmentFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 	}
 	patchPoints->InsertNextPoint(patchPoints->GetPoint(0)); // Duplicate first point to close the loop.
 
+	this->UpdateProgress(static_cast<double>(1) / static_cast<double>(3));
+
 	vtkSmartPointer<vtkAppendPoints> appendPoints = vtkSmartPointer<vtkAppendPoints>::New();
 	vtkSmartPointer<vtkPolyData> pointSet = vtkSmartPointer<vtkPolyData>::New();
 
@@ -151,6 +157,8 @@ int vtkSkipSegmentFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 
 	}
 	appendPoints->Update();
+
+	this->UpdateProgress(static_cast<double>(2) / static_cast<double>(3));
 
 	// Transform poly data containing all points into a structured grid so we can use vtkStructuredGridGeometryFilter to
 	// easily build a mesh.
@@ -188,6 +196,12 @@ int vtkSkipSegmentFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 	output->SetLines(line);
 
 	return 1;
+}
+
+void vtkSkipSegmentFilter::ProgressFunction(vtkObject* caller, long unsigned int eventId, void* clientData, void* callData)
+{
+	vtkSkipSegmentFilter* filter = static_cast<vtkSkipSegmentFilter *>(caller);
+	cout << filter->GetClassName() << " progress: " << std::fixed << std::setprecision(3) << filter->GetProgress() << endl;
 }
 
 void vtkSkipSegmentFilter::PrintSelf(ostream &os, vtkIndent indent)

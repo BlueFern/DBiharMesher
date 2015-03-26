@@ -44,10 +44,13 @@ public:
 	vtkSetMacro(NumberOfRadialQuads, unsigned int);
 	vtkSetMacro(SpineId, unsigned int);
 	vtkSetMacro(BifurcationId, unsigned int);
+	vtkSetMacro(ShowProgress, bool);
 
 protected:
 	vtkCentrelineToDbiharPatch();
 	~vtkCentrelineToDbiharPatch() {};
+
+	static void ProgressFunction(vtkObject* caller, long unsigned int eventId, void* clientData, void* callData);
 
 	int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
 
@@ -60,6 +63,7 @@ private:
 	double ArchDerivScale;
 	double EdgeDerivScale;
 	unsigned int BifurcationId;
+	bool ShowProgress;
 
 };
 

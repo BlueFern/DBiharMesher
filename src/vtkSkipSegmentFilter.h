@@ -45,6 +45,8 @@ protected:
 	vtkSkipSegmentFilter();
 	~vtkSkipSegmentFilter() {};
 
+	static void ProgressFunction(vtkObject* caller, long unsigned int eventId, void* clientData, void* callData);
+
 	int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
 
 private:

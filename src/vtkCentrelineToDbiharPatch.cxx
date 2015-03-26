@@ -49,6 +49,12 @@ vtkCentrelineToDbiharPatch::vtkCentrelineToDbiharPatch()
 	this->BifurcationId = -1;
 	this->ArchDerivScale = 3;
 	this->EdgeDerivScale = 4;
+
+	this->ShowProgress = false;
+
+	vtkSmartPointer<vtkCallbackCommand> progressCallback = vtkSmartPointer<vtkCallbackCommand>::New();
+	progressCallback->SetCallback(this->ProgressFunction);
+	this->AddObserver(vtkCommand::ProgressEvent, progressCallback);
 }
 
 int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
@@ -98,11 +104,14 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 	vtkIdType rightBifurcationDerivId = -1;
 	vtkIdType leftBifurcationDerivId = -1;
 
+	int total = numPtIds / 10 ; // Every 10%, for progress function.
+	int stage = 1;
 	if (bifurcation)
 	{
 		rightBifurcationDerivId = this->NumberOfRadialQuads + bifurcationPos;
 		leftBifurcationDerivId = numPtIds - bifurcationPos;
 	}
+
 
 	const double zero[3] = {0};
 	double point[3] = {0.0};
@@ -294,6 +303,12 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 
 		patchBoundary->GetPointIds()->InsertNextId(ptId);
 		derivatives->InsertNextTuple(deriv);
+
+		if ((ptId + 1) % total == 0)
+		{
+			// Over 12 calculated as 10% + 2 as we start with stage at 1 and have a later progress function call.
+			this->UpdateProgress(static_cast<double>(stage++) / static_cast<double>(12));
+		}
 	}
 	patchBoundary->GetPointIds()->InsertNextId(0);
 
@@ -364,6 +379,7 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 			derivatives->SetTuple(derivId, deriv1);
 		}
 
+
 		// Traversing the "left" edge of the patch from bifurcation backwards.
 		for(int ptId = bifurcationPos - 1, derivId = leftBifurcationDerivId + 1; ptId > 0; ptId--, derivId++)
 		{
@@ -387,6 +403,7 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 
 			derivatives->SetTuple(derivId, deriv1);
 		}
+
 
 		// Traversing the "right" edge of the patch from bifurcation forward.
 		for(int ptId = bifurcationPos + 1, derivId = rightBifurcationDerivId + 1; ptId < spineSize - 1; ptId++, derivId++)
@@ -436,7 +453,10 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 
 			derivatives->SetTuple(derivId, deriv1);
 		}
+
 	}
+
+	this->UpdateProgress(static_cast<double>(stage++) / static_cast<double>(12));
 
 	vtkSmartPointer<vtkCellArray> boundaries = vtkSmartPointer<vtkCellArray>::New();
 	boundaries->InsertNextCell(patchBoundary);
@@ -481,6 +501,15 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 
 	output->DeepCopy(patchFilter->GetOutput());
 	return 1;
+}
+
+void vtkCentrelineToDbiharPatch::ProgressFunction(vtkObject* caller, long unsigned int eventId, void* clientData, void* callData)
+{
+	vtkCentrelineToDbiharPatch* filter = static_cast<vtkCentrelineToDbiharPatch *>(caller);
+	if(filter->ShowProgress)
+	{
+		cout << filter->GetClassName() << " progress: " << std::fixed << std::setprecision(3) << filter->GetProgress() << endl;
+	}
 }
 
 void vtkCentrelineToDbiharPatch::PrintSelf(ostream &os, vtkIndent indent)

@@ -54,6 +54,8 @@ int main(int argc, char* argv[]) {
 	centrelinePartitioner->Update();
 
 	vtkSmartPointer<vtkCentrelineToDbiharPatch> dbiharPatchFilter = vtkSmartPointer<vtkCentrelineToDbiharPatch>::New();
+
+	dbiharPatchFilter->SetShowProgress(true);
 	dbiharPatchFilter->SetInputData(centrelinePartitioner->GetOutput());
 	dbiharPatchFilter->SetNumberOfRadialQuads(28);
 	dbiharPatchFilter->SetSpineId(0);

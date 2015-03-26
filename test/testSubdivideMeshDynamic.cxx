@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
 	subdivideMeshDynamic->Print(std::cout);
 	subdivideMeshDynamic->Update();
 
-#if 1
+#if 0
 	vtkSmartPointer<vtkXMLPolyDataWriter> meshWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
 	meshWriter->SetInputData(subdivideMeshDynamic->GetOutput());
 	meshWriter->SetFileName("dynamicTinyMesh0.vtp");

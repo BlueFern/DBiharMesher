@@ -122,6 +122,7 @@ int main(int argc, char* argv[]) {
 
 			dbiharPatchFilter->SetBifurcationId(bifurcationId);
 
+			//dbiharPatchFilter->SetShowProgress(true);
 			dbiharPatchFilter->SetArchDerivScale(3.2);
 			dbiharPatchFilter->SetEdgeDerivScale(4.0);
 			dbiharPatchFilter->Update();

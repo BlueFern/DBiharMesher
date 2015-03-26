@@ -39,7 +39,6 @@ protected:
 	int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
 	static void ProgressFunction(vtkObject* caller, long unsigned int eventId, void* clientData, void* callData);
 
-
 private:
 	vtkSubdivideMeshDynamic(const vtkSubdivideMeshDynamic&); // Not implemented.
 	void operator=(const vtkSubdivideMeshDynamic&); // Not implemented.

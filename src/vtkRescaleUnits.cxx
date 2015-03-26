@@ -3,6 +3,7 @@
 #include <vtkObjectFactory.h>
 #include <vtkInformationVector.h>
 #include <vtkInformation.h>
+#include <vtkCallbackCommand.h>
 #include <vtkDataObject.h>
 #include <vtkSmartPointer.h>
 #include <vtkTransform.h>
@@ -21,6 +22,10 @@ vtkRescaleUnits::vtkRescaleUnits()
 	this->SetNumberOfOutputPorts(1);
 
 	this->Scale = 1;
+
+	vtkSmartPointer<vtkCallbackCommand> progressCallback = vtkSmartPointer<vtkCallbackCommand>::New();
+	progressCallback->SetCallback(this->ProgressFunction);
+	this->AddObserver(vtkCommand::ProgressEvent, progressCallback);
 }
 
 int vtkRescaleUnits::RequestData(vtkInformation *vtkNotUsed(request),
@@ -41,7 +46,9 @@ int vtkRescaleUnits::RequestData(vtkInformation *vtkNotUsed(request),
 	transformFilter->SetTransform(transform);
 	transformFilter->Update(); // Point data is unchanged, however.
 
+	this->UpdateProgress(static_cast<double>(1) / static_cast<double>(3));
 	doubleArray->SetNumberOfValues(input->GetPointData()->GetNumberOfTuples());
+
 	doubleArray = vtkDoubleArray::SafeDownCast(input->GetPointData()->GetScalars());
 
 	// Multiply each point data by given scale.
@@ -49,11 +56,17 @@ int vtkRescaleUnits::RequestData(vtkInformation *vtkNotUsed(request),
 	{
 		doubleArray->SetValue(i, doubleArray->GetValue(i) * this->Scale);
 	}
-
+	this->UpdateProgress(static_cast<double>(2) / static_cast<double>(3));
 	output->GetPointData()->SetScalars(doubleArray);
 	output->ShallowCopy(transformFilter->GetOutput());
 
 	return 1;
+}
+
+void vtkRescaleUnits::ProgressFunction(vtkObject* caller, long unsigned int eventId, void* clientData, void* callData)
+{
+	vtkRescaleUnits* filter = static_cast<vtkRescaleUnits *>(caller);
+	cout << filter->GetClassName() << " progress: " << std::fixed << std::setprecision(3) << filter->GetProgress() << endl;
 }
 
 void vtkRescaleUnits::PrintSelf(ostream &os, vtkIndent indent)

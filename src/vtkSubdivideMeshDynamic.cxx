@@ -55,6 +55,9 @@ int vtkSubdivideMeshDynamic::RequestData(vtkInformation *vtkNotUsed(request), vt
 	double averageDistance0, averageDistance1 = 0.0;
 	int numberOfQuads = input->GetNumberOfCells();
 
+	int percentOfTotal  = numberOfQuads / 10; // Every 10%, for progress function.
+	int stage = 1;
+
 	// Loop over every quad in input
 	for (int i = 0; i < numberOfQuads; i++)
 	{
@@ -98,6 +101,12 @@ int vtkSubdivideMeshDynamic::RequestData(vtkInformation *vtkNotUsed(request), vt
 
 		subdivideQuadFilter->Update();
 		appendPolyData->AddInputData(subdivideQuadFilter->GetOutput());
+
+		// Basic progress reporting.
+		if ((i + 1) % percentOfTotal == 0)
+		{
+			this->UpdateProgress(static_cast<double>(stage++) / static_cast<double>(11)); // 10% + 1 as we start with stage at 1.
+		}
 	}
 	appendPolyData->Update();
 	output->ShallowCopy(appendPolyData->GetOutput());

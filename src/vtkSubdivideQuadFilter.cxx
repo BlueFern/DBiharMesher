@@ -5,6 +5,7 @@
 #include <vtkInformationVector.h>
 #include <vtkInformation.h>
 #include <vtkDataObject.h>
+#include <vtkCallbackCommand.h>
 #include <vtkSmartPointer.h>
 #include <vtkIdList.h>
 #include <vtkCellArray.h>
@@ -31,6 +32,12 @@ vtkSubdivideQuadFilter::vtkSubdivideQuadFilter()
 
 	this->Columns = 0;
 	this->Rows = 0;
+
+	this->ShowProgress = false;
+
+	vtkSmartPointer<vtkCallbackCommand> progressCallback = vtkSmartPointer<vtkCallbackCommand>::New();
+	progressCallback->SetCallback(this->ProgressFunction);
+	this->AddObserver(vtkCommand::ProgressEvent, progressCallback);
 }
 
 /**
@@ -95,6 +102,8 @@ int vtkSubdivideQuadFilter::RequestData(vtkInformation *vtkNotUsed(request),
 	splinePointsSource2->SetUResolution(this->Columns);
 	splinePointsSource2->Update();
 
+	this->UpdateProgress(static_cast<double>(1) / static_cast<double>(this->Columns + 1));
+
 	vtkSmartPointer<vtkPoints> bottomEdge = splinePointsSource2->GetOutput()->GetPoints();
 
 	// Build points down columns.
@@ -118,6 +127,8 @@ int vtkSubdivideQuadFilter::RequestData(vtkInformation *vtkNotUsed(request),
 		pointSet->SetPoints(sps->GetOutput()->GetPoints());
 		appendPoints->AddInputData(pointSet);
 
+		this->UpdateProgress(static_cast<double>(i + 2) / static_cast<double>(this->Columns + 1));
+
 	}
 	appendPoints->Update();
 
@@ -134,6 +145,15 @@ int vtkSubdivideQuadFilter::RequestData(vtkInformation *vtkNotUsed(request),
 
 	output->ShallowCopy(structuredGridGeomFilter->GetOutput());
 	return 1;
+}
+
+void vtkSubdivideQuadFilter::ProgressFunction(vtkObject* caller, long unsigned int eventId, void* clientData, void* callData)
+{
+	vtkSubdivideQuadFilter* filter = static_cast<vtkSubdivideQuadFilter *>(caller);
+	if(filter->ShowProgress)
+	{
+		cout << filter->GetClassName() << " progress: " << std::fixed << std::setprecision(3) << filter->GetProgress() << endl;
+	}
 }
 
 void vtkSubdivideQuadFilter::PrintSelf(ostream &os, vtkIndent indent)

@@ -28,6 +28,7 @@ public:
 
 	vtkSetMacro(Columns, int);
 	vtkSetMacro(Rows, int);
+	vtkSetMacro(ShowProgress, bool);
 
 protected:
 	vtkSubdivideQuadFilter();
@@ -36,12 +37,16 @@ protected:
 	int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
 	void copyPointsArray(double array1[], double array2[]);
 
+	static void ProgressFunction(vtkObject* caller, long unsigned int eventId, void* clientData, void* callData);
+
 private:
 	vtkSubdivideQuadFilter(const vtkSubdivideQuadFilter&); // Not implemented.
 	void operator=(const vtkSubdivideQuadFilter&); // Not implemented.
 
 	int Columns;
 	int Rows;
+
+	bool ShowProgress;
 
 
 };

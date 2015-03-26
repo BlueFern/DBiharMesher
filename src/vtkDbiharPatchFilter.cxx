@@ -31,6 +31,8 @@ vtkDbiharPatchFilter::vtkDbiharPatchFilter()
 	this->SetNumberOfInputPorts(1);
 	this->SetNumberOfOutputPorts(1);
 
+	this->ShowProgress = false;
+
 	this->A = 0.0;
 	this->B = 0.0;
 	this->C = 0.0;
@@ -48,12 +50,9 @@ vtkDbiharPatchFilter::vtkDbiharPatchFilter()
 	this->Tol = 1e-3;
 	this->ITCG = 10;
 
-#if 0
 	vtkSmartPointer<vtkCallbackCommand> progressCallback = vtkSmartPointer<vtkCallbackCommand>::New();
 	progressCallback->SetCallback(this->ProgressFunction);
 	this->AddObserver(vtkCommand::ProgressEvent, progressCallback);
-#endif
-
 }
 
 int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkInformationVector **inputVector, vtkInformationVector *outputVector)
@@ -350,7 +349,10 @@ void vtkDbiharPatchFilter::PrintSelf(ostream &os, vtkIndent indent)
 void vtkDbiharPatchFilter::ProgressFunction(vtkObject* caller, long unsigned int eventId, void* clientData, void* callData)
 {
 	vtkDbiharPatchFilter* filter = static_cast<vtkDbiharPatchFilter *>(caller);
-	cout << filter->GetClassName() << " progress: " << std::fixed << std::setprecision(3) << filter->GetProgress() << endl;
+	if(filter->ShowProgress)
+	{
+		cout << filter->GetClassName() << " progress: " << std::fixed << std::setprecision(3) << filter->GetProgress() << endl;
+	}
 }
 
 void vtkDbiharPatchFilter::CheckError()

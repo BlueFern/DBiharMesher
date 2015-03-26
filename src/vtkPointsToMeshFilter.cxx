@@ -25,16 +25,11 @@ vtkPointsToMeshFilter::vtkPointsToMeshFilter()
 	this->SetNumberOfInputPorts(1);
 	this->SetNumberOfOutputPorts(1);
 
-	// WARNING: VTK developers style guide says all class variables need to be initialised,
-	// but in this case it indicates memory problems. This issue needs to be tested further.
-	// this->Dimensions = vtkSmartPointer<vtkUnsignedIntArray>::New(); // Error.
+	this->ShowProgress = false;
 
-#if 0
 	vtkSmartPointer<vtkCallbackCommand> progressCallback = vtkSmartPointer<vtkCallbackCommand>::New();
 	progressCallback->SetCallback(this->ProgressFunction);
 	this->AddObserver(vtkCommand::ProgressEvent, progressCallback);
-#endif
-
 }
 
 int vtkPointsToMeshFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkInformationVector **inputVector, vtkInformationVector *outputVector)
@@ -88,15 +83,28 @@ int vtkPointsToMeshFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 
 	// Initial values for trunk. Will be updated at the end of each iteration for the next branch.
 	int branchStart = 0;
+
+	int stage = 1;
+	int total = 0;
+	for (int i = 1; i < this->Dimensions->GetNumberOfTuples(); i++)
+	{
+		total += this->Dimensions->GetValue(i);
+	}
+	total /= 10; // Every 10% for progress function.
+	int k = 0; // For the progress function.
+
 	int reversedStart = numPoints - 1;
 	int reversedEnd = reversedStart - halfLoop;
 	int quadPosition = 0;
 	int cellDataId = 0;
 
+
+
 	for (int branch = 1; branch <= numPatches; branch++) // Looping over the number of branches (once if straight segment).
 	{
 		for (int i = 0; i < Dimensions->GetValue(branch) + 1; i++) // For each ring in a given branch.
 		{
+			k++;
 			start = branchStart + i * (Dimensions->GetValue(0) + 1);
 			end = start + (Dimensions->GetValue(0) + 1);
 
@@ -158,6 +166,12 @@ int vtkPointsToMeshFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 				quadPosition++;
 			}
 			reversedStart -= halfLoop;
+
+			if (k % total == 0)
+			{
+				this->UpdateProgress(static_cast<double>(stage++) / static_cast<double>(11));
+			}
+
 		}
 
 		// End early if in last iteration of loop.
@@ -204,5 +218,8 @@ void vtkPointsToMeshFilter::PrintSelf(ostream &os, vtkIndent indent)
 void vtkPointsToMeshFilter::ProgressFunction(vtkObject* caller, long unsigned int eventId, void* clientData, void* callData)
 {
 	vtkPointsToMeshFilter* filter = static_cast<vtkPointsToMeshFilter *>(caller);
-	cout << filter->GetClassName() << " progress: " << std::fixed << std::setprecision(3) << filter->GetProgress() << endl;
+	if(filter->ShowProgress)
+	{
+		cout << filter->GetClassName() << " progress: " << std::fixed << std::setprecision(3) << filter->GetProgress() << endl;
+	}
 }

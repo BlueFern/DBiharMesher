@@ -40,6 +40,7 @@ public:
 	static vtkPointsToMeshFilter *New();
 
 	vtkSetObjectMacro(Dimensions, vtkUnsignedIntArray);
+	vtkSetMacro(ShowProgress, bool);
 
 protected:
 	vtkPointsToMeshFilter();
@@ -54,6 +55,7 @@ private:
 	void operator=(const vtkPointsToMeshFilter&); // Not implemented.
 
 	vtkSmartPointer<vtkUnsignedIntArray> Dimensions;
+	bool ShowProgress;
 
 };
 
