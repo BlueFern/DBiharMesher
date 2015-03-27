@@ -333,7 +333,8 @@ void vtkScalarRadiiToVectorsFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
 	this->Superclass::PrintSelf(os, indent);
 
-	// TODO: Print treeInfo map.
+	os << indent << "Angle Tolerance: " << this->angleTolerance << "\n";
+	os << indent << "Input Pointer Copy: " << this->inputPointerCopy << "\n";
 }
 
 void vtkScalarRadiiToVectorsFilter::ProgressFunction(vtkObject* caller, long unsigned int eventId, void* clientData, void* callData)
