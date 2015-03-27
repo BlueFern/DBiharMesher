@@ -98,8 +98,6 @@ int vtkPointsToMeshFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 	int quadPosition = 0;
 	int cellDataId = 0;
 
-
-
 	for (int branch = 1; branch <= numPatches; branch++) // Looping over the number of branches (once if straight segment).
 	{
 		for (int i = 0; i < Dimensions->GetValue(branch) + 1; i++) // For each ring in a given branch.
@@ -213,6 +211,12 @@ void vtkPointsToMeshFilter::PrintSelf(ostream &os, vtkIndent indent)
 {
 	this->Superclass::PrintSelf(os, indent);
 	// this->Dimensions->PrintSelf(os, indent);
+	os << indent << "ShowProgress: " << this->ShowProgress << "\n";
+	os << indent << "Points per half ring: " << this->Dimensions->GetValue(0) << "\n";
+	for (int i = 1; i < this->Dimensions->GetNumberOfTuples(); i++)
+	{
+		os << indent << "Rings in branch " << i << ": " << this->Dimensions->GetValue(i) << "\n";
+	}
 }
 
 void vtkPointsToMeshFilter::ProgressFunction(vtkObject* caller, long unsigned int eventId, void* clientData, void* callData)

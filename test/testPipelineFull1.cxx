@@ -53,11 +53,6 @@ int main(int argc, char* argv[]) {
 	vtkSmartPointer<vtkCentrelinePartitioner> centrelinePartitioner = vtkSmartPointer<vtkCentrelinePartitioner>::New();
 	centrelinePartitioner->SetInputData(scalarRadiiToVectorsFilter->GetOutput());
 
-
-
-	vtkSmartPointer<vtkIdList> EndPoints = vtkSmartPointer<vtkIdList>::New();
-
-	vtkSmartPointer<vtkIdList> bifurcations = vtkSmartPointer<vtkIdList>::New();
 	vtkSmartPointer<vtkIdList> endPointIds = vtkSmartPointer<vtkIdList>::New();
 
 	//EndPoints->InsertNextId(180);
@@ -73,7 +68,6 @@ int main(int argc, char* argv[]) {
 	vertexArray->GetNextCell(endPointIds);
 	if (vertexArray->GetNumberOfCells() == 2)
 	{
-		vertexArray->GetNextCell(bifurcations);
 		cellId = 2;
 	}
 
@@ -101,26 +95,8 @@ int main(int argc, char* argv[]) {
 			vtkSmartPointer<vtkCentrelineToDbiharPatch> dbiharPatchFilter = vtkSmartPointer<vtkCentrelineToDbiharPatch>::New();
 			dbiharPatchFilter->SetInputData(partitionedCentreline);
 
-			vtkSmartPointer<vtkIdList> cellPoints = vtkSmartPointer<vtkIdList>::New();
-			vtkSmartPointer<vtkGenericCell> cell = vtkSmartPointer<vtkGenericCell>::New();
-
-			partitionedCentreline->GetCell(cellId, cell);
-			cellPoints = cell->GetPointIds();
-			for (vtkIdType id = 0; id < bifurcations->GetNumberOfIds(); id++)
-			{
-				vtkIdType ptId = bifurcations->GetId(id);
-				vtkIdType ptPos = cellPoints->IsId(ptId);
-				if (ptPos != -1)
-				{
-					bifurcationId = ptPos;
-					break;
-				}
-			}
-
 			dbiharPatchFilter->SetNumberOfRadialQuads(28);
 			dbiharPatchFilter->SetSpineId(cellId);
-
-			dbiharPatchFilter->SetBifurcationId(bifurcationId);
 
 			//dbiharPatchFilter->SetShowProgress(true);
 			dbiharPatchFilter->SetArchDerivScale(3.2);

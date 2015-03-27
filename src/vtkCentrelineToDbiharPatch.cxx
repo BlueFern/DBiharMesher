@@ -46,7 +46,6 @@ vtkCentrelineToDbiharPatch::vtkCentrelineToDbiharPatch()
 
 	this->NumberOfRadialQuads = 16;
 	this->SpineId = 0;
-	this->BifurcationId = -1;
 	this->ArchDerivScale = 3;
 	this->EdgeDerivScale = 4;
 
@@ -64,16 +63,40 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 	vtkPolyData *input = vtkPolyData::GetData(inputVector[0],0);
 	input->BuildLinks();
 
+	input->Print(std::cout);
+
 	vtkPolyData *output = vtkPolyData::GetData(outputVector,0);
 
 	// TODO: Verify segment id and number of radial quads is set.
 
+	vtkSmartPointer<vtkIdList> pointIdList = vtkSmartPointer<vtkIdList>::New();
+	pointIdList = input->GetCell(this->SpineId)->GetPointIds();
+
 	bool bifurcation = false;
 	vtkIdType bifurcationPos = -1;
-	if (this->BifurcationId != -1)
+
+	vtkSmartPointer<vtkCellArray> vertexArray = vtkSmartPointer<vtkCellArray>::New();
+	vtkSmartPointer<vtkIdList> endPointIds = vtkSmartPointer<vtkIdList>::New();
+	vtkSmartPointer<vtkIdList> bifurcations = vtkSmartPointer<vtkIdList>::New();
+
+	vertexArray =  input->GetVerts();
+	vertexArray->InitTraversal();
+	vertexArray->GetNextCell(endPointIds);
+	if (vertexArray->GetNumberOfCells() == 2)
 	{
-		bifurcation = true;
-		bifurcationPos = this->BifurcationId;
+		vertexArray->GetNextCell(bifurcations);
+	}
+
+	for (vtkIdType id = 0; id < bifurcations->GetNumberOfIds(); id++)
+	{
+		vtkIdType ptId = bifurcations->GetId(id);
+		vtkIdType ptPos = pointIdList->IsId(ptId);
+		if (ptPos != -1)
+		{
+			bifurcationPos = ptPos;
+			bifurcation = true;
+			break;
+		}
 	}
 
 	std::vector<vtkSmartPointer<vtkStructuredGrid> > outputGrids;
@@ -93,8 +116,7 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 	derivatives->SetName(vtkDbiharStatic::DERIV_ARR_NAME);
 	derivatives->SetNumberOfComponents(3);
 
-	vtkSmartPointer<vtkIdList> pointIdList = vtkSmartPointer<vtkIdList>::New();
-	pointIdList = input->GetCell(this->SpineId)->GetPointIds();
+
 
 	const int spineSize = pointIdList->GetNumberOfIds();
 
@@ -111,7 +133,6 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 		rightBifurcationDerivId = this->NumberOfRadialQuads + bifurcationPos;
 		leftBifurcationDerivId = numPtIds - bifurcationPos;
 	}
-
 
 	const double zero[3] = {0};
 	double point[3] = {0.0};
@@ -469,7 +490,7 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 	// Sanity check.
 	assert(inputPatch->GetNumberOfPoints() == numPtIds);
 
-	// showPolyData(inputPatch, NULL, 1.0);
+	//vtkDbiharStatic::ShowPolyData(inputPatch, 1.0);
 
 	// writePolyData(inputPatch, SSTR("tmpPatch" << this->SpineId << ".vtp"));
 

@@ -42,19 +42,13 @@ int main(int argc, char* argv[]) {
 	pointsToMeshFilter->SetInputConnection(pointsReader->GetOutputPort());
 	pointsToMeshFilter->SetShowProgress(true);
 	pointsToMeshFilter->Update();
+	pointsToMeshFilter->Print(std::cout);
 
 	//showPolyData1(pointsToMeshFilter->GetOutput(), 1.0);
 
 	std::cout << "Number of points in the output: " << pointsToMeshFilter->GetOutput()->GetNumberOfPoints() << std::endl;
 
-#if 1
-	vtkSmartPointer<vtkXMLPolyDataWriter> meshWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-	meshWriter->SetInputConnection(pointsToMeshFilter->GetOutputPort());
-	meshWriter->SetFileName("mesh0.vtp");
-	//meshWriter->SetFileName("outputMeshTEST_1.vtp");
-	//meshWriter->SetFileName("outputMeshTEST_2.vtp");
-	meshWriter->Update();
-#endif
+	vtkDbiharStatic::WritePolyData(pointsToMeshFilter->GetOutput(), "meshTestOutput.vtp");
 
 	std::cout << "Exiting " << __FILE__ << std::endl;
 

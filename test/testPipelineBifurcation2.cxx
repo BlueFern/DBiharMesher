@@ -74,15 +74,12 @@ int main(int argc, char* argv[]) {
 
 	vtkSmartPointer<vtkCellArray> vertexArray = vtkSmartPointer<vtkCellArray>::New();
 	vertexArray =  partitionedCentreline->GetVerts();
+	vertexArray->InitTraversal();
 	vertexArray->GetNextCell(endPointIds);
 	if (vertexArray->GetNumberOfCells() == 2)
 	{
-		vertexArray->GetNextCell(bifurcations);
 		offset = 2;
 	}
-
-
-
 
 #if 0
 	writePolyData(partitionedCentreline, "tmpCentreline2.vtp");
@@ -100,7 +97,6 @@ int main(int argc, char* argv[]) {
 	partitionedCentreline->GetCell(base, cell);
 	cellPoints = cell->GetPointIds();
 
-	vtkIdType bifurcationId = cellPoints->IsId(bifurcations->GetId(0));
 
 	// Working with centreline partitions 3, 4, 5.
 	for (int i = base; i < base + 3; i++)
@@ -109,7 +105,6 @@ int main(int argc, char* argv[]) {
 		dbiharPatchFilter->SetInputData(partitionedCentreline);
 		dbiharPatchFilter->SetNumberOfRadialQuads(28);
 		dbiharPatchFilter->SetSpineId(i);
-		dbiharPatchFilter->SetBifurcationId(bifurcationId);
 		dbiharPatchFilter->SetArchDerivScale(3.2);
 		dbiharPatchFilter->SetEdgeDerivScale(4.0);
 		dbiharPatchFilter->Update();

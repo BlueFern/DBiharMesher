@@ -43,7 +43,6 @@ public:
 	vtkSetMacro(EdgeDerivScale, double);
 	vtkSetMacro(NumberOfRadialQuads, unsigned int);
 	vtkSetMacro(SpineId, unsigned int);
-	vtkSetMacro(BifurcationId, unsigned int);
 	vtkSetMacro(ShowProgress, bool);
 
 protected:
@@ -62,7 +61,6 @@ private:
 	unsigned int SpineId;
 	double ArchDerivScale;
 	double EdgeDerivScale;
-	unsigned int BifurcationId;
 	bool ShowProgress;
 
 };

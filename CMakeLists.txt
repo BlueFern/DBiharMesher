@@ -202,7 +202,7 @@ target_link_libraries(testScalarRadiiToVectorsFilter1
 	${testLibs})
 
 add_executable(testPointsToMeshFilter1
-	test/testPointsToMeshFilter.cxx)
+	test/testPointsToMeshFilter1.cxx)
 target_link_libraries(testPointsToMeshFilter1
 	vtkDbiharStatic
 	vtkPointsToMeshFilter

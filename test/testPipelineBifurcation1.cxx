@@ -70,7 +70,6 @@ int main(int argc, char* argv[]) {
 	vtkPolyData *partitionedCentreline = centrelinePartitioner->GetOutput();
 
 	vtkSmartPointer<vtkIdList> endPointIds = vtkSmartPointer<vtkIdList>::New();
-	vtkSmartPointer<vtkIdList> bifurcations = vtkSmartPointer<vtkIdList>::New();
 
 	// First cell (or two) are polyVertex cells describing endpoints (and bifurcations if applicable).
 	int offset = 1;
@@ -80,7 +79,6 @@ int main(int argc, char* argv[]) {
 	vertexArray->GetNextCell(endPointIds);
 	if (vertexArray->GetNumberOfCells() == 2)
 	{
-		vertexArray->GetNextCell(bifurcations);
 		offset = 2;
 	}
 
@@ -95,8 +93,6 @@ int main(int argc, char* argv[]) {
 
 	partitionedCentreline->GetCell(base, cell);
 	cellPoints = cell->GetPointIds();
-
-	vtkIdType bifurcationId = cellPoints->IsId(bifurcations->GetId(0));
 
 	for (int i = base; i < base + 3; i++)
 	{
