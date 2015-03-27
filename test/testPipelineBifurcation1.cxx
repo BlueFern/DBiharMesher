@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
 	partitionedCentreline->GetCell(base, cell);
 	cellPoints = cell->GetPointIds();
 
-	vtkIdType bifurcationId = vtkDbiharStatic::GetPosition(cellPoints, bifurcations->GetId(0));
+	vtkIdType bifurcationId = cellPoints->IsId(bifurcations->GetId(0));
 
 	for (int i = base; i < base + 3; i++)
 	{

@@ -109,7 +109,7 @@ int main(int argc, char* argv[]) {
 			for (vtkIdType id = 0; id < bifurcations->GetNumberOfIds(); id++)
 			{
 				vtkIdType ptId = bifurcations->GetId(id);
-				vtkIdType ptPos = vtkDbiharStatic::GetPosition(cellPoints, ptId);
+				vtkIdType ptPos = cellPoints->IsId(ptId);
 				if (ptPos != -1)
 				{
 					bifurcationId = ptPos;
