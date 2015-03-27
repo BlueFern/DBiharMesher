@@ -180,7 +180,6 @@ int main(int argc, char* argv[]) {
 #endif
 
 	vtkSmartPointer<vtkAppendPolyData> capJoiner = vtkSmartPointer<vtkAppendPolyData>::New();
-	capJoiner->AddInputData(fullMeshJoiner->GetOutput());
 
 	for (int i = 0; i < endPointIds->GetNumberOfIds(); i++)
 	{
