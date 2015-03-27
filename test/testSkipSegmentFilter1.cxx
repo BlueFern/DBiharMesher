@@ -3,10 +3,7 @@
 #include <vtkSmartPointer.h>
 #include <vtkPolyData.h>
 #include <vtkXMLPolyDataReader.h>
-#include <vtkXMLPolyDataWriter.h>
 #include <vtkGenericDataObjectReader.h>
-#include <vtkGenericDataObjectWriter.h>
-#include <vtkPolyDataWriter.h>
 
 #include "wrapDbiharConfig.h"
 #include "vtkScalarRadiiToVectorsFilter.h"
@@ -39,16 +36,10 @@ int main(int argc, char* argv[]) {
 	skipSegmentFilter->Update();
 
 	vtkSmartPointer<vtkPolyData> centrelineSegments = skipSegmentFilter->GetOutput();
-	vtkSmartPointer<vtkPolyDataWriter> writer = vtkSmartPointer<vtkPolyDataWriter>::New();
-	writer->SetInputData(centrelineSegments);
-	writer->SetFileName("TEST_721_skip_inlet.vtk");
-	//writer->SetFileName("TEST_721_skip_outlet1.vtk");
-	//writer->SetFileName("TEST_721_skip_outlet2.vtk");
-	writer->SetFileTypeToASCII();
-	writer->Write();
+
+	vtkDbiharStatic::WritePolyData(centrelineSegments, "skipSegmentTest.vtp");
+
 	skipSegmentFilter->Print(std::cout);
-
-
 
 	return EXIT_SUCCESS;
 }

@@ -15,9 +15,6 @@
 #include <vtkCellArray.h>
 #include <vtkPointData.h>
 
-#include <vtkXMLPolyDataWriter.h>
-#include <vtkGenericDataObjectWriter.h>
-
 #include "vtkDbiharStatic.h"
 #include "vtkRescaleUnits.h"
 #include "vtkCentrelineResampler.h"
@@ -50,23 +47,12 @@ int main(int argc, char* argv[]) {
 	vtkSmartPointer<vtkScalarRadiiToVectorsFilter> scalarRadiiToVectorsFilter = vtkSmartPointer<vtkScalarRadiiToVectorsFilter>::New();
 	scalarRadiiToVectorsFilter->SetInputData(resampledVesselCentreline);
 	scalarRadiiToVectorsFilter->Update();
-
+	scalarRadiiToVectorsFilter->Print(std::cout);
 	vtkPolyData *resampledVesselCentrelineWithRadii = scalarRadiiToVectorsFilter->GetOutput();
 	vtkDbiharStatic::ShowPolyData(resampledVesselCentrelineWithRadii, 1.0);
 
 #if 1
-	// TODO: Replace this code with output methods from vtkDbiharStatic. Do the same for all cases of output in the test code.
-	vtkSmartPointer<vtkXMLPolyDataWriter> tmpWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-	tmpWriter->SetInputData(resampledVesselCentrelineWithRadii);
-	tmpWriter->SetFileName("227A_resampledCentrelineWithRadii.vtp");
-	//tmpWriter->SetFileName("721A_resampledCentrelineWithRadii.vtp");
-	tmpWriter->Write();
-
-	vtkSmartPointer<vtkGenericDataObjectWriter> writer = vtkSmartPointer<vtkGenericDataObjectWriter>::New();
-	writer->SetInputData(resampledVesselCentrelineWithRadii);
-	writer->SetFileName("227A_resampledCentrelineWithRadii.vtk");
-	//writer->SetFileName("721A_resampledCentrelineWithRadii.vtk");
-	writer->Write();
+	vtkDbiharStatic::WritePolyData(resampledVesselCentrelineWithRadii, "227A_resampledCentrelineWithRadii.vtp");
 #endif
 
 	std::cout << "Exiting " << __FILE__ << std::endl;

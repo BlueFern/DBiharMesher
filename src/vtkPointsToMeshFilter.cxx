@@ -210,7 +210,6 @@ int vtkPointsToMeshFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 void vtkPointsToMeshFilter::PrintSelf(ostream &os, vtkIndent indent)
 {
 	this->Superclass::PrintSelf(os, indent);
-	// this->Dimensions->PrintSelf(os, indent);
 	os << indent << "ShowProgress: " << this->ShowProgress << "\n";
 	os << indent << "Points per half ring: " << this->Dimensions->GetValue(0) << "\n";
 	for (int i = 1; i < this->Dimensions->GetNumberOfTuples(); i++)

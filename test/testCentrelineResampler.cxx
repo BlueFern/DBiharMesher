@@ -15,9 +15,6 @@
 
 #include <vtkIdList.h>
 #include <vtkCellArray.h>
-
-#include <vtkXMLPolyDataWriter.h>
-#include <vtkGenericDataObjectWriter.h>
 #include <vtkPointData.h>
 #include <vtkDoubleArray.h>
 #include <vtkMath.h>
@@ -70,19 +67,7 @@ int main(int argc, char* argv[]) {
 	centrelineSegmentSource->Print(std::cout);
 
 #if 1
-	vtkSmartPointer<vtkXMLPolyDataWriter> tmpWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-	tmpWriter->SetInputData(resampledVesselCentreline);
-	tmpWriter->SetFileName("227A_CentrelineResampled_4ECs.vtp");
-	//tmpWriter->SetFileName("721A_CentrelineResampled_4ECs.vtp");
-	//tmpWriter->SetFileName("resampledSyntheticBifurcation_1.vtp");
-	tmpWriter->Write();
-
-	vtkSmartPointer<vtkGenericDataObjectWriter> writer = vtkSmartPointer<vtkGenericDataObjectWriter>::New();
-	writer->SetInputData(resampledVesselCentreline);
-	writer->SetFileName("227A_CentrelineResampled_4ECs.vtk");
-	//writer->SetFileName("721A_CentrelineResampled_4ECs.vtk");
-	//writer->SetFileName("resampledSyntheticBifurcation_1.vtk");
-	writer->Write();
+	vtkDbiharStatic::WritePolyData(resampledVesselCentreline, "227A_CentrelineResampled_4ECs.vtp");
 #endif
 
 #if 0

@@ -21,6 +21,8 @@ int main(int argc, char* argv[]) {
 	endCapFilter->Update();
 
 	vtkDbiharStatic::ShowPolyDataWithGrid(endCapFilter->GetOutput(), NULL);
+	//vtkDbiharStatic::WritePolyData(endCapFilter->GetOutput(), "endCapTest.vtp");
+
 
 	std::cout << "Exiting " << __FILE__ << std::endl;
 

@@ -13,8 +13,6 @@
 #include <vtkStructuredGrid.h>
 #include <vtkStructuredGridGeometryFilter.h>
 #include <vtkTriangleFilter.h>
-#include <vtkXMLPolyDataWriter.h>
-#include <vtkSTLWriter.h>
 
 #include "vtkDbiharPatchFilter.h"
 #include "vtkDbiharStatic.h"
@@ -84,10 +82,7 @@ int main(int argc, char* argv[]) {
 	inputPatch->SetPoints(points);
 	inputPatch->SetLines(boundaries);
 
-	vtkSmartPointer<vtkXMLPolyDataWriter> inputPatchWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-	inputPatchWriter->SetFileName("inputPatch.vtp");
-	inputPatchWriter->SetInputData(inputPatch);
-	inputPatchWriter->Update();
+	vtkDbiharStatic::WritePolyData(inputPatch, "inputPatch.vtp");
 
 	// showPolyData(inputPatch, NULL);
 
@@ -127,10 +122,7 @@ int main(int argc, char* argv[]) {
 
 	vtkDbiharStatic::ShowPolyDataWithGrid(gridGeometryFilter->GetOutput(), NULL);
 
-	vtkSmartPointer<vtkXMLPolyDataWriter> polyDataWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-	polyDataWriter->SetInputData(gridGeometryFilter->GetOutput());
-	polyDataWriter->SetFileName("endCapQuads.vtp");
-	polyDataWriter->Update();
+	vtkDbiharStatic::WritePolyData(gridGeometryFilter->GetOutput(), "endCapQuads.vtp");
 
 	vtkSmartPointer<vtkTriangleFilter> triangulatorFilter = vtkSmartPointer<vtkTriangleFilter>::New();
 	triangulatorFilter->SetInputData(gridGeometryFilter->GetOutput());
@@ -138,14 +130,9 @@ int main(int argc, char* argv[]) {
 
 	vtkDbiharStatic::ShowPolyDataWithGrid(triangulatorFilter->GetOutput(), NULL);
 
-	polyDataWriter->SetInputData(triangulatorFilter->GetOutput());
-	polyDataWriter->SetFileName("endCapTriangles.vtp");
-	polyDataWriter->Update();
+	vtkDbiharStatic::WritePolyData(triangulatorFilter->GetOutput(), "endCapTriangles.vtp");
 
-	vtkSmartPointer<vtkSTLWriter> stlWriter = vtkSmartPointer<vtkSTLWriter>::New();
-	stlWriter->SetInputData(triangulatorFilter->GetOutput());
-	stlWriter->SetFileName("endCapTriangles.stl");
-	stlWriter->Update();
+	vtkDbiharStatic::WriteStlData(triangulatorFilter->GetOutput(), "endCapTriangles.stl");
 
 	std::cout << "Exiting " << __FILE__ << std::endl;
 

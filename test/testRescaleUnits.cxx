@@ -2,14 +2,12 @@
 
 #include <vtkSmartPointer.h>
 #include <vtkPolyData.h>
-#include <vtkPolyDataWriter.h>
 #include <vtkGenericDataObjectReader.h>
-#include <vtkGenericDataObjectWriter.h>
 #include <vtkIdList.h>
 
 #include "vtkRescaleUnits.h"
 #include "wrapDbiharConfig.h"
-
+#include "vtkDbiharStatic.h"
 
 
 int main(int argc, char* argv[]) {
@@ -28,13 +26,7 @@ int main(int argc, char* argv[]) {
 	rescaleUnits->Update();
 
 #if 1
-	vtkSmartPointer<vtkPolyDataWriter> writer = vtkSmartPointer<vtkPolyDataWriter>::New();
-	writer->SetInputData(rescaleUnits->GetOutput());
-	writer->SetFileName("TestUnitRescale.vtk");
-	writer->SetFileTypeToASCII();
-	writer->Write();
-
-
+	vtkDbiharStatic::WritePolyData(rescaleUnits->GetOutput(), "TestUnitRescale.vtp");
 #endif
 
 	std::cout << "Exiting " << __FILE__ << std::endl;

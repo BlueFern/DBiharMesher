@@ -5,7 +5,6 @@
 #include <vtkPointSet.h>
 #include <vtkSubdivideQuadFilter.h>
 #include <vtkXMLPolyDataReader.h>
-#include <vtkXMLPolyDataWriter.h>
 #include <vtkIdList.h>
 
 #include "vtkSubdivideMeshDynamic.h"
@@ -30,12 +29,7 @@ int main(int argc, char* argv[]) {
 	subdivideMeshDynamic->Update();
 
 #if 0
-	vtkSmartPointer<vtkXMLPolyDataWriter> meshWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-	meshWriter->SetInputData(subdivideMeshDynamic->GetOutput());
-	meshWriter->SetFileName("dynamicTinyMesh0.vtp");
-	meshWriter->Update();
-
-
+	vtkDbiharStatic::WritePolyData(subdivideMeshDynamic->GetOutput(), "subdivideMeshDynamicTest.vtp");
 #endif
 
 	std::cout << "Exiting " << __FILE__ << std::endl;

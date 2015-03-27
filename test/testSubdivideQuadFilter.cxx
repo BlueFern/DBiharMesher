@@ -4,7 +4,6 @@
 #include <vtkPolyData.h>
 #include <vtkSubdivideQuadFilter.h>
 #include <vtkXMLPolyDataReader.h>
-#include <vtkXMLPolyDataWriter.h>
 #include <vtkIdList.h>
 
 #include "wrapDbiharConfig.h"
@@ -38,14 +37,7 @@ int main(int argc, char* argv[]) {
 	subdivideQuadFilter->Update();
 
 #if 1
-	vtkSmartPointer<vtkXMLPolyDataWriter> meshWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-	meshWriter->SetInputConnection(subdivideQuadFilter->GetOutputPort());
-	meshWriter->SetFileName("2tinymesh.vtp");
-	//meshWriter->SetFileName("outputMeshTEST_1.vtp");
-	//meshWriter->SetFileName("outputMeshTEST_2.vtp");
-	meshWriter->Update();
-
-
+	vtkDbiharStatic::WritePolyData(subdivideQuadFilter->GetOutput(), "subdividQuadTest.vtp");
 #endif
 
 	std::cout << "Exiting " << __FILE__ << std::endl;

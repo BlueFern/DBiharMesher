@@ -3,7 +3,6 @@
 #include <vtkSmartPointer.h>
 #include <vtkPolyData.h>
 #include <vtkXMLPolyDataReader.h>
-#include <vtkXMLPolyDataWriter.h>
 
 #include "wrapDbiharConfig.h"
 #include "vtkPointsToMeshFilter.h"

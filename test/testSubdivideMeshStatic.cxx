@@ -5,7 +5,6 @@
 #include <vtkPointSet.h>
 #include <vtkSubdivideQuadFilter.h>
 #include <vtkXMLPolyDataReader.h>
-#include <vtkXMLPolyDataWriter.h>
 #include <vtkIdList.h>
 #include <vtkAppendPolyData.h>
 
@@ -48,14 +47,7 @@ int main(int argc, char* argv[]) {
 	appendPolyData->Update();
 
 #if 1
-	vtkSmartPointer<vtkXMLPolyDataWriter> meshWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-	meshWriter->SetInputData(appendPolyData->GetOutput());
-	meshWriter->SetFileName("tinyMeshStatic.vtp");
-	//meshWriter->SetFileName("outputMeshTEST_1.vtp");
-	//meshWriter->SetFileName("outputMeshTEST_2.vtp");
-	meshWriter->Update();
-
-
+	vtkDbiharStatic::WritePolyData(appendPolyData->GetOutput(), "subdivideMeshStaticTest.vtp");
 #endif
 
 	std::cout << "Exiting " << __FILE__ << std::endl;

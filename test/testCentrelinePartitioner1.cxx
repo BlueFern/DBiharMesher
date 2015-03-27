@@ -7,10 +7,6 @@
 #include <vtkCellArray.h>
 
 #include <vtkPointData.h>
-
-#include <vtkXMLPolyDataWriter.h>
-#include <vtkGenericDataObjectWriter.h>
-
 #include <vtkXMLStructuredGridReader.h>
 
 #include "wrapDbiharConfig.h"

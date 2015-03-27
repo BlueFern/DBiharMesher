@@ -12,15 +12,10 @@
 #include <vtkRenderer.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkInteractorStyleSwitch.h>
-#include <vtkPolyDataWriter.h>
 #include <vtkUnsignedIntArray.h>
 #include <vtkCellArray.h>
 
 #include <vtkPointData.h>
-
-#include <vtkXMLPolyDataWriter.h>
-#include <vtkGenericDataObjectWriter.h>
-
 #include <vtkXMLStructuredGridReader.h>
 
 #include "vtkDbiharStatic.h"
@@ -63,11 +58,7 @@ int main(int argc, char* argv[]) {
 	dbiharPatchFilter->SetEdgeDerivScale(4.0);
 	dbiharPatchFilter->Update();
 
-	vtkSmartPointer<vtkPolyDataWriter> writer = vtkSmartPointer<vtkPolyDataWriter>::New();
-	writer->SetInputData(dbiharPatchFilter->GetOutput());
-	writer->SetFileName("TEST_.vtk");
-	writer->SetFileTypeToASCII();
-	writer->Write();
+	vtkDbiharStatic::WritePolyData(dbiharPatchFilter->GetOutput(), "centrelineToDbiharTest.vtp");
 
 	return EXIT_SUCCESS;
 }
