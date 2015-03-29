@@ -8,7 +8,6 @@
 #include <vtkStreamingDemandDrivenPipeline.h>
 #include <vtkInformationVector.h>
 #include <vtkInformation.h>
-#include <vtkAppendPolyData.h>
 #include <vtkPointData.h>
 #include <vtkPolyLine.h>
 #include <vtkCellArray.h>
@@ -22,7 +21,8 @@
 #include "vtkDbiharPatchFilter.h"
 
 double expBase = 1.6;
-double inputMap[] = {60, 7.0};
+double inputMap[] = {60, 7};
+double fractionScale = 40;
 
 double scaleMap(double input, double *inputMap)
 {
@@ -63,49 +63,56 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 	vtkPolyData *input = vtkPolyData::GetData(inputVector[0],0);
 	input->BuildLinks();
 
-	input->Print(std::cout);
-
 	vtkPolyData *output = vtkPolyData::GetData(outputVector,0);
 
 	// TODO: Verify segment id and number of radial quads is set.
 
-	vtkSmartPointer<vtkIdList> pointIdList = vtkSmartPointer<vtkIdList>::New();
-	pointIdList = input->GetCell(this->SpineId)->GetPointIds();
+	// Find the spine indicated by the SpineId.
+	vtkSmartPointer<vtkIdList> spineIds = vtkSmartPointer<vtkIdList>::New();
+	vtkSmartPointer<vtkCellArray> allSpines = input->GetLines();
+	allSpines->InitTraversal();
+	vtkIdType searchId = 0;
+	while(true)
+	{
+		allSpines->GetNextCell(spineIds);
+		if(searchId == this->SpineId)
+		{
+			break;
+		}
+		else
+		{
+			searchId++;
+		}
+	}
+	const int spineSize = spineIds->GetNumberOfIds();
 
+	// Get end points and bifurcations.
+	vtkSmartPointer<vtkCellArray> verts = input->GetVerts();
+	verts->InitTraversal();
+
+	// Get end points for later.
+	// WARNING: the assumption here is that end points always come first.
+	vtkSmartPointer<vtkIdList> endPointIds = vtkSmartPointer<vtkIdList>::New();
+	verts->GetNextCell(endPointIds);
+
+	// Get bifurcation points.
+	vtkSmartPointer<vtkIdList> bifurcationIds = vtkSmartPointer<vtkIdList>::New();
+	verts->GetNextCell(bifurcationIds);
+
+	// Determine if this is a bifurcation.
+	// Remember the position if this is the case.
+	// TODO: Check the spine contains only one bifurcation.
 	bool bifurcation = false;
 	vtkIdType bifurcationPos = -1;
-
-	vtkSmartPointer<vtkCellArray> vertexArray = vtkSmartPointer<vtkCellArray>::New();
-	vtkSmartPointer<vtkIdList> endPointIds = vtkSmartPointer<vtkIdList>::New();
-	vtkSmartPointer<vtkIdList> bifurcations = vtkSmartPointer<vtkIdList>::New();
-
-	vertexArray =  input->GetVerts();
-	vertexArray->InitTraversal();
-	vertexArray->GetNextCell(endPointIds);
-	if (vertexArray->GetNumberOfCells() == 2)
+	for(vtkIdType bifPos = 0; bifPos < bifurcationIds->GetNumberOfIds(); bifPos++)
 	{
-		vertexArray->GetNextCell(bifurcations);
-	}
-
-	for (vtkIdType id = 0; id < bifurcations->GetNumberOfIds(); id++)
-	{
-		vtkIdType ptId = bifurcations->GetId(id);
-		vtkIdType ptPos = pointIdList->IsId(ptId);
-		if (ptPos != -1)
+		bifurcationPos = spineIds->IsId(bifurcationIds->GetId(bifPos));
+		if(bifurcationPos != -1)
 		{
-			bifurcationPos = ptPos;
 			bifurcation = true;
 			break;
 		}
 	}
-
-	std::vector<vtkSmartPointer<vtkStructuredGrid> > outputGrids;
-
-	vtkSmartPointer<vtkAppendPolyData> appendPolyDataFilter = vtkSmartPointer<vtkAppendPolyData>::New();
-	vtkSmartPointer<vtkAppendPolyData> appendGridFilter = vtkSmartPointer<vtkAppendPolyData>::New();
-
-	vtkSmartPointer<vtkDoubleArray> radiiArray =
-			vtkDoubleArray::SafeDownCast(input->GetPointData()->GetVectors(vtkDbiharStatic::RADII_VECTORS_ARR_NAME));
 
 	// Points and lines.
 	vtkSmartPointer<vtkPoints> patchPoints = vtkSmartPointer<vtkPoints>::New();
@@ -116,17 +123,14 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 	derivatives->SetName(vtkDbiharStatic::DERIV_ARR_NAME);
 	derivatives->SetNumberOfComponents(3);
 
-
-
-	const int spineSize = pointIdList->GetNumberOfIds();
-
 	// Number of points in the patch boundary.
 	int numPtIds = spineSize * 2 + this->NumberOfRadialQuads * 2 - 2;
 
 	vtkIdType rightBifurcationDerivId = -1;
 	vtkIdType leftBifurcationDerivId = -1;
 
-	int total = numPtIds / 10 ; // Every 10%, for progress function.
+	// Every 10%, for progress function.
+	int total = numPtIds / 10 ;
 	int stage = 1;
 	if (bifurcation)
 	{
@@ -153,6 +157,8 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 	// Insert the derivatives from the temporary container into the right and left edges.
 	// TODO: The above.
 
+	vtkSmartPointer<vtkDoubleArray> radiiArray = vtkDoubleArray::SafeDownCast(input->GetPointData()->GetVectors(vtkDbiharStatic::RADII_VECTORS_ARR_NAME));
+
 	for(vtkIdType ptId = 0, spinePtId = 0; ptId < numPtIds; ptId++)
 	{
 		// Derivative is declared inside the loop to make sure it is (0,0,0) at the start of every iteration.
@@ -167,14 +173,14 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 			double parametricCoord = localId / (double)this->NumberOfRadialQuads;
 
 			// Translation comes from the first point.
-			input->GetPoint(pointIdList->GetId(0), p0);
+			input->GetPoint(spineIds->GetId(0), p0);
 
 			// Axis of rotation comes from the centreline direction at the first point.
-			input->GetPoint(pointIdList->GetId(1), p1);
+			input->GetPoint(spineIds->GetId(1), p1);
 			vtkMath::Subtract(p1, p0, v0);
 
 			// Get the first radius.
-			radiiArray->GetTuple(pointIdList->GetId(0), r);
+			radiiArray->GetTuple(spineIds->GetId(0), r);
 
 			// Get the rotation axis.
 			vtkDbiharStatic::DoubleCross(r, v0, r, c0);
@@ -209,10 +215,10 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 			vtkIdType localId = ptId - this->NumberOfRadialQuads;
 
 			// Translation comes from the first point.
-			input->GetPoint(pointIdList->GetId(localId), p0);
+			input->GetPoint(spineIds->GetId(localId), p0);
 
 			// Get the current radius.
-			radiiArray->GetTuple(pointIdList->GetId(localId), r);
+			radiiArray->GetTuple(spineIds->GetId(localId), r);
 
 			// Flip the radius.
 			vtkMath::MultiplyScalar(r, -1.0);
@@ -224,8 +230,8 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 			if(localId != 0)
 			{
 				// Get the centreline direction at the current point.
-				input->GetPoint(pointIdList->GetId(localId), p0);
-				input->GetPoint(pointIdList->GetId(localId + 1), p1);
+				input->GetPoint(spineIds->GetId(localId), p0);
+				input->GetPoint(spineIds->GetId(localId + 1), p1);
 				vtkMath::Subtract(p1, p0, v0);
 
 				// The derivative is perpendicular to the radius vector and the local direction.
@@ -246,14 +252,14 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 			double parametricCoord = localId / (double)this->NumberOfRadialQuads;
 
 			// Translation comes from the first point.
-			input->GetPoint(pointIdList->GetId(spineSize - 1), p0);
+			input->GetPoint(spineIds->GetId(spineSize - 1), p0);
 
 			// Axis of rotation comes from the centreline direction at the first point.
-			input->GetPoint(pointIdList->GetId(spineSize - 2), p1);
+			input->GetPoint(spineIds->GetId(spineSize - 2), p1);
 			vtkMath::Subtract(p1, p0, v0);
 
 			// Get the last radius.
-			radiiArray->GetTuple(pointIdList->GetId(spineSize - 1), r);
+			radiiArray->GetTuple(spineIds->GetId(spineSize - 1), r);
 			vtkMath::MultiplyScalar(r, -1.0);
 
 			// Get the rotation axis.
@@ -290,10 +296,10 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 			localId = std::fabs(localId - (spineSize - 1));
 
 			// Translation comes from the first point.
-			input->GetPoint(pointIdList->GetId(localId), p0);
+			input->GetPoint(spineIds->GetId(localId), p0);
 
 			// Get the current radius.
-			radiiArray->GetTuple(pointIdList->GetId(localId), r);
+			radiiArray->GetTuple(spineIds->GetId(localId), r);
 
 			// Translate the radius.
 			vtkMath::Add(p0, r, point);
@@ -302,8 +308,8 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 			if(localId != spineSize - 1)
 			{
 				// Get the centreline direction at the current point.
-				input->GetPoint(pointIdList->GetId(localId), p0);
-				input->GetPoint(pointIdList->GetId(localId + 1), p1);
+				input->GetPoint(spineIds->GetId(localId), p0);
+				input->GetPoint(spineIds->GetId(localId + 1), p1);
 				vtkMath::Subtract(p1, p0, v0);
 
 				// The derivative is perpendicular to the radius vector and the local direction.
@@ -333,6 +339,16 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 	}
 	patchBoundary->GetPointIds()->InsertNextId(0);
 
+	vtkSmartPointer<vtkCellArray> boundaries = vtkSmartPointer<vtkCellArray>::New();
+	boundaries->InsertNextCell(patchBoundary);
+
+	vtkSmartPointer<vtkPolyData> inputPatch = vtkSmartPointer<vtkPolyData>::New();
+	inputPatch->SetPoints(patchPoints);
+	inputPatch->SetLines(boundaries);
+	inputPatch->GetPointData()->SetVectors(derivatives);
+
+	// vtkDbiharStatic::ShowPolyData(inputPatch);
+
 	// Adjust the angles of derivatives for bifurcation segments.
 	if(bifurcation)
 	{
@@ -355,7 +371,7 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 		double rightAngleNm1 = vtkMath::DegreesFromRadians(vtkMath::AngleBetweenVectors(derivNm1, derivN));
 		double rightAngleNp1 = vtkMath::DegreesFromRadians(vtkMath::AngleBetweenVectors(derivNp1, derivN));
 
-		vtkMath::MultiplyScalar(derivN, vtkMath::Norm(derivatives->GetTuple(rightBifurcationDerivId)) + vtkMath::Norm(derivatives->GetTuple(rightBifurcationDerivId))); // * scalingR); // * this->EdgeDerivScale);
+		vtkMath::MultiplyScalar(derivN, vtkMath::Norm(derivatives->GetTuple(rightBifurcationDerivId)) * 1.6); // * scalingR); // * this->EdgeDerivScale);
 		derivatives->SetTuple(rightBifurcationDerivId, derivN);
 
 		// For the "right" bifurcation point get the adjacent vectors.
@@ -369,10 +385,13 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 		double leftAngleNm1 = vtkMath::DegreesFromRadians(vtkMath::AngleBetweenVectors(derivNm1, derivN));
 		double leftAngleNp1 = vtkMath::DegreesFromRadians(vtkMath::AngleBetweenVectors(derivNp1, derivN));
 
-		vtkMath::MultiplyScalar(derivN, vtkMath::Norm(derivatives->GetTuple(leftBifurcationDerivId)) + vtkMath::Norm(derivatives->GetTuple(leftBifurcationDerivId))); // * scalingL); // * this->EdgeDerivScale);
+		vtkMath::MultiplyScalar(derivN, vtkMath::Norm(derivatives->GetTuple(leftBifurcationDerivId)) * 1.6); // * scalingL); // * this->EdgeDerivScale);
 		derivatives->SetTuple(leftBifurcationDerivId, derivN);
 
-		radiiArray->GetTuple(pointIdList->GetId(bifurcationPos), r);
+		// vtkDbiharStatic::ShowPolyData(inputPatch);
+
+		// Derivatives adjustment rotation axis.
+		radiiArray->GetTuple(spineIds->GetId(bifurcationPos), r);
 
 		double m = 4.0 / 60.0;
 
@@ -381,9 +400,10 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 		{
 			// Fraction of the rotation angle.
 			double currentFraction = ptId / (double)(bifurcationPos - 1);
+			std::cout << currentFraction << std::endl;
 
 			// Rotate derivative around radius by fraction of the angle.
-			radiiArray->GetTuple(pointIdList->GetId(ptId), r);
+			radiiArray->GetTuple(spineIds->GetId(ptId), r);
 			vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
 			double angle = -rightAngleNm1 * currentFraction;
 			angle += -rightAngleNm1 * m * currentFraction;
@@ -396,9 +416,15 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 
 			vtkMath::Normalize(deriv1);
 			vtkMath::MultiplyScalar(deriv1, vtkMath::Norm(deriv0) + vtkMath::Norm(deriv0) * scaleMap(angle, inputMap));
+			//std::cout << "\t" << vtkMath::Norm(deriv0) << ", " << vtkMath::Norm(deriv0) * scaleMap(angle, inputMap) << ", " << angle << std::endl;
+
+			//vtkMath::MultiplyScalar(deriv1, vtkMath::Norm(deriv0) + vtkMath::Norm(deriv0) * scaleMap(currentFraction * fractionScale, inputMap));
+			//std::cout << "\t" << vtkMath::Norm(deriv0) << ", " << vtkMath::Norm(deriv0) * scaleMap(currentFraction * fractionScale, inputMap) << ", " << currentFraction << std::endl;
 
 			derivatives->SetTuple(derivId, deriv1);
 		}
+
+		std::cout << std::endl;
 
 
 		// Traversing the "left" edge of the patch from bifurcation backwards.
@@ -406,9 +432,10 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 		{
 			// Fraction of the rotation angle.
 			double currentFraction = ptId / (double)(bifurcationPos - 1);
+			std::cout << currentFraction << std::endl;
 
 			// Rotate derivative around radius by fraction of the angle.
-			radiiArray->GetTuple(pointIdList->GetId(ptId), r);
+			radiiArray->GetTuple(spineIds->GetId(ptId), r);
 			vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
 			double angle = -leftAngleNm1 * currentFraction;
 			angle += -leftAngleNm1 * m * currentFraction;
@@ -421,19 +448,25 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 
 			vtkMath::Normalize(deriv1);
 			vtkMath::MultiplyScalar(deriv1, vtkMath::Norm(deriv0) + vtkMath::Norm(deriv0) * scaleMap(angle, inputMap));
+			//std::cout << "\t" << vtkMath::Norm(deriv0) << ", " << vtkMath::Norm(deriv0) * scaleMap(angle, inputMap) << ", " << angle << std::endl;
+
+			//vtkMath::MultiplyScalar(deriv1, vtkMath::Norm(deriv0) + vtkMath::Norm(deriv0) * scaleMap(currentFraction * fractionScale, inputMap));
+			//std::cout << "\t" << vtkMath::Norm(deriv0) << ", " << vtkMath::Norm(deriv0) * scaleMap(currentFraction * fractionScale, inputMap) << ", " << currentFraction << std::endl;
 
 			derivatives->SetTuple(derivId, deriv1);
 		}
 
+		std::cout << std::endl;
 
 		// Traversing the "right" edge of the patch from bifurcation forward.
 		for(int ptId = bifurcationPos + 1, derivId = rightBifurcationDerivId + 1; ptId < spineSize - 1; ptId++, derivId++)
 		{
 			// Fraction of the rotation angle.
-			double currentFraction = (spineSize - 1 - ptId) / (double)(spineSize - 1 - bifurcationPos);
+			double currentFraction = (spineSize - ptId) / (double)(spineSize - 1 - bifurcationPos);
+			std::cout << currentFraction << std::endl;
 
 			// Rotate derivative around radius by fraction of the angle.
-			radiiArray->GetTuple(pointIdList->GetId(ptId), r);
+			radiiArray->GetTuple(spineIds->GetId(ptId), r);
 			vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
 			double angle = rightAngleNm1 * currentFraction;
 			angle += rightAngleNm1 * m * currentFraction;
@@ -446,18 +479,25 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 
 			vtkMath::Normalize(deriv1);
 			vtkMath::MultiplyScalar(deriv1, vtkMath::Norm(deriv0) + vtkMath::Norm(deriv0) * scaleMap(angle, inputMap));
+			//std::cout << "\t" << vtkMath::Norm(deriv0) << ", " << vtkMath::Norm(deriv0) * scaleMap(angle, inputMap) << ", " << angle << std::endl;
+
+			//vtkMath::MultiplyScalar(deriv1, vtkMath::Norm(deriv0) + vtkMath::Norm(deriv0) * scaleMap(currentFraction * fractionScale, inputMap));
+			//std::cout << "\t" << vtkMath::Norm(deriv0) << ", " << vtkMath::Norm(deriv0) * scaleMap(currentFraction * fractionScale, inputMap) << ", " << currentFraction << std::endl;
 
 			derivatives->SetTuple(derivId, deriv1);
 		}
+
+		std::cout << std::endl;
 
 		// Traversing the "left" edge of the patch from bifurcation forward.
 		for (int ptId = bifurcationPos + 1, derivId = leftBifurcationDerivId - 1; ptId < spineSize - 1; ptId++, derivId--)
 		{
 			// Fraction of the rotation angle.
-			double currentFraction = (spineSize - 1 - ptId) / (double)(spineSize - 1 - bifurcationPos);
+			double currentFraction = (spineSize - ptId) / (double)(spineSize - 1 - bifurcationPos);
+			std::cout << currentFraction << std::endl;
 
 			// Rotate derivative around radius by fraction of the angle.
-			radiiArray->GetTuple(pointIdList->GetId(ptId), r);
+			radiiArray->GetTuple(spineIds->GetId(ptId), r);
 			vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
 
 			double angle = leftAngleNm1 * currentFraction;
@@ -471,37 +511,32 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 
 			vtkMath::Normalize(deriv1);
 			vtkMath::MultiplyScalar(deriv1, vtkMath::Norm(deriv0) + vtkMath::Norm(deriv0) * scaleMap(angle, inputMap));
+			//std::cout << "\t" << vtkMath::Norm(deriv0) << ", " << vtkMath::Norm(deriv0) * scaleMap(angle, inputMap) << ", " << angle << std::endl;
+
+			//vtkMath::MultiplyScalar(deriv1, vtkMath::Norm(deriv0) + vtkMath::Norm(deriv0) * scaleMap(currentFraction * fractionScale, inputMap));
+			//std::cout << "\t" << vtkMath::Norm(deriv0) << ", " << vtkMath::Norm(deriv0) * scaleMap(currentFraction * fractionScale, inputMap) << ", " << currentFraction << std::endl;
 
 			derivatives->SetTuple(derivId, deriv1);
 		}
-
 	}
 
 	this->UpdateProgress(static_cast<double>(stage++) / static_cast<double>(12));
 
-	vtkSmartPointer<vtkCellArray> boundaries = vtkSmartPointer<vtkCellArray>::New();
-	boundaries->InsertNextCell(patchBoundary);
-
-	vtkSmartPointer<vtkPolyData> inputPatch = vtkSmartPointer<vtkPolyData>::New();
-	inputPatch->SetPoints(patchPoints);
-	inputPatch->SetLines(boundaries);
-	inputPatch->GetPointData()->SetVectors(derivatives);
-
 	// Sanity check.
 	assert(inputPatch->GetNumberOfPoints() == numPtIds);
 
-	//vtkDbiharStatic::ShowPolyData(inputPatch, 1.0);
+	// vtkDbiharStatic::ShowPolyData(inputPatch, 1.0);
 
 	// writePolyData(inputPatch, SSTR("tmpPatch" << this->SpineId << ".vtp"));
 
 	vtkSmartPointer<vtkDbiharPatchFilter> patchFilter = vtkSmartPointer<vtkDbiharPatchFilter>::New();
 
-	double lowerArcLength = vtkMath::Pi() * vtkMath::Norm(radiiArray->GetTuple(pointIdList->GetId(0)));
+	double lowerArcLength = vtkMath::Pi() * vtkMath::Norm(radiiArray->GetTuple(spineIds->GetId(0)));
 	double spineLength = 0;
 	for(int pos = 0; pos < spineSize - 2; pos++)
 	{
-		input->GetPoint(pointIdList->GetId(pos), p0);
-		input->GetPoint(pointIdList->GetId(pos + 1), p1);
+		input->GetPoint(spineIds->GetId(pos), p0);
+		input->GetPoint(spineIds->GetId(pos + 1), p1);
 		spineLength += sqrt(vtkMath::Distance2BetweenPoints(p0, p1));
 	}
 
