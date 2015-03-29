@@ -340,6 +340,24 @@ target_link_libraries(testPipelineFull1
 	vtkCentrelineResampler
 	${testLibs})
 
+add_executable(testPipelineFullc216
+	test/testPipelineFullc216.cxx)
+target_link_libraries(testPipelineFullc216
+	vtkDbiharStatic
+	vtkScalarRadiiToVectorsFilter
+	vtkFiltersGeometry
+	vtkSubdivideMeshDynamic
+	vtkSubdivideQuadFilter
+	vtkCentrelineToDbiharPatch
+	vtkDbiharPatchFilter
+	vtkCentrelinePartitioner
+	vtkPointsToMeshFilter
+	vtkSkipSegmentFilter
+	vtkEndCapFilter
+	vtkRescaleUnits
+	vtkCentrelineResampler
+	${testLibs})
+
 #add_executable(scratch
 #	test/showPolyData.cxx
 #	test/scratch.cxx)
