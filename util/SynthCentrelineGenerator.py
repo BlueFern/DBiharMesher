@@ -46,16 +46,18 @@ segmentList1 = [20,
 segmentList2 = [16,[8,[4,[2,None,None],[2,None,None]],None],[8,[4,None,None],None]]
 segmentList3 = [20,[(20,60),[(20,80),None,None],[20,None,None]],[(20,135),None,None]]
 
+# A centreline for a mesh with 216 cores.
+segmentList4 = [1.7,[(1.7,60),None,None], [(1.7,120),None,None]]
+
 # Paremeters specifying the properties of the generated centrelines.
 
 scaling = 1.0
 step = 0.1
-radiusBase = 2.5
-radiusDelta = 0.001
-endRadius = 0.5
+radiusBase = 0.382 # 2.5
+
 # If sphereRadius is set to None, the centreline is generated in the XY plane.
 # Otherwise the centreline is wrapped on a sphere of the specified radius.
-sphereRadius = 50
+sphereRadius = None
 points = vtk.vtkPoints()
 lines = vtk.vtkCellArray()
 radii = vtk.vtkDoubleArray()
@@ -122,15 +124,6 @@ def buildCentreline(segmentList, firstId = 0, firstPt = (0.0,0.0,0.0), direction
             
             line.GetPointIds().InsertNextId(nextId)
             
-#            if firstId == 0 or pId > 0:
-#                if not isinstance(leftBranch, list) and not isinstance(rightBranch, list):
-#                    
-#                    newRadiusDelta = (radius - endRadus) / (domainLength / step)
-#                    radiusVal = radius - (newRadiusDelta * pId)
-#                else:
-#                    radiusVal = radius - (radiusDelta * pId)
-#                radii.InsertNextTuple((radiusVal,))
-    
     lines.InsertNextCell(line)
     
     if isinstance(leftBranch, list):
@@ -199,11 +192,13 @@ def buildRadiiScalars():
     distanceCovered = 0
     traversal = treeTraversal(0)
     
-    for path, length in traversal: # for every path, starting from longest route
+    # For every path, starting from longest route.
+    for path, length in traversal:
     
         distanceCovered = 0
         
-        for cellId in path: # for each cellId in path, check hasn't already been done
+        # For each cellId in path, check hasn't already been done.
+        for cellId in path:
         
             connectedCellIds = vtk.vtkIdList()            
             ids = vtk.vtkGenericCell()
@@ -251,7 +246,7 @@ def main():
     
     global centreline
     
-    buildCentreline(segmentList1)
+    buildCentreline(segmentList4)
     
     print "Number of points in the centreline:", points.GetNumberOfPoints()
     radii.SetNumberOfValues(points.GetNumberOfPoints())
