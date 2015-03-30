@@ -400,7 +400,6 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 		{
 			// Fraction of the rotation angle.
 			double currentFraction = ptId / (double)(bifurcationPos - 1);
-			std::cout << currentFraction << std::endl;
 
 			// Rotate derivative around radius by fraction of the angle.
 			radiiArray->GetTuple(spineIds->GetId(ptId), r);
@@ -424,15 +423,11 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 			derivatives->SetTuple(derivId, deriv1);
 		}
 
-		std::cout << std::endl;
-
-
 		// Traversing the "left" edge of the patch from bifurcation backwards.
 		for(int ptId = bifurcationPos - 1, derivId = leftBifurcationDerivId + 1; ptId > 0; ptId--, derivId++)
 		{
 			// Fraction of the rotation angle.
 			double currentFraction = ptId / (double)(bifurcationPos - 1);
-			std::cout << currentFraction << std::endl;
 
 			// Rotate derivative around radius by fraction of the angle.
 			radiiArray->GetTuple(spineIds->GetId(ptId), r);
@@ -456,14 +451,11 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 			derivatives->SetTuple(derivId, deriv1);
 		}
 
-		std::cout << std::endl;
-
 		// Traversing the "right" edge of the patch from bifurcation forward.
 		for(int ptId = bifurcationPos + 1, derivId = rightBifurcationDerivId + 1; ptId < spineSize - 1; ptId++, derivId++)
 		{
 			// Fraction of the rotation angle.
 			double currentFraction = (spineSize - ptId) / (double)(spineSize - 1 - bifurcationPos);
-			std::cout << currentFraction << std::endl;
 
 			// Rotate derivative around radius by fraction of the angle.
 			radiiArray->GetTuple(spineIds->GetId(ptId), r);
@@ -487,14 +479,11 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 			derivatives->SetTuple(derivId, deriv1);
 		}
 
-		std::cout << std::endl;
-
 		// Traversing the "left" edge of the patch from bifurcation forward.
 		for (int ptId = bifurcationPos + 1, derivId = leftBifurcationDerivId - 1; ptId < spineSize - 1; ptId++, derivId--)
 		{
 			// Fraction of the rotation angle.
 			double currentFraction = (spineSize - ptId) / (double)(spineSize - 1 - bifurcationPos);
-			std::cout << currentFraction << std::endl;
 
 			// Rotate derivative around radius by fraction of the angle.
 			radiiArray->GetTuple(spineIds->GetId(ptId), r);
@@ -526,7 +515,6 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 	assert(inputPatch->GetNumberOfPoints() == numPtIds);
 
 	// vtkDbiharStatic::ShowPolyData(inputPatch, 1.0);
-
 	// writePolyData(inputPatch, SSTR("tmpPatch" << this->SpineId << ".vtp"));
 
 	vtkSmartPointer<vtkDbiharPatchFilter> patchFilter = vtkSmartPointer<vtkDbiharPatchFilter>::New();

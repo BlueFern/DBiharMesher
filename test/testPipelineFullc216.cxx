@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
 	centrelinePartitioner->Update();
 
 	vtkDbiharStatic::ShowPolyData(centrelinePartitioner->GetOutput());
-	vtkDbiharStatic::WritePolyData(centrelinePartitioner->GetOutput(), "c216_part.vtp");
+	// vtkDbiharStatic::WritePolyData(centrelinePartitioner->GetOutput(), "c216_part.vtp");
 
 	vtkPolyData *partitionedCentreline = centrelinePartitioner->GetOutput();
 
@@ -184,7 +184,6 @@ int main(int argc, char* argv[]) {
 	fullMeshJoiner->Update();
 
 	vtkDbiharStatic::ShowPolyData(fullMeshJoiner->GetOutput());
-
 	vtkDbiharStatic::WritePolyData(fullMeshJoiner->GetOutput(), "quadMeshFullc216.vtp");
 
 #if 1
@@ -205,6 +204,8 @@ int main(int argc, char* argv[]) {
 	vtkDbiharStatic::WritePolyData(subdivideSMCMesh->GetOutput(), "quadMeshFullSMCc216.vtp");
 #endif
 
+#if 0
+	// 6 quads in radial dimension is not enough for generating end caps with our dbihar filter.
 	vtkSmartPointer<vtkAppendPolyData> capJoiner = vtkSmartPointer<vtkAppendPolyData>::New();
 
 	for (int i = 0; i < endPointIds->GetNumberOfIds(); i++)
@@ -241,6 +242,7 @@ int main(int argc, char* argv[]) {
 	triMeshJoiner->Update();
 
 	vtkDbiharStatic::WriteStlData(triMeshJoiner->GetOutput(), "triMeshWithCapsFullc216.stl");
+#endif
 
 	return EXIT_SUCCESS;
 }
