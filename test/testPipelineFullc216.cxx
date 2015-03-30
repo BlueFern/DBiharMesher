@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
 	std::cout << "Starting " << __FILE__ << std::endl;
 
 	vtkSmartPointer<vtkGenericDataObjectReader> vesselCentrelineReader = vtkSmartPointer<vtkGenericDataObjectReader>::New();
-	vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/../tmpData/c216Centreline.vtk").c_str());
+	vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/../tmpData/c216/c216Centreline.vtk").c_str());
 	vesselCentrelineReader->Update();
 
 	vtkPolyData *vesselCentreline = vtkPolyData::SafeDownCast(vesselCentrelineReader->GetOutput());
@@ -219,7 +219,7 @@ int main(int argc, char* argv[]) {
 		skipSegmentFilter->SetOutlet(i != 0);
 		skipSegmentFilter->SetSkipSize(10);
 		skipSegmentFilter->SetPointId(endPointIds->GetId(i));
-		skipSegmentFilter->SetNumberOfRadialQuads(28);
+		skipSegmentFilter->SetNumberOfRadialQuads(numRadialQuads);
 		skipSegmentFilter->Update();
 		capJoiner->AddInputData(skipSegmentFilter->GetOutput());
 
