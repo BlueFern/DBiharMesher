@@ -125,8 +125,8 @@ add_library(vtkSubdivideMeshDynamic src/vtkSubdivideMeshDynamic.cxx)
 target_link_libraries(vtkSubdivideMeshDynamic
 	vtkFiltersHybrid)
 	
-add_library(vtkSubdivideMeshStatic src/vtkSubdivideMeshStatic.cxx)
-target_link_libraries(vtkSubdivideMeshStatic
+add_library(vtkSubdivideMesh src/vtkSubdivideMesh.cxx)
+target_link_libraries(vtkSubdivideMesh
 	vtkFiltersHybrid)
 	
 add_library(vtkRescaleUnits src/vtkRescaleUnits.cxx)
@@ -272,14 +272,14 @@ target_link_libraries(testSubdivideMeshDynamic
 	vtkSubdivideMeshDynamic
 	${testLibs})
 	
-add_executable(testSubdivideMeshStatic
+add_executable(testSubdivideMesh
 	src/vtkSubdivideQuadFilter.cxx
-	src/vtkSubdivideMeshStatic.cxx
-	test/testSubdivideMeshStatic.cxx)
-target_link_libraries(testSubdivideMeshStatic
+	src/vtkSubdivideMesh.cxx
+	test/testSubdivideMesh.cxx)
+target_link_libraries(testSubdivideMesh
 	vtkDbiharStatic
 	vtkSubdivideQuadFilter
-	vtkSubdivideMeshStatic
+	vtkSubdivideMesh
 	vtkFiltersGeometry
 	${testLibs})
 	

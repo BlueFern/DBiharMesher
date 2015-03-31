@@ -14,12 +14,12 @@
 
 #include <vtkAppendPolyData.h>
 
-#include "vtkSubdivideMeshStatic.h"
+#include "vtkSubdivideMesh.h"
 #include "vtkSubdivideQuadFilter.h"
 
-vtkStandardNewMacro(vtkSubdivideMeshStatic);
+vtkStandardNewMacro(vtkSubdivideMesh);
 
-vtkSubdivideMeshStatic::vtkSubdivideMeshStatic()
+vtkSubdivideMesh::vtkSubdivideMesh()
 {
 	this->SetNumberOfInputPorts(1);
 	this->SetNumberOfOutputPorts(1);
@@ -32,7 +32,7 @@ vtkSubdivideMeshStatic::vtkSubdivideMeshStatic()
 	this->AddObserver(vtkCommand::ProgressEvent, progressCallback);
 }
 
-int vtkSubdivideMeshStatic::RequestData(vtkInformation *vtkNotUsed(request), vtkInformationVector **inputVector, vtkInformationVector *outputVector)
+int vtkSubdivideMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
 	// Get the input and output.
 	vtkPolyData* input = vtkPolyData::GetData(inputVector[0], 0);
@@ -84,15 +84,15 @@ int vtkSubdivideMeshStatic::RequestData(vtkInformation *vtkNotUsed(request), vtk
 	return 1;
 }
 
-void vtkSubdivideMeshStatic::PrintSelf(ostream &os, vtkIndent indent)
+void vtkSubdivideMesh::PrintSelf(ostream &os, vtkIndent indent)
 {
 	this->Superclass::PrintSelf(os, indent);
 	os << indent << "Columns: " << this->Columns << " mm\n";
 	os << indent << "Rows: " << this->Rows << " mm\n";
 }
 
-void vtkSubdivideMeshStatic::ProgressFunction(vtkObject* caller, long unsigned int eventId, void* clientData, void* callData)
+void vtkSubdivideMesh::ProgressFunction(vtkObject* caller, long unsigned int eventId, void* clientData, void* callData)
 {
-	vtkSubdivideMeshStatic* filter = static_cast<vtkSubdivideMeshStatic *>(caller);
+	vtkSubdivideMesh* filter = static_cast<vtkSubdivideMesh *>(caller);
 	cout << filter->GetClassName() << " progress: " << std::fixed << std::setprecision(3) << filter->GetProgress() << endl;
 }

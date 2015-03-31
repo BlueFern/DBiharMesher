@@ -22,26 +22,26 @@ class vtkIdList;
  *
  * \return vtkPolyData with cells of roughly Height x Length size.
  */
-class vtkSubdivideMeshStatic : public vtkPolyDataAlgorithm {
+class vtkSubdivideMesh : public vtkPolyDataAlgorithm {
 public:
-	vtkTypeMacro(vtkSubdivideMeshStatic, vtkPolyDataAlgorithm);
+	vtkTypeMacro(vtkSubdivideMesh, vtkPolyDataAlgorithm);
 	void PrintSelf(ostream& os, vtkIndent indent);
 
-	static vtkSubdivideMeshStatic *New();
+	static vtkSubdivideMesh *New();
 
 	vtkSetMacro(Columns, double);
 	vtkSetMacro(Rows, double);
 
 protected:
-	vtkSubdivideMeshStatic();
-	~vtkSubdivideMeshStatic() {};
+	vtkSubdivideMesh();
+	~vtkSubdivideMesh() {};
 
 	int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
 	static void ProgressFunction(vtkObject* caller, long unsigned int eventId, void* clientData, void* callData);
 
 private:
-	vtkSubdivideMeshStatic(const vtkSubdivideMeshStatic&); // Not implemented.
-	void operator=(const vtkSubdivideMeshStatic&); // Not implemented.
+	vtkSubdivideMesh(const vtkSubdivideMesh&); // Not implemented.
+	void operator=(const vtkSubdivideMesh&); // Not implemented.
 
 	double Columns;
 	double Rows;

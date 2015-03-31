@@ -10,7 +10,7 @@
 
 #include "wrapDbiharConfig.h"
 #include "vtkDbiharStatic.h"
-#include "vtkSubdivideMeshStatic.h"
+#include "vtkSubdivideMesh.h"
 
 int main(int argc, char* argv[]) {
 
@@ -22,14 +22,14 @@ int main(int argc, char* argv[]) {
 	pointsReader->Update();
 
 	vtkDbiharStatic::ShowPolyData(pointsReader->GetOutput());
-	vtkSmartPointer<vtkSubdivideMeshStatic> subdivideMeshStatic = vtkSmartPointer<vtkSubdivideMeshStatic>::New();
-	subdivideMeshStatic->SetInputData(pointsReader->GetOutput());
-	subdivideMeshStatic->SetColumns(2);
-	subdivideMeshStatic->SetRows(1);
-	subdivideMeshStatic->Print(std::cout);
-	subdivideMeshStatic->Update();
+	vtkSmartPointer<vtkSubdivideMesh> subdivideMesh = vtkSmartPointer<vtkSubdivideMesh>::New();
+	subdivideMesh->SetInputData(pointsReader->GetOutput());
+	subdivideMesh->SetColumns(2);
+	subdivideMesh->SetRows(1);
+	subdivideMesh->Print(std::cout);
+	subdivideMesh->Update();
 
-	vtkDbiharStatic::ShowPolyData(subdivideMeshStatic->GetOutput());
+	vtkDbiharStatic::ShowPolyData(subdivideMesh->GetOutput());
 
 	std::cout << "Exiting " << __FILE__ << std::endl;
 
