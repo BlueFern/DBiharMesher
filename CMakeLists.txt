@@ -358,6 +358,11 @@ target_link_libraries(testPipelineFullc216
 	vtkCentrelineResampler
 	${testLibs})
 
+add_executable(DumpMeshToLegacyFormat
+	util/DumpMeshToLegacyFormat.cxx)
+target_link_libraries(DumpMeshToLegacyFormat
+	vtkIOXML vtkIOLegacy)
+
 #add_executable(scratch
 #	test/showPolyData.cxx
 #	test/scratch.cxx)
