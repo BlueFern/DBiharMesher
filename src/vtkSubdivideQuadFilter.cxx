@@ -65,71 +65,109 @@ int vtkSubdivideQuadFilter::RequestData(vtkInformation *vtkNotUsed(request),
 		exit(EXIT_FAILURE);
 	}
 
+
+	vtkSmartPointer<vtkPoints> topEdge = vtkSmartPointer<vtkPoints>::New();
+	vtkSmartPointer<vtkPoints> bottomEdge = vtkSmartPointer<vtkPoints>::New();
 	vtkSmartPointer<vtkPoints> splineInputPoints = vtkSmartPointer<vtkPoints>::New();
 	vtkSmartPointer<vtkAppendPoints> appendPoints = vtkSmartPointer<vtkAppendPoints>::New();
 	vtkSmartPointer<vtkAppendPolyData> appendPolyData = vtkSmartPointer<vtkAppendPolyData>::New();
 
 	splineInputPoints->SetNumberOfPoints(2);
 
-	splineInputPoints->SetPoint(0,input->GetPoint(0));
-	splineInputPoints->SetPoint(1,input->GetPoint(3));
+	if (this->Columns == 1)
+	{
+		topEdge->InsertPoint(0, input->GetPoint(0));
+		topEdge->InsertPoint(1, input->GetPoint(3));
 
-	vtkSmartPointer<vtkParametricSpline> parametricSpline = vtkSmartPointer<vtkParametricSpline>::New();
+		bottomEdge->InsertPoint(0, input->GetPoint(1));
+		bottomEdge->InsertPoint(1, input->GetPoint(2));
+	}
+	else
+	{
+		splineInputPoints->SetPoint(0, input->GetPoint(0));
+		splineInputPoints->SetPoint(1, input->GetPoint(3));
 
-	parametricSpline->SetPoints(splineInputPoints);
-	// Setting these constraints ensures regular interval sampling of output points.
-	parametricSpline->SetLeftConstraint(2);
-	parametricSpline->SetRightConstraint(2);
+		vtkSmartPointer<vtkParametricSpline> parametricSpline = vtkSmartPointer<vtkParametricSpline>::New();
 
-	vtkSmartPointer<vtkParametricFunctionSource> splinePointsSource = vtkSmartPointer<vtkParametricFunctionSource>::New();
-	splinePointsSource->SetParametricFunction(parametricSpline);
-	splinePointsSource->SetUResolution(this->Columns);
-	splinePointsSource->Update();
+		parametricSpline->SetPoints(splineInputPoints);
+		// Setting these constraints ensures regular interval sampling of output points.
+		parametricSpline->SetLeftConstraint(2);
+		parametricSpline->SetRightConstraint(2);
 
-	vtkSmartPointer<vtkPoints> topEdge = splinePointsSource->GetOutput()->GetPoints();
+		vtkSmartPointer<vtkParametricFunctionSource> splinePointsSource = vtkSmartPointer<vtkParametricFunctionSource>::New();
+		splinePointsSource->SetParametricFunction(parametricSpline);
+		splinePointsSource->SetUResolution(this->Columns);
+		splinePointsSource->Update();
 
-	splineInputPoints->SetPoint(0,input->GetPoint(1));
-	splineInputPoints->SetPoint(1,input->GetPoint(2));
+		topEdge = splinePointsSource->GetOutput()->GetPoints();
 
-	vtkSmartPointer<vtkParametricSpline> parametricSpline2 = vtkSmartPointer<vtkParametricSpline>::New();
-	parametricSpline2->SetPoints(splineInputPoints);
-	// Setting these constraints ensures regular interval sampling of output points.
-	parametricSpline2->SetLeftConstraint(2);
-	parametricSpline2->SetRightConstraint(2);
+		splineInputPoints->SetPoint(0,input->GetPoint(1));
+		splineInputPoints->SetPoint(1,input->GetPoint(2));
 
-	vtkSmartPointer<vtkParametricFunctionSource> splinePointsSource2 = vtkSmartPointer<vtkParametricFunctionSource>::New();
-	splinePointsSource2->SetParametricFunction(parametricSpline2);
-	splinePointsSource2->SetUResolution(this->Columns);
-	splinePointsSource2->Update();
+		vtkSmartPointer<vtkParametricSpline> parametricSpline2 = vtkSmartPointer<vtkParametricSpline>::New();
+		parametricSpline2->SetPoints(splineInputPoints);
+		// Setting these constraints ensures regular interval sampling of output points.
+		parametricSpline2->SetLeftConstraint(2);
+		parametricSpline2->SetRightConstraint(2);
+
+		vtkSmartPointer<vtkParametricFunctionSource> splinePointsSource2 = vtkSmartPointer<vtkParametricFunctionSource>::New();
+		splinePointsSource2->SetParametricFunction(parametricSpline2);
+		splinePointsSource2->SetUResolution(this->Columns);
+		splinePointsSource2->Update();
+
+		bottomEdge = splinePointsSource2->GetOutput()->GetPoints();
+	}
 
 	this->UpdateProgress(static_cast<double>(1) / static_cast<double>(this->Columns + 1));
-
-	vtkSmartPointer<vtkPoints> bottomEdge = splinePointsSource2->GetOutput()->GetPoints();
+	int test = topEdge->GetNumberOfPoints();
 
 	// Build points down columns.
-	for (int i = 0; i < this->Columns + 1; i++)
+
+	if (this->Rows > 1)
 	{
+		for (int i = 0; i < this->Columns + 1; i++)
+		{
 
-		splineInputPoints->SetPoint(0,topEdge->GetPoint(i));
-		splineInputPoints->SetPoint(1,bottomEdge->GetPoint(i));
+			splineInputPoints->SetPoint(0,topEdge->GetPoint(i));
+			splineInputPoints->SetPoint(1,bottomEdge->GetPoint(i));
 
-		vtkSmartPointer<vtkParametricSpline> parametricSplineCol = vtkSmartPointer<vtkParametricSpline>::New();
-		parametricSplineCol->SetPoints(splineInputPoints);
-		parametricSplineCol->SetLeftConstraint(2);
-		parametricSplineCol->SetRightConstraint(2);
+			vtkSmartPointer<vtkParametricSpline> parametricSplineCol = vtkSmartPointer<vtkParametricSpline>::New();
+			parametricSplineCol->SetPoints(splineInputPoints);
+			parametricSplineCol->SetLeftConstraint(2);
+			parametricSplineCol->SetRightConstraint(2);
 
-		vtkSmartPointer<vtkParametricFunctionSource> sps = vtkSmartPointer<vtkParametricFunctionSource>::New();
-		sps->SetParametricFunction(parametricSplineCol);
-		sps->SetUResolution(this->Rows);
-		sps->Update();
+			vtkSmartPointer<vtkParametricFunctionSource> sps = vtkSmartPointer<vtkParametricFunctionSource>::New();
+			sps->SetParametricFunction(parametricSplineCol);
+			sps->SetUResolution(this->Rows);
+			sps->Update();
+
+			vtkSmartPointer<vtkPolyData> pointSet = vtkSmartPointer<vtkPolyData>::New();
+			pointSet->SetPoints(sps->GetOutput()->GetPoints());
+			appendPoints->AddInputData(pointSet);
+
+			this->UpdateProgress(static_cast<double>(i + 2) / static_cast<double>(this->Columns + 1));
+
+		}
+	}
+
+	else // No new rows to create, just use top and bottom edges.
+	{
+		vtkSmartPointer<vtkPoints> allPoints = vtkSmartPointer<vtkPoints>::New();
+
+		// Necessary for the correct ordering of points.
+		for (int i = 0; i < topEdge->GetNumberOfPoints(); i++)
+		{
+			allPoints->InsertNextPoint(topEdge->GetPoint(i));
+			allPoints->InsertNextPoint(bottomEdge->GetPoint(i));
+
+		}
 
 		vtkSmartPointer<vtkPolyData> pointSet = vtkSmartPointer<vtkPolyData>::New();
-		pointSet->SetPoints(sps->GetOutput()->GetPoints());
+		pointSet->SetPoints(allPoints);
 		appendPoints->AddInputData(pointSet);
 
-		this->UpdateProgress(static_cast<double>(i + 2) / static_cast<double>(this->Columns + 1));
-
 	}
+
 	appendPoints->Update();
 
 	vtkSmartPointer<vtkStructuredGrid> structuredGrid = vtkSmartPointer<vtkStructuredGrid>::New();

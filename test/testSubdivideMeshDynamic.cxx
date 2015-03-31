@@ -23,10 +23,12 @@ int main(int argc, char* argv[]) {
 
 	vtkSmartPointer<vtkSubdivideMeshDynamic> subdivideMeshDynamic = vtkSmartPointer<vtkSubdivideMeshDynamic>::New();
 	subdivideMeshDynamic->SetInputData(pointsReader->GetOutput());
-	subdivideMeshDynamic->SetHeight(0.05);
-	subdivideMeshDynamic->SetLength(1);
+	subdivideMeshDynamic->SetHeight(3);
+	subdivideMeshDynamic->SetLength(3);
 	subdivideMeshDynamic->Print(std::cout);
 	subdivideMeshDynamic->Update();
+
+	vtkDbiharStatic::ShowPolyData(subdivideMeshDynamic->GetOutput());
 
 #if 0
 	vtkDbiharStatic::WritePolyData(subdivideMeshDynamic->GetOutput(), "subdivideMeshDynamicTest.vtp");

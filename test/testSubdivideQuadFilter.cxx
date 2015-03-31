@@ -32,11 +32,12 @@ int main(int argc, char* argv[]) {
 	points->SetPoint(3,pd->GetPoint(pointsList->GetId(3)));
 	pointsData->SetPoints(points);
 	subdivideQuadFilter->SetInputData(pointsData);
-	subdivideQuadFilter->SetColumns(4);
-	subdivideQuadFilter->SetRows(15);
+	subdivideQuadFilter->SetColumns(1);
+	subdivideQuadFilter->SetRows(2);
 	subdivideQuadFilter->Update();
 
-#if 1
+	vtkDbiharStatic::ShowPolyData(subdivideQuadFilter->GetOutput());
+#if 0
 	vtkDbiharStatic::WritePolyData(subdivideQuadFilter->GetOutput(), "subdividQuadTest.vtp");
 #endif
 
