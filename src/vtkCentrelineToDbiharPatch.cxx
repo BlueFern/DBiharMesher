@@ -515,7 +515,7 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 	assert(inputPatch->GetNumberOfPoints() == numPtIds);
 
 	// vtkDbiharStatic::ShowPolyData(inputPatch, 1.0);
-	// writePolyData(inputPatch, SSTR("tmpPatch" << this->SpineId << ".vtp"));
+	// vtkDbiharStatic::WritePolyData(inputPatch, SSTR("tmpPatch" << this->SpineId << ".vtp"));
 
 	vtkSmartPointer<vtkDbiharPatchFilter> patchFilter = vtkSmartPointer<vtkDbiharPatchFilter>::New();
 

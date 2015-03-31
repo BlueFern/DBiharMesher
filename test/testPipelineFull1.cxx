@@ -52,131 +52,166 @@ int main(int argc, char* argv[]) {
 
 	vtkSmartPointer<vtkCentrelinePartitioner> centrelinePartitioner = vtkSmartPointer<vtkCentrelinePartitioner>::New();
 	centrelinePartitioner->SetInputData(scalarRadiiToVectorsFilter->GetOutput());
-
-	vtkSmartPointer<vtkIdList> endPointIds = vtkSmartPointer<vtkIdList>::New();
-
-	//EndPoints->InsertNextId(180);
-	//centrelinePartitioner->SetEndPoints(EndPoints);
 	centrelinePartitioner->SetPartitionLength(50);
 	centrelinePartitioner->Update();
 
 	vtkPolyData *partitionedCentreline = centrelinePartitioner->GetOutput();
 
-	vtkSmartPointer<vtkCellArray> vertexArray = vtkSmartPointer<vtkCellArray>::New();
-	vtkIdType cellId = 1;
-	vertexArray =  partitionedCentreline->GetVerts();
-	vertexArray->GetNextCell(endPointIds);
-	if (vertexArray->GetNumberOfCells() == 2)
-	{
-		cellId = 2;
-	}
-
 	vtkSmartPointer<vtkAppendPolyData> fullMeshJoiner = vtkSmartPointer<vtkAppendPolyData>::New();
 
-	bool straightSection = true;
+	vtkSmartPointer<vtkCellArray> allSpines = partitionedCentreline->GetLines();
 
-	vtkIdType bifurcationId = -1;
+	// WARNING: There is a duplication of the following code in vtkCentrelineToDbiharPatch.
 
-	while (true)
+	// Get end points and bifurcations.
+	vtkSmartPointer<vtkCellArray> verts = partitionedCentreline->GetVerts();
+	verts->InitTraversal();
+
+	// Get end points for later.
+	// WARNING: the assumption here is that end points always come first.
+	vtkSmartPointer<vtkIdList> endPointIds = vtkSmartPointer<vtkIdList>::New();
+	verts->GetNextCell(endPointIds);
+
+	// Get bifurcation points.
+	vtkSmartPointer<vtkIdList> bifurcationIds = vtkSmartPointer<vtkIdList>::New();
+	verts->GetNextCell(bifurcationIds);
+
+	int numRadialQuads = 28;
+
+	// Iterate over all spines.
+	vtkIdType spineId = 0;
+
+	vtkSmartPointer<vtkAppendPoints> appendPoints;
+	vtkSmartPointer<vtkUnsignedIntArray> pointsToMeshDimensions;
+
+	// Number of inputs for the appendPoints filter.
+	unsigned int inputId = 0;
+
+	// For straight segments this will be 1, for bifurcations this will become 2.
+	unsigned int maxInputId = 0;
+
+	// Find whether we are dealing with a straight segment or a bifurcation and process accordingly.
+	while(true)
 	{
-		if (cellId >= partitionedCentreline->GetNumberOfCells())
+		std::clog << "Processing spine id: " << spineId << std::endl;
+
+		// Find the spine indicated by the spineId.
+		allSpines->InitTraversal();
+		vtkSmartPointer<vtkIdList> spineIds = vtkSmartPointer<vtkIdList>::New();
+		vtkIdType searchId = 0;
+		while(true)
 		{
-			break;
-		}
-
-		vtkSmartPointer<vtkAppendPoints> appendPoints = vtkSmartPointer<vtkAppendPoints>::New();
-		vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
-		vtkSmartPointer<vtkPoints> previousPoints = vtkSmartPointer<vtkPoints>::New();
-		double lengths[3], p0[3], p1[3] = {0.0};
-		straightSection = false;
-
-		for (int i = 0; i < 3; i++)
-		{
-			vtkSmartPointer<vtkCentrelineToDbiharPatch> dbiharPatchFilter = vtkSmartPointer<vtkCentrelineToDbiharPatch>::New();
-			dbiharPatchFilter->SetInputData(partitionedCentreline);
-
-			dbiharPatchFilter->SetNumberOfRadialQuads(28);
-			dbiharPatchFilter->SetSpineId(cellId);
-
-			//dbiharPatchFilter->SetShowProgress(true);
-			dbiharPatchFilter->SetArchDerivScale(3.2);
-			dbiharPatchFilter->SetEdgeDerivScale(4.0);
-			dbiharPatchFilter->Update();
-
-			lengths[i] = partitionedCentreline->GetCell(cellId)->GetNumberOfPoints();
-			appendPoints->AddInputData(dbiharPatchFilter->GetOutput());
-
-			cellId++;
-
-			if (i == 1) //check if just straight, if so break.
+			allSpines->GetNextCell(spineIds);
+			if(searchId == spineId)
 			{
-				vtkSmartPointer<vtkGenericCell> cell1 = vtkSmartPointer<vtkGenericCell>::New();
-				vtkSmartPointer<vtkGenericCell> cell2 = vtkSmartPointer<vtkGenericCell>::New();
-				partitionedCentreline->GetCell(cellId - 2, cell1);
+				break;
+			}
+			else
+			{
+				searchId++;
+			}
+		}
+		const int spineSize = spineIds->GetNumberOfIds();
 
-				previousPoints = cell1->GetPoints();
-				partitionedCentreline->GetCell(cellId - 1, cell2);
-				points = cell2->GetPoints();
-				int tmp = points->GetNumberOfPoints() - 1;
-				int tmp2 = previousPoints->GetNumberOfPoints() - 1;
-				previousPoints->GetPoint(0, p0);
-				points->GetPoint(tmp, p1);
-
-				if (p0[0] == p1[0] && p0[1] == p1[1] && p0[2] == p1[2])
-				{
-					straightSection = true;
-					break;
-
-				}
+		// Determine if this is a bifurcation.
+		// Remember the position if this is the case.
+		// TODO: Check the spine contains only one bifurcation.
+		bool bifurcation = false;
+		vtkIdType bifurcationPos = -1;
+		for(vtkIdType bifPos = 0; bifPos < bifurcationIds->GetNumberOfIds(); bifPos++)
+		{
+			bifurcationPos = spineIds->IsId(bifurcationIds->GetId(bifPos));
+			if(bifurcationPos != -1)
+			{
+				bifurcation = true;
+				break;
 			}
 		}
 
-		appendPoints->Update();
-		vtkSmartPointer<vtkUnsignedIntArray> dimensions = vtkSmartPointer<vtkUnsignedIntArray>::New();
-		dimensions->InsertNextValue(28);
+		maxInputId = bifurcation ? 2 : 1;
 
-		if (straightSection)
+		// Prepare to append points.
+		if(inputId == 0)
 		{
-			dimensions->InsertNextValue(lengths[0] - 1);
-		}
-		else
-		{
-			// Solving simultaneous equations for each branch sections length
-			dimensions->InsertNextValue((lengths[0] - lengths[1] + lengths[2]) / 2);
-			dimensions->InsertNextValue((lengths[0] + lengths[1] - lengths[2]) / 2);
-			dimensions->InsertNextValue((-lengths[0] + lengths[1] + lengths[2]) / 2);
+			appendPoints = vtkSmartPointer<vtkAppendPoints>::New();
+			pointsToMeshDimensions = vtkSmartPointer<vtkUnsignedIntArray>::New();
+			pointsToMeshDimensions->InsertNextValue(numRadialQuads);
 		}
 
-		vtkSmartPointer<vtkPointsToMeshFilter> pointsToMeshFilter = vtkSmartPointer<vtkPointsToMeshFilter>::New();
-		pointsToMeshFilter->SetInputData(appendPoints->GetOutput());
-		pointsToMeshFilter->SetDimensions(dimensions);
-		pointsToMeshFilter->Update();
-		fullMeshJoiner->AddInputData(pointsToMeshFilter->GetOutput());
+		vtkSmartPointer<vtkCentrelineToDbiharPatch> dbiharPatchFilter = vtkSmartPointer<vtkCentrelineToDbiharPatch>::New();
+		dbiharPatchFilter->SetInputData(partitionedCentreline);
+		dbiharPatchFilter->SetNumberOfRadialQuads(numRadialQuads);
+		dbiharPatchFilter->SetSpineId(spineId);
+		dbiharPatchFilter->SetArchDerivScale(3.2);
+		dbiharPatchFilter->SetEdgeDerivScale(4.0);
+		dbiharPatchFilter->Update();
 
+		// Set dimensions for a bifurcation.
+		if(bifurcation)
+		{
+			pointsToMeshDimensions->InsertNextValue(bifurcationPos);
+		}
+
+		// Send output to appendPoints.
+		appendPoints->AddInputData(dbiharPatchFilter->GetOutput());
+		inputId++;
+		spineId++;
+
+		// All inputs to appendPoints are ready.
+		if(inputId > maxInputId)
+		{
+			appendPoints->Update();
+
+			// Set dimensions for a straight segment.
+			if(!bifurcation)
+			{
+				pointsToMeshDimensions->InsertNextValue(spineSize - 1);
+			}
+
+			// Run pointsToMesh filter.
+			vtkSmartPointer<vtkPointsToMeshFilter> pointsToMeshFilter = vtkSmartPointer<vtkPointsToMeshFilter>::New();
+			pointsToMeshFilter->SetInputData(appendPoints->GetOutput());
+			pointsToMeshFilter->SetDimensions(pointsToMeshDimensions);
+			pointsToMeshFilter->Update();
+
+			// Send output to the append filter.
+			fullMeshJoiner->AddInputData(pointsToMeshFilter->GetOutput());
+
+			if(spineId == allSpines->GetNumberOfCells())
+			{
+				// All done.
+				break;
+			}
+			else
+			{
+				inputId = 0;
+			}
+		}
 	}
+
 	fullMeshJoiner->Update();
 
 	vtkDbiharStatic::ShowPolyData(fullMeshJoiner->GetOutput());
 
 	vtkDbiharStatic::WritePolyData(fullMeshJoiner->GetOutput(), "quadMeshFull.vtp");
 
-#if 0 // Very Expensive to run.
+#if 1 // Very Expensive to run.
 
 	vtkSmartPointer<vtkSubdivideMeshDynamic> subdivideMeshDynamic = vtkSmartPointer<vtkSubdivideMeshDynamic>::New();
-	subdivideMeshDynamic->SetInputData(appendPolyData->GetOutput());
+	subdivideMeshDynamic->SetInputData(fullMeshJoiner->GetOutput());
 	subdivideMeshDynamic->SetHeight(vtkDbiharStatic::EC_CIRC);
 	subdivideMeshDynamic->SetLength(vtkDbiharStatic::EC_AXIAL);
 	subdivideMeshDynamic->Update();
 
-	writePolyData(subdivideMeshDynamic->GetOutput(), "ECquadMeshFull.vtp");
+	vtkDbiharStatic::WritePolyData(subdivideMeshDynamic->GetOutput(), "ECquadMeshFull.vtp");
 
 	vtkSmartPointer<vtkSubdivideMeshDynamic> subdivideMeshDynamic2 = vtkSmartPointer<vtkSubdivideMeshDynamic>::New();
-	subdivideMeshDynamic2->SetInputData(appendPolyData->GetOutput());
+	subdivideMeshDynamic2->SetInputData(fullMeshJoiner->GetOutput());
 	subdivideMeshDynamic2->SetHeight(vtkDbiharStatic::SMC_CIRC);
 	subdivideMeshDynamic2->SetLength(vtkDbiharStatic::SMC_AXIAL);
 	subdivideMeshDynamic2->Update();
 
-	writePolyData(subdivideMeshDynamic2->GetOutput(), "SMCquadMeshFull.vtp");
+	vtkDbiharStatic::WritePolyData(subdivideMeshDynamic2->GetOutput(), "SMCquadMeshFull.vtp");
 #endif
 
 	vtkSmartPointer<vtkAppendPolyData> capJoiner = vtkSmartPointer<vtkAppendPolyData>::New();
@@ -193,7 +228,7 @@ int main(int argc, char* argv[]) {
 		skipSegmentFilter->SetOutlet(i != 0);
 		skipSegmentFilter->SetSkipSize(10);
 		skipSegmentFilter->SetPointId(endPointIds->GetId(i));
-		skipSegmentFilter->SetNumberOfRadialQuads(28);
+		skipSegmentFilter->SetNumberOfRadialQuads(numRadialQuads);
 		skipSegmentFilter->Update();
 		capJoiner->AddInputData(skipSegmentFilter->GetOutput());
 
