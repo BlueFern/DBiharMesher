@@ -192,8 +192,8 @@ int main(int argc, char* argv[]) {
 	vtkSmartPointer<vtkSubdivideMesh> subdivideECMesh = vtkSmartPointer<vtkSubdivideMesh>::New();
 	//subdivideECMesh->DebugOn();
 	subdivideECMesh->SetInputData(fullMeshJoiner->GetOutput());
-	subdivideECMesh->SetColumns((vtkDbiharStatic::SMC_CIRC / vtkDbiharStatic::EC_CIRC) * numSMCs);
-	subdivideECMesh->SetRows(numECs);
+	subdivideECMesh->SetColumns(numECs);
+	subdivideECMesh->SetRows((vtkDbiharStatic::SMC_CIRC / vtkDbiharStatic::EC_CIRC) * numSMCs);
 	//subdivideECMesh->SetHeight(vtkDbiharStatic::EC_CIRC);
 	//subdivideECMesh->SetLength(vtkDbiharStatic::EC_AXIAL);
 	subdivideECMesh->Print(std::cout);
@@ -204,8 +204,8 @@ int main(int argc, char* argv[]) {
 	vtkSmartPointer<vtkSubdivideMesh> subdivideSMCMesh = vtkSmartPointer<vtkSubdivideMesh>::New();
 	subdivideSMCMesh->SetInputData(fullMeshJoiner->GetOutput());
 	//subdivideSMCMesh->DebugOn();
-	subdivideSMCMesh->SetColumns(4);
-	subdivideSMCMesh->SetRows((vtkDbiharStatic::EC_AXIAL / vtkDbiharStatic::SMC_AXIAL) * numSMCs);
+	subdivideSMCMesh->SetColumns((vtkDbiharStatic::EC_AXIAL / vtkDbiharStatic::SMC_AXIAL) * numECs);
+	subdivideSMCMesh->SetRows(numSMCs);
 	//subdivideSMCMesh->SetHeight(vtkDbiharStatic::SMC_CIRC);
 	//subdivideSMCMesh->SetLength(vtkDbiharStatic::SMC_AXIAL);
 	subdivideSMCMesh->Print(std::cout);
