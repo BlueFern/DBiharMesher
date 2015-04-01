@@ -351,7 +351,7 @@ target_link_libraries(testPipelineFullc216
 	vtkDbiharStatic
 	vtkScalarRadiiToVectorsFilter
 	vtkFiltersGeometry
-	vtkSubdivideMeshDynamic
+	vtkSubdivideMesh
 	vtkSubdivideQuadFilter
 	vtkCentrelineToDbiharPatch
 	vtkDbiharPatchFilter

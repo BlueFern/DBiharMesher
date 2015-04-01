@@ -29,8 +29,8 @@ public:
 
 	static vtkSubdivideMesh *New();
 
-	vtkSetMacro(Columns, double);
-	vtkSetMacro(Rows, double);
+	vtkSetMacro(Columns, int);
+	vtkSetMacro(Rows, int);
 
 protected:
 	vtkSubdivideMesh();
@@ -43,8 +43,8 @@ private:
 	vtkSubdivideMesh(const vtkSubdivideMesh&); // Not implemented.
 	void operator=(const vtkSubdivideMesh&); // Not implemented.
 
-	double Columns;
-	double Rows;
+	int Columns;
+	int Rows;
 
 
 };

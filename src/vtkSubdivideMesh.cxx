@@ -24,8 +24,8 @@ vtkSubdivideMesh::vtkSubdivideMesh()
 	this->SetNumberOfInputPorts(1);
 	this->SetNumberOfOutputPorts(1);
 
-	this->Columns = 0.0;
-	this->Rows = 0.0;
+	this->Columns = 0;
+	this->Rows = 0;
 
 	vtkSmartPointer<vtkCallbackCommand> progressCallback = vtkSmartPointer<vtkCallbackCommand>::New();
 	progressCallback->SetCallback(this->ProgressFunction);
@@ -87,8 +87,8 @@ int vtkSubdivideMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInform
 void vtkSubdivideMesh::PrintSelf(ostream &os, vtkIndent indent)
 {
 	this->Superclass::PrintSelf(os, indent);
-	os << indent << "Columns: " << this->Columns << " mm\n";
-	os << indent << "Rows: " << this->Rows << " mm\n";
+	os << indent << "Columns: " << this->Columns << "\n";
+	os << indent << "Rows: " << this->Rows << "\n";
 }
 
 void vtkSubdivideMesh::ProgressFunction(vtkObject* caller, long unsigned int eventId, void* clientData, void* callData)

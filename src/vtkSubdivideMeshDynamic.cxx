@@ -19,6 +19,8 @@
 
 vtkStandardNewMacro(vtkSubdivideMeshDynamic);
 
+// TODO: Rename the filter to vtkSubdivideMeshAdaptive.
+
 vtkSubdivideMeshDynamic::vtkSubdivideMeshDynamic()
 {
 	this->SetNumberOfInputPorts(1);

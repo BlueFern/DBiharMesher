@@ -18,7 +18,7 @@
 #include "vtkScalarRadiiToVectorsFilter.h"
 #include "vtkCentrelineToDbiharPatch.h"
 #include "vtkPointsToMeshFilter.h"
-#include "vtkSubdivideMeshDynamic.h"
+#include "vtkSubdivideMesh.h"
 #include "vtkSkipSegmentFilter.h"
 #include "vtkEndCapFilter.h"
 #include "vtkCentrelineResampler.h"
@@ -187,18 +187,28 @@ int main(int argc, char* argv[]) {
 	vtkDbiharStatic::WritePolyData(fullMeshJoiner->GetOutput(), "quadMeshFullc216.vtp");
 
 #if 1
-	vtkSmartPointer<vtkSubdivideMeshDynamic> subdivideECMesh = vtkSmartPointer<vtkSubdivideMeshDynamic>::New();
+	int numECs = 4;
+	int numSMCs = 4;
+	vtkSmartPointer<vtkSubdivideMesh> subdivideECMesh = vtkSmartPointer<vtkSubdivideMesh>::New();
+	//subdivideECMesh->DebugOn();
 	subdivideECMesh->SetInputData(fullMeshJoiner->GetOutput());
-	subdivideECMesh->SetHeight(vtkDbiharStatic::EC_CIRC);
-	subdivideECMesh->SetLength(vtkDbiharStatic::EC_AXIAL);
+	subdivideECMesh->SetColumns((vtkDbiharStatic::SMC_CIRC / vtkDbiharStatic::EC_CIRC) * numSMCs);
+	subdivideECMesh->SetRows(numECs);
+	//subdivideECMesh->SetHeight(vtkDbiharStatic::EC_CIRC);
+	//subdivideECMesh->SetLength(vtkDbiharStatic::EC_AXIAL);
+	subdivideECMesh->Print(std::cout);
 	subdivideECMesh->Update();
 
 	vtkDbiharStatic::WritePolyData(subdivideECMesh->GetOutput(), "quadMeshFullECc216.vtp");
 
-	vtkSmartPointer<vtkSubdivideMeshDynamic> subdivideSMCMesh = vtkSmartPointer<vtkSubdivideMeshDynamic>::New();
+	vtkSmartPointer<vtkSubdivideMesh> subdivideSMCMesh = vtkSmartPointer<vtkSubdivideMesh>::New();
 	subdivideSMCMesh->SetInputData(fullMeshJoiner->GetOutput());
-	subdivideSMCMesh->SetHeight(vtkDbiharStatic::SMC_CIRC);
-	subdivideSMCMesh->SetLength(vtkDbiharStatic::SMC_AXIAL);
+	//subdivideSMCMesh->DebugOn();
+	subdivideSMCMesh->SetColumns(4);
+	subdivideSMCMesh->SetRows((vtkDbiharStatic::EC_AXIAL / vtkDbiharStatic::SMC_AXIAL) * numSMCs);
+	//subdivideSMCMesh->SetHeight(vtkDbiharStatic::SMC_CIRC);
+	//subdivideSMCMesh->SetLength(vtkDbiharStatic::SMC_AXIAL);
+	subdivideSMCMesh->Print(std::cout);
 	subdivideSMCMesh->Update();
 
 	vtkDbiharStatic::WritePolyData(subdivideSMCMesh->GetOutput(), "quadMeshFullSMCc216.vtp");
