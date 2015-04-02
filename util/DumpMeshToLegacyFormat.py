@@ -10,6 +10,7 @@ VTK files are written out for visual verification.
 """
 
 import os
+import sys
 import vtk
 
 numQuadsPerRing0 = 12
@@ -229,7 +230,7 @@ def main():
     
     # Check all rings per label values are the same.
     if ringsPerLabelVals[1:] != ringsPerLabelVals[:-1]:
-        print "ERROR: All values of rings per label must be identical ..."
+        sys.exit("ERROR: All values of rings per label must be identical. Generated output is invalid ...")
     else:
         print "OK: All values of rings per label are identical ..."
 
