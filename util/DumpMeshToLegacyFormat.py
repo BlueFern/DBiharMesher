@@ -15,6 +15,10 @@ numQuadsPerRing0 = 12
 numECsPerQuad = 4
 numSMCsPerQuad = 4
 
+numECsInRow = numSMCsPerQuad * 5
+numSMCsInCol = numECsPerQuad * 13
+numECsInQuad = numECsInRow * numECsPerQuad
+
 # VTK files to write.
 taskVTKFiles = [
 "vtk/parent.vtp",
@@ -98,6 +102,7 @@ def main():
     labelRange = range(int(labelRange[0]), int(labelRange[1]) + 1)    
     print "Labels found in task mesh:", labelRange
    
+    # Prepare the stupid TXT files for output.
     parentPointsFile = open(taskTXTFiles[0], 'w')
     parentCellsFile = open(taskTXTFiles[1], 'w')
 
@@ -106,8 +111,11 @@ def main():
     
     rightPointsFile = open(taskTXTFiles[4], 'w')
     rightCellsFile = open(taskTXTFiles[5], 'w')
+
+    # Store the number of rings for each label. 
+    numRingsPerLabel = {}   
    
-    # For every label in the range of labels we want to extract all cells.
+    # For every label in the range of labels we want to extract all cells/quads.
     for label in labelRange:
         # Use this filter to extract the cells for a given label value.
         branchSelector = vtk.vtkThreshold()
@@ -128,10 +136,11 @@ def main():
         # New vtkCellArray for storing reordeced cells.
         reorderedCellArray = vtk.vtkCellArray()
         numRings = taskMeshBranch.GetNumberOfCells() / numQuadsPerRing0;
+        numRingsPerLabel[label] = numRings
         ringIds = range(0, numRings);
         ringIds.reverse()
 
-        # Decide which files to write to.
+        # Decide which TXT files to write to.
         pointsOf = ''
         cellsOf = ''
         if label == 0:
@@ -143,24 +152,30 @@ def main():
         elif label == 2:
             pointsOf = rightPointsFile
             cellsOf = rightCellsFile
+
+        print "Writing TXT files for task mesh:"
+        print pointsOf
+        print cellsOf
        
-        # Iterante over the rings in reverse order.
+        # Iterate over the rings in reverse order.
         for ringNum in ringIds:
             # Iterate over the cells in normal order.
             for cellNum in range(0, numQuadsPerRing0):
-                # Calculate the 'real' cell id and the corresponding cell.
+                # Calculate the 'real' cell id and get the corresponding cell.
                 cellId = ringNum * numQuadsPerRing0 + cellNum
                 cell = taskMeshBranch.GetCell(cellId)
                 reorderedCellArray.InsertNextCell(cell)
                 
+                # The ids to be written to the TXT file.
                 pointIdList = [cell.GetNumberOfPoints()]
                 for pPos in range(0, cell.GetNumberOfPoints()):
                     pointIdList.append(cell.GetPointId(pPos))
-                    
+                
+                # Write the ids to the TXT file.
                 pointIdListStr = ' '.join(str(i) for i in pointIdList)
                 cellsOf.write(pointIdListStr + '\n')
                 
-                # Write points to text file.
+                # Write the appropriate points to TXT file.
                 for pPos in range(0, cell.GetNumberOfPoints()):
                     writePoint = False
                     if ringNum == ringIds[0]:
@@ -176,11 +191,11 @@ def main():
                             if pPos == 1:
                                 writePoint = True
                     if writePoint == True:
-                        print pPos,
+                        # print pPos,
                         point = taskMeshBranch.GetPoint(cell.GetPointId(pPos))
                         pointStr = ' '.join(format(i , '.6f') for i in point)
                         pointsOf.write(pointStr + '\n')
-            print '\n'
+        # print '\n'
 
         # Put the reordered cells into the reordered mesh.
         reorderedTaskMeshBranch.SetPolys(reorderedCellArray)
@@ -199,6 +214,8 @@ def main():
     
     rightPointsFile.close()
     rightCellsFile.close()
+    
+    print "Rings per label:", numRingsPerLabel, "..."
 
     # Working with EC mesh.
     # Working with EC mesh.
@@ -208,7 +225,205 @@ def main():
     ecMeshReader.Update()
 
     ecMesh = ecMeshReader.GetOutput()
- 
+    print "There are", ecMesh.GetNumberOfCells(), "EC cells in total ..."
+
+    # Prepare the stupid TXT files for output.    
+    parentPointsFile = open(ecTXTFiles[0], 'w')
+    parentCellsFile = open(ecTXTFiles[1], 'w')
+    parentCentroidPointsFile = open(ecCentroidTXTFiles[0], 'w')
+    parentCentroidCellsFile = open(ecCentroidTXTFiles[1], 'w')
+
+    leftPointsFile = open(ecTXTFiles[2], 'w')
+    leftCellsFile = open(ecTXTFiles[3], 'w')
+    leftCentroidPointsFile = open(ecCentroidTXTFiles[2], 'w')
+    leftCentroidCellsFile = open(ecCentroidTXTFiles[3], 'w')
+    
+    rightPointsFile = open(ecTXTFiles[4], 'w')
+    rightCellsFile = open(ecTXTFiles[5], 'w')
+    rightCentroidPointsFile = open(ecCentroidTXTFiles[4], 'w')
+    rightCentroidCellsFile = open(ecCentroidTXTFiles[5], 'w')
+    
+    # For every label in the range of labels we want to extract all EC cells.
+    for label in labelRange:
+        # Can not use vtkThreshold filter to extract the cells because they are not labelled.
+    
+        # Ring ids list for traversal.
+        numRings = taskMeshBranch.GetNumberOfCells() / numQuadsPerRing0
+        ringIds = range(0, numRings)
+        ringIds.reverse()
+        
+        # Number of ECs rows is the number of ECs per quad.
+        rowIds = range(0, numECsPerQuad)
+        rowIds.reverse()
+
+        # The ECs are organised in rings of blocks of cells.
+        # New vtkCellArray for storing reordeced cells.
+        reorderedCellArray = vtk.vtkCellArray()
+        
+        # Create new vtkPolyData object for the new reordered mesh.
+        reorderedECMeshBranch = vtk.vtkPolyData()
+        # Use the old points.
+        # We are cheating here, because we are using all points,
+        # but only the ones participating in reordered cells will show
+        # and only they will be written out to the stupid TXT files.
+        reorderedECMeshBranch.SetPoints(ecMesh.GetPoints())
+        
+        # Extracting the cells on the basis of the index.
+        # We only want cells that correspond to the quads withthe given label
+        # in the task mesh.
+
+        ecCellOffset = label * numQuadsPerRing0 * numRingsPerLabel[label] * \
+        numECsInQuad
+        
+        print "ecCellOffset", ecCellOffset
+        
+        # Iterate over the rings in reverse order.
+        for ringNum in ringIds:
+            # Iterate over the 'imaginary' quads of cells in normal order.
+            for quadNum in range(0, numQuadsPerRing0):
+                # Iterate over the rows of cells in reverse order.
+                # Calculate the 'real' id for the 'imaginary' quad.
+                quadId = ringNum * numQuadsPerRing0 + quadNum
+                # Iterate over rows of cells in reverse order.
+                for rowNum in rowIds:
+                    # Iterate over the rows of cells in normal order.
+                    for ecNum in range(0, numECsInRow):
+                        # Calculate the 'real' ec cell id and get the corresponding cell.
+                        ecId = quadId * numECsInQuad + rowNum * numECsInRow + ecNum
+                        ecId = ecCellOffset + ecId
+                        ecCell = ecMesh.GetCell(ecId)
+                        reorderedCellArray.InsertNextCell(ecCell)
+        
+        # Set the reordered cells to the reordered ECs mesh.
+        reorderedECMeshBranch.SetPolys(reorderedCellArray)
+  
+        print "There are", reorderedECMeshBranch.GetNumberOfCells(), \
+        "EC cells for label", label, "..."
+
+        # Decide which TXT files to write to.
+        pointsOf = ''
+        cellsOf = ''
+        centPointsOf = ''
+        centCellsOf = ''
+        
+        if label == 0:
+            pointsOf = parentPointsFile
+            cellsOf = parentCellsFile
+            centPointsOf = parentCentroidPointsFile
+            centCellsOf = parentCentroidCellsFile
+        elif label == 1:
+            pointsOf = leftPointsFile
+            cellsOf = leftCellsFile
+            centPointsOf = leftCentroidPointsFile
+            centCellsOf = leftCentroidCellsFile
+        elif label == 2:
+            pointsOf = rightPointsFile
+            cellsOf = rightCellsFile
+            centPointsOf = rightCentroidPointsFile
+            centCellsOf = rightCentroidCellsFile
+        
+        print "Writing TXT files for ECs:"
+        print pointsOf
+        print cellsOf
+        print centPointsOf
+        print centCellsOf
+       
+        # Iterate over quads in normal order because they have been reordered.
+        for quadNum in range(0, numRings * numQuadsPerRing0):
+            # Iterate over rows in normal order because they have been reordered.
+            for rowNum in range(0, numECsPerQuad):
+                # Iterate over the ECs in the row in normal order.
+                for ecNum in range(0, numECsInRow):
+                    # Calculate the 'real' ec cell id and get the corresponding cell.
+                    ecId = quadNum * numECsInQuad + rowNum * numECsInRow + ecNum
+                    ecCell = reorderedECMeshBranch.GetCell(ecId)
+                    
+                    # The ids to be written to the TXT file.
+                    pointIdList = [ecCell.GetNumberOfPoints()]
+                    for pPos in range(0, ecCell.GetNumberOfPoints()):
+                        pointIdList.append(ecCell.GetPointId(pPos))
+                    
+                    # Write the ids to the TXT file.
+                    pointIdListStr = ' '.join(str(i) for i in pointIdList)
+                    cellsOf.write(pointIdListStr + '\n')
+                
+                    # Write the appropriate points to the TXT file.
+                    for pPos in range(0, ecCell.GetNumberOfPoints()):
+                        writePoint = False
+                        if rowNum == 0:
+                            if ecNum == 0:
+                                writePoint = True
+                            elif pPos == 1 or pPos == 2:
+                                writePoint = True
+                        else:
+                            if ecNum == 0:
+                                if pPos == 0 or pPos == 1:
+                                    writePoint = True
+                            else:
+                                if pPos == 1:
+                                    writePoint = True
+                        if writePoint == True:
+                            # print pPos,
+                            point = reorderedECMeshBranch.GetPoint(ecCell.GetPointId(pPos))
+                            pointStr = ' '.join(format(i , '.6f') for i in point)
+                            pointsOf.write(pointStr + '\n')
+            # print '\n'
+
+        # Write the VTK EC mesh file.
+        reorderedMeshWriter = vtk.vtkXMLPolyDataWriter()
+        reorderedMeshWriter.SetInput(reorderedECMeshBranch)
+        reorderedMeshWriter.SetFileName(ecVTKFiles[label])
+        reorderedMeshWriter.Update()
+        
+        # Use VTK centroid filter to get the centroids in the right order
+        # from the reorderedECMeshBranch.
+        centroidFilter = vtk.vtkCellCenters()
+        centroidFilter.SetInput(reorderedECMeshBranch)
+        centroidFilter.Update()
+        
+        # Create a vertex for each point.
+        pointsToVerticesFilter = vtk.vtkVertexGlyphFilter()
+        pointsToVerticesFilter.SetInput(centroidFilter.GetOutput())
+        pointsToVerticesFilter.Update()
+        
+        reorderedCentroidBranch = pointsToVerticesFilter.GetOutput()
+                
+        # Write the VTK EC centrouid file.
+        centroidWriter = vtk.vtkXMLPolyDataWriter()
+        centroidWriter.SetInput(reorderedCentroidBranch)
+        centroidWriter.SetFileName(ecCentroidVTKFiles[label])
+        centroidWriter.Update()
+        
+        # Write the centroids to the TXT points and cells files.
+        for cId in range(0, reorderedCentroidBranch.GetNumberOfCells()):
+            centCell = reorderedCentroidBranch.GetCell(cId)
+            centIds = [centCell.GetNumberOfPoints()]
+            
+            # Write centroid ids.            
+            ptId = centCell.GetPointId(0)
+            centIds.append(ptId)
+            centIdsStr = ' '.join(str(i) for i in centIds)
+            centCellsOf.write(centIdsStr + '\n')
+            
+            # Write centroid points.
+            point = reorderedCentroidBranch.GetPoint(ptId)
+            pointStr = ' '.join(format(i , '.6f') for i in point)
+            centPointsOf.write(pointStr + '\n')
+
+    parentPointsFile.close()
+    parentCellsFile.close()
+    parentCentroidPointsFile.close()
+    parentCentroidCellsFile.close()
+    
+    leftPointsFile.close()
+    leftCellsFile.close()
+    leftCentroidPointsFile.close()
+    leftCentroidCellsFile.close()
+    
+    rightPointsFile.close()
+    rightCellsFile.close()    
+    rightCentroidPointsFile.close()
+    rightCentroidCellsFile.close()
     
     # Working with SMC mesh.
     # Working with SMC mesh.
