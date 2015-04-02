@@ -2,22 +2,25 @@
 """
 Created on Tue Mar 31 17:09:57 2015
 """
-import os
 
+import os
 import vtk
+
+numQuadsPerRing0 = 12
+numECsPerCol = 4
+numSMCsPerRow = 4
 
 meshSet0 = [
 "quadMeshFullc216.vtp",
 "quadMeshFullECc216.vtp",
 "quadMeshFullSMCc216.vtp"
 ]
-numQuadsPerRing0 = 12
-numECsPerQuad = 4
-numSMCsPerQuad = 4
 
-numECsInRow = numSMCsPerQuad * 5
-numSMCsInCol = numECsPerQuad * 13
-numECsInQuad = numECsInRow * numECsPerQuad
+numECsPerRow = numSMCsPerRow * 5
+numSMCsPerCol = numECsPerCol * 13
+
+numECsPerQuad = numECsPerRow * numECsPerCol
+numSMCsPerQuad = numSMCsPerCol * numSMCsPerRow
 
 # VTK files to write.
 taskVTKFiles = [
@@ -253,7 +256,7 @@ def main():
         ringIds.reverse()
         
         # Number of ECs rows is the number of ECs per quad.
-        rowIds = range(0, numECsPerQuad)
+        rowIds = range(0, numECsPerCol)
         rowIds.reverse()
 
         # The ECs are organised in rings of blocks of cells.
@@ -273,7 +276,7 @@ def main():
         # in the task mesh.
 
         ecCellOffset = label * numQuadsPerRing0 * numRingsPerLabel[label] * \
-        numECsInQuad
+        numECsPerQuad
         
         print "ecCellOffset", ecCellOffset
         
@@ -287,9 +290,9 @@ def main():
                 # Iterate over rows of cells in reverse order.
                 for rowNum in rowIds:
                     # Iterate over the rows of cells in normal order.
-                    for ecNum in range(0, numECsInRow):
+                    for ecNum in range(0, numECsPerRow):
                         # Calculate the 'real' ec cell id and get the corresponding cell.
-                        ecId = quadId * numECsInQuad + rowNum * numECsInRow + ecNum
+                        ecId = quadId * numECsPerQuad + rowNum * numECsPerRow + ecNum
                         ecId = ecCellOffset + ecId
                         ecCell = ecMesh.GetCell(ecId)
                         reorderedCellArray.InsertNextCell(ecCell)
@@ -331,11 +334,11 @@ def main():
         # Iterate over quads in normal order because they have been reordered.
         for quadNum in range(0, numRings * numQuadsPerRing0):
             # Iterate over rows in normal order because they have been reordered.
-            for rowNum in range(0, numECsPerQuad):
+            for rowNum in range(0, numECsPerCol):
                 # Iterate over the ECs in the row in normal order.
-                for ecNum in range(0, numECsInRow):
+                for ecNum in range(0, numECsPerRow):
                     # Calculate the 'real' ec cell id and get the corresponding cell.
-                    ecId = quadNum * numECsInQuad + rowNum * numECsInRow + ecNum
+                    ecId = quadNum * numECsPerQuad + rowNum * numECsPerRow + ecNum
                     ecCell = reorderedECMeshBranch.GetCell(ecId)
                     
                     # The ids to be written to the TXT file.
