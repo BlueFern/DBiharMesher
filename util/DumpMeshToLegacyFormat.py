@@ -1,6 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 Created on Tue Mar 31 17:09:57 2015
+
+This script converts output from WrapDbihar code to be suitabl for the
+legacy Coupled Cells code.
+
+The code reorders cells and produces the required files in TXT format.
+VTK files are written out for visual verification.
 """
 
 import os
@@ -138,9 +144,9 @@ def main():
 
         # New vtkCellArray for storing reordeced cells.
         reorderedCellArray = vtk.vtkCellArray()
-        numRings = taskMeshBranch.GetNumberOfCells() / numQuadsPerRing0;
-        numRingsPerLabel[label] = numRings
-        ringIds = range(0, numRings);
+        numQuadRowsPerBranch = taskMeshBranch.GetNumberOfCells() / numQuadsPerRing0;
+        numRingsPerLabel[label] = numQuadRowsPerBranch
+        ringIds = range(0, numQuadRowsPerBranch);
         ringIds.reverse()
 
         # Decide which TXT files to write to.
@@ -219,6 +225,13 @@ def main():
     rightCellsFile.close()
 
     print "Rings per label:", numRingsPerLabel, "..."
+    ringsPerLabelVals = numRingsPerLabel.values()    
+    
+    # Check all rings per label values are the same.
+    if ringsPerLabelVals[1:] != ringsPerLabelVals[:-1]:
+        print "ERROR: All values of rings per label must be identical ..."
+    else:
+        print "OK: All values of rings per label are identical ..."
 
     # Working with EC mesh.
     # Working with EC mesh.
@@ -252,8 +265,7 @@ def main():
         # Can not use vtkThreshold filter to extract the cells because they are not labelled.
 
         # Ring ids list for traversal.
-        numRings = taskMeshBranch.GetNumberOfCells() / numQuadsPerRing0
-        ringIds = range(0, numRings)
+        ringIds = range(0, numRingsPerLabel[label])
         ringIds.reverse()
 
         # Number of ECs rows is the number of ECs per quad.
@@ -334,7 +346,7 @@ def main():
         print centCellsOf
 
         # Iterate over quads in normal order because they have been reordered.
-        for quadNum in range(0, numRings * numQuadsPerRing0):
+        for quadNum in range(0, numRingsPerLabel[label] * numQuadsPerRing0):
             # Iterate over rows in normal order because they have been reordered.
             for rowNum in range(0, numECsPerCol):
                 # Iterate over the ECs in the row in normal order.
@@ -456,8 +468,7 @@ def main():
         # Can not use vtkThreshold filter to extract the cells because they are not labelled.
 
         # Ring ids list for traversal.
-        numRings = taskMeshBranch.GetNumberOfCells() / numQuadsPerRing0
-        ringIds = range(0, numRings)
+        ringIds = range(0, numRingsPerLabel[label])
         ringIds.reverse()
 
         # Number of SMCs rows is the number of ECs per quad times 13.
@@ -530,7 +541,7 @@ def main():
         print cellsOf
 
         # Iterate over quads in normal order because they have been reordered.
-        for quadNum in range(0, numRings * numQuadsPerRing0):
+        for quadNum in range(0, numRingsPerLabel[label] * numQuadsPerRing0):
             # Iterate over rows in normal order because they have been reordered.
             for rowNum in range(0, numSMCsPerCol):
                 # Iterate over the SMCs in the row in normal order.
@@ -588,16 +599,27 @@ def main():
     print "All done ..."
     print "... Except the last configuration_info.txt file ..."
 
-    print("Processors information\n")
-    print("Total number of points per branch (vtk points) = 1445\t\tm = 85 n = 17\n")
-    print("Total number of cells per branch (vtk cells) = 1344\t\tm = 84 n = 16\n")
-    print("Total number of SMC mesh points per processor mesh (vtk points) = 265\t\tm = 53 n = 5\n")
-    print("Total number of SMC mesh cells per processor mesh (vtk cells) = 208\t\tm = 52 n = 4\n")
-    print("Total number of EC mesh points per processor mesh (vtk points) = 105\t\tm = 5 n = 21\n")
-    print("Total number of EC mesh cells per processor mesh (vtk cells) = 80\t\tm = 4 n = 20\n")
-    print("Total number of EC mesh centeroid points per processor mesh (vtk points) = 80\t\tm = 4 n = 20\n")
-    print("Total number of EC mesh centeroid cells per processor mesh (vtk cells) = 80\t\tm = 4 n = 20\n")
+    configFile = open("txt/configuration_info.txt", 'w')
+    configFile.write("Processors information\n")
+    configFile.write("Total number of points per branch (vtk points) = %d\t\tm = %d n = %d\n" \
+    % ((numQuadsPerRing0 + 1) * (numRingsPerLabel[0] + 1), (numQuadsPerRing0 + 1), (numRingsPerLabel[0] + 1)))
+    configFile.write("Total number of cells per branch (vtk cells) = %d\t\tm = %d n = %d\n" \
+    % (numQuadsPerRing0 * numRingsPerLabel[0], numQuadsPerRing0, numRingsPerLabel[0]))
+    configFile.write("Total number of SMC mesh points per processor mesh (vtk points) = %d\t\tm = %d n = %d\n" \
+    % ((numSMCsPerCol + 1) * (numSMCsPerRow + 1), (numSMCsPerCol + 1), (numSMCsPerRow + 1)))
+    configFile.write("Total number of SMC mesh cells per processor mesh (vtk cells) = %d\t\tm = %d n = %d\n" \
+    % (numSMCsPerCol * numSMCsPerRow, numSMCsPerCol, numSMCsPerRow))
+    configFile.write("Total number of EC mesh points per processor mesh (vtk points) = %d\t\tm = %d n = %d\n" \
+    % ((numECsPerCol + 1) * (numECsPerRow + 1), (numECsPerCol + 1), (numECsPerRow + 1)))
+    configFile.write("Total number of EC mesh cells per processor mesh (vtk cells) = %d\t\tm = %d n = %d\n" \
+    % (numECsPerCol *numECsPerRow, numECsPerCol, numECsPerRow))
+    configFile.write("Total number of EC mesh centeroid points per processor mesh (vtk points) = %d\t\tm = %d n = %d\n" \
+    % (numECsPerCol *numECsPerRow, numECsPerCol, numECsPerRow))
+    configFile.write("Total number of EC mesh centeroid cells per processor mesh (vtk cells) = %d\t\tm = %d n = %d\n" \
+    % (numECsPerCol *numECsPerRow, numECsPerCol, numECsPerRow))
 
+    configFile.close()
+    
     print "Now it is all done for real ..."
 
 if __name__ == '__main__':
