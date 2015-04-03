@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
 
 	vtkSmartPointer<vtkCentrelinePartitioner> centrelinePartitioner = vtkSmartPointer<vtkCentrelinePartitioner>::New();
 	centrelinePartitioner->SetInputData(scalarRadiiToVectorsFilter->GetOutput());
-	centrelinePartitioner->SetPartitionLength(50);
+	centrelinePartitioner->SetPartitionLength(100);
 	centrelinePartitioner->Update();
 
 	vtkDbiharStatic::ShowPolyData(centrelinePartitioner->GetOutput());
@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
 	vtkSmartPointer<vtkIdList> bifurcationIds = vtkSmartPointer<vtkIdList>::New();
 	verts->GetNextCell(bifurcationIds);
 
-	int numRadialQuads = 68;
+	int numRadialQuads = 40;
 	vtkSmartPointer<vtkAppendPoints> appendPoints;
 	vtkSmartPointer<vtkUnsignedIntArray> pointsToMeshDimensions;
 
@@ -186,7 +186,7 @@ int main(int argc, char* argv[]) {
 	vtkDbiharStatic::ShowPolyData(fullMeshJoiner->GetOutput());
 	vtkDbiharStatic::WritePolyData(fullMeshJoiner->GetOutput(), "quadMeshFullc4080.vtp");
 
-#if 0
+#if 1
 	int numECs = 4;
 	int numSMCs = 4;
 	vtkSmartPointer<vtkSubdivideMesh> subdivideECMesh = vtkSmartPointer<vtkSubdivideMesh>::New();

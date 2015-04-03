@@ -60,12 +60,12 @@ segmentList4 = [1.7,[(1.7,60),None,None], [(1.7,120),None,None]]
 # radiusBase = 0.382
 
 # A centreline for a mesh with 4080 cores.
-segmentList5 = [5.2,[(5.2,60),None,None], [(5.2,120),None,None]]
-# radiusBase = 2.1645072260497766
+segmentList5 = [8.84,[(8.84,60),None,None], [(8.84,120),None,None]]
+radiusBase = 1.2732395447351628
 
 # A centreline for a meth with 4032 cores.
 segmentList6 = [7.2,[(7.2,60),None,None], [(7.2,120),None,None]]
-radiusBase = 1.5278874536821951
+# radiusBase = 1.5278874536821951
 
 
 # If sphereRadius is set to None, the centreline is generated in the XY plane.
