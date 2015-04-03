@@ -364,7 +364,7 @@ void vtkDbiharPatchFilter::CheckError()
 			exit(EXIT_FAILURE);
 			//return;
 		case -1:
-			vtkErrorMacro("Dbihar: n and/or m is even or less than 3.");
+			vtkErrorMacro("Dbihar: n (" << this->NDim << ") and/or m (" << this->MDim << ") is even or less than 3.");
 			exit(EXIT_FAILURE);
 			//return;
 		case -2:

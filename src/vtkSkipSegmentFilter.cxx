@@ -28,6 +28,7 @@ vtkStandardNewMacro(vtkSkipSegmentFilter);
 
 vtkSkipSegmentFilter::vtkSkipSegmentFilter()
 {
+	this->NumberOfRadialQuads = 0;
 	this->SetNumberOfInputPorts(1);
 	this->SetNumberOfOutputPorts(1);
 	this->Inlet = false;
@@ -73,7 +74,6 @@ int vtkSkipSegmentFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 	}
 
 	// Build ring of points around point specified.
-
 	vtkSmartPointer<vtkDoubleArray> radiiArray =
 			vtkDoubleArray::SafeDownCast(input->GetPointData()->GetVectors(vtkDbiharStatic::RADII_VECTORS_ARR_NAME));
 

@@ -33,27 +33,40 @@ import math
 # Lists to be used as input. A specific list is passed as the argument to
 # buildCentreline in main.
 
+# Paremeters specifying the properties of the generated centrelines.
+
+# Default branch angle if the angle por branch is not specified.
 branchAngle = math.pi / 4.0
+
+scaling = 1.0
+step = 0.1
+radiusDecreasing = False
 
 segmentList0 = [20,  
                [(20,60),[(30,35),None,None],[(20,105),None,None]],   
                [(20,150),[(40,105),None,None],[(30,150),[(30,105),None,None],[(40,150),None,None]]]]
-               
+# radiusBase = 2.5
+
 segmentList1 = [20,  
                [(20,60),[(20,15),       [(30,350),None,None],[(30,60),None,None]]          ,[(40,105),None,None]],   
                [(20,150),[(50,105),None,None],[(30,150),[(40,105),None,None],[(60,150),None,None]]]]
-                
+# radiusBase = 2.5
+
 segmentList2 = [16,[8,[4,[2,None,None],[2,None,None]],None],[8,[4,None,None],None]]
 segmentList3 = [20,[(20,60),[(20,80),None,None],[20,None,None]],[(20,135),None,None]]
 
 # A centreline for a mesh with 216 cores.
 segmentList4 = [1.7,[(1.7,60),None,None], [(1.7,120),None,None]]
+# radiusBase = 0.382
 
-# Paremeters specifying the properties of the generated centrelines.
+# A centreline for a mesh with 4080 cores.
+segmentList5 = [5.2,[(5.2,60),None,None], [(5.2,120),None,None]]
+# radiusBase = 2.1645072260497766
 
-scaling = 1.0
-step = 0.1
-radiusBase = 0.382 # 2.5
+# A centreline for a meth with 4032 cores.
+segmentList6 = [7.2,[(7.2,60),None,None], [(7.2,120),None,None]]
+radiusBase = 1.5278874536821951
+
 
 # If sphereRadius is set to None, the centreline is generated in the XY plane.
 # Otherwise the centreline is wrapped on a sphere of the specified radius.
@@ -132,7 +145,6 @@ def buildCentreline(segmentList, firstId = 0, firstPt = (0.0,0.0,0.0), direction
     if isinstance(rightBranch, list):
         buildCentreline(rightBranch, nextId, nextPt, -1.0)
         
-        
 def treeTraversal(startingCell):
     
     branchesToExplore = vtk.vtkPriorityQueue()
@@ -185,7 +197,7 @@ def treeTraversal(startingCell):
  
 
 def buildRadiiScalars():
-    
+    radii.SetNumberOfValues(points.GetNumberOfPoints())
     radii.InsertValue(0, radiusBase)
     alreadyBuilt = []
     bifurcationValues = dict()
@@ -217,11 +229,8 @@ def buildRadiiScalars():
                 
             else: # for first iteration (inlet)
                 scalarValue = radiusBase
-            
                 
             if cellId not in alreadyBuilt:
-                            
-                
                 start = int(ids.GetPointId(1))
                 end = int(ids.GetNumberOfPoints()) + start - 1
 
@@ -240,20 +249,26 @@ def buildRadiiScalars():
                 alreadyBuilt.append(cellId)
                 
             distanceCovered += int(ids.GetNumberOfPoints() - 1)
-              
 
 def main():
     
     global centreline
     
-    buildCentreline(segmentList4)
+    buildCentreline(segmentList5)
     
     print "Number of points in the centreline:", points.GetNumberOfPoints()
-    radii.SetNumberOfValues(points.GetNumberOfPoints())
     centreline.SetPoints(points)    
     centreline.SetLines(lines)
     
-    buildRadiiScalars()
+    if radiusDecreasing:
+        # Build decreasing radii.
+        buildRadiiScalars()
+    else:
+        # Constant radii for all points.
+        rIdx = 0
+        while rIdx < points.GetNumberOfPoints():
+            radii.InsertNextValue(radiusBase)
+            rIdx = rIdx + 1
     
     centreline.GetPointData().SetScalars(radii)
 

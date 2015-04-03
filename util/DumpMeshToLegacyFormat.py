@@ -13,14 +13,26 @@ import os
 import sys
 import vtk
 
-numQuadsPerRing0 = 12
+os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c4032')
+
 numECsPerCol = 4
 numSMCsPerRow = 4
 
+
+'''
+numQuadsPerRing0 = 12
 meshSet0 = [
 "quadMeshFullc216.vtp",
 "quadMeshFullECc216.vtp",
 "quadMeshFullSMCc216.vtp"
+]
+''' and None
+
+numQuadsPerRing0 = 48
+meshSet0 = [
+"quadMeshFullc4032.vtp",
+"quadMeshFullECc4032.vtp",
+"quadMeshFullSMCc4032.vtp"
 ]
 
 numECsPerRow = numSMCsPerRow * 5
@@ -92,7 +104,6 @@ smcTXTFiles = [
 
 def main():
     # This is where the data is for testing purposes.
-    os.chdir("/home/cza14/BlueFern/LocalData/c216")
     print "Current working directory:", os.getcwd()    
 
     # Working with the task mesh.
@@ -103,7 +114,7 @@ def main():
     taskMeshReader.Update()
 
     taskMesh = taskMeshReader.GetOutput()
-
+    
     # Get the range of branch labels.
     labelRange = [0, 0]
     taskMesh.GetCellData().GetScalars().GetRange(labelRange, 0)
