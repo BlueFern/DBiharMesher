@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
 
 	vtkSmartPointer<vtkCentrelinePartitioner> centrelinePartitioner = vtkSmartPointer<vtkCentrelinePartitioner>::New();
 	centrelinePartitioner->SetInputData(scalarRadiiToVectorsFilter->GetOutput());
-	centrelinePartitioner->SetPartitionLength(50);
+	centrelinePartitioner->SetPartitionLength(100);
 	centrelinePartitioner->Update();
 
 	vtkDbiharStatic::ShowPolyData(centrelinePartitioner->GetOutput());
