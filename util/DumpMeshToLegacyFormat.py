@@ -303,7 +303,7 @@ def main():
     rightCellsFile.close()
 
     print "Rings per label:", numRingsPerLabel, "..."
-    ringsPerLabelVals = numRingsPerLabel.values()    
+    ringsPerLabelVals = numRingsPerLabel.values()
     
     # Check all rings per label values are the same.
     if ringsPerLabelVals[1:] != ringsPerLabelVals[:-1]:
@@ -437,11 +437,10 @@ def main():
         
         # New vtkPoints for storing reordered points.
         reorderedPoints = vtk.vtkPoints()
-        
+
         # New vtkCellArray for storing reordeced cells.
         reorderedCellArray = vtk.vtkCellArray()
 
-        globalBase = 0
         rowBase = 0
         # Iterate over quads in normal order because they have been reordered.
         for quadNum in range(0, numRingsPerLabel[label] * numQuadsPerRing0):
@@ -452,7 +451,7 @@ def main():
                     # Calculate the 'real' ec cell id and get the corresponding cell.
                     ecId = quadNum * numECsPerQuad + rowNum * numECsPerRow + ecNum
                     ecCell = reorderedECMeshBranch.GetCell(ecId)
-                    
+
                     # The ids to be written to the TXT file.
                     pointIdList = [ecCell.GetNumberOfPoints()]
 
@@ -529,21 +528,20 @@ def main():
                                         pointIdList.append(long(rowBase + ecNum + 1))
                                     elif pPos == 3:
                                         pointIdList.append(long(rowBase + ecNum))
-    
-                    print pointIdList, rowBase
+
+                    # print pointIdList, rowBase
                     
                     # Insert the ids into the cell array.
                     newCell = vtk.vtkQuad()
                     newCell.GetPointIds().Reset()
                     for id in pointIdList[1:]:
                         newCell.GetPointIds().InsertNextId(id)
-                    reorderedCellArray.InsertNextCell(newCell)                        
-                            
+                    reorderedCellArray.InsertNextCell(newCell)
+
                     # Write the ids to the TXT file.
                     pointIdListStr = ' '.join(str(i) for i in pointIdList)
                     cellsOf.write(pointIdListStr + '\n')
                 rowBase = rowBasePrev
-            globalBase = rowBase
 
         # print '\n'
         print "There are", reorderedPoints.GetNumberOfPoints(), "ECs points for label", label, "..."
@@ -552,7 +550,7 @@ def main():
         # Create new vtkPolyData object for the new reordered mesh.
         reorderedECs = vtk.vtkPolyData()
 
-        # Put the reordered points and cells into the reordered mesh.
+        # Put the reordered points and cells into the mesh.
         reorderedECs.SetPoints(reorderedPoints)
         reorderedECs.SetPolys(reorderedCellArray)
 
@@ -586,7 +584,7 @@ def main():
             centCell = reorderedCentroidBranch.GetCell(cId)
             centIds = [centCell.GetNumberOfPoints()]
 
-            # Write centroid ids.            
+            # Write centroid ids.
             ptId = centCell.GetPointId(0)
             centIds.append(ptId)
             centIdsStr = ' '.join(str(i) for i in centIds)
@@ -626,7 +624,7 @@ def main():
     # Prepare the stupid TXT files for output.    
     parentPointsFile = open(smcTXTFiles[0], 'w')
     parentCellsFile = open(smcTXTFiles[1], 'w')
-    
+
     leftPointsFile = open(smcTXTFiles[2], 'w')
     leftCellsFile = open(smcTXTFiles[3], 'w')
 
@@ -702,9 +700,6 @@ def main():
         # Set the reordered cells to the reordered SMCs mesh.
         reorderedSMCMeshBranch.SetPolys(reorderedCellArray)
 
-        print "There are", reorderedSMCMeshBranch.GetNumberOfPoints(), "SMCs points for label", label, "..."
-        print "There are", reorderedSMCMeshBranch.GetNumberOfCells(), "SMCs cells for label", label, "..."
-
         # Decide which TXT files to write to.
         pointsOf = ''
         cellsOf = ''
@@ -725,6 +720,13 @@ def main():
         print pointsOf
         print cellsOf
 
+        # New vtkPoints for storing reordered points.
+        reorderedPoints = vtk.vtkPoints()
+
+        # New vtkCellArray for storing reordeced cells.
+        reorderedCellArray = vtk.vtkCellArray()
+
+        rowBase = 0
         # Iterate over quads in normal order because they have been reordered.
         for quadNum in range(0, numRingsPerLabel[label] * numQuadsPerRing0):
             # Iterate over rows in normal order because they have been reordered.
@@ -737,47 +739,117 @@ def main():
 
                     # The ids to be written to the TXT file.
                     pointIdList = [smcCell.GetNumberOfPoints()]
+                    
+                    # Write the appropriate points to the TXT file.
                     for pPos in range(0, smcCell.GetNumberOfPoints()):
-                        pointIdList.append(smcCell.GetPointId(pPos))
+                        newPoint = False
+                        if rowNum == 0:
+                            if smcNum == 0:
+                                newPoint = True
+                            elif pPos == 1 or pPos == 2:
+                                newPoint = True
+                        else:
+                            if smcNum == 0:
+                                if pPos == 0 or pPos == 1:
+                                    newPoint = True
+                            else:
+                                if pPos == 1:
+                                    newPoint = True
+                        if newPoint == True:
+                            # print pPos,
+                            # Inserting a new point...
+                            point = reorderedSMCMeshBranch.GetPoint(smcCell.GetPointId(pPos))
+                            # with a new id.
+                            newId = reorderedPoints.InsertNextPoint(point)
+                            pointIdList.append(newId)
+
+                            # Write the point.
+                            pointStr = ' '.join(format(i , '.6f') for i in point)
+                            pointsOf.write(pointStr + '\n')
+
+                            if smcNum == 0 and pPos == 0:
+                                rowBasePrev = newId
+                        else:
+                            # Perhaps this can be done in a nicer way.
+                            # Calculate the ide of a previously inserted point.
+                            if rowNum == 0:
+                                if smcNum == 1:
+                                    if pPos == 0:
+                                        pointIdList.append(long(reorderedPoints.GetNumberOfPoints() - 3))
+                                    elif pPos == 3:
+                                        pointIdList.append(long(reorderedPoints.GetNumberOfPoints() - 4))
+                                else:
+                                    if pPos == 0:
+                                        pointIdList.append(long(reorderedPoints.GetNumberOfPoints() - 2))
+                                    elif pPos == 3:
+                                        pointIdList.append(long(reorderedPoints.GetNumberOfPoints() - 3))
+                            elif rowNum == 1:
+                                if smcNum == 0:
+                                    if pPos == 2:
+                                        pointIdList.append(long(rowBase + 1))
+                                    elif pPos == 3:
+                                        pointIdList.append(long(rowBase))
+                                else:
+                                    if pPos == 0:
+                                        pointIdList.append(long(reorderedPoints.GetNumberOfPoints() - 1))
+                                    elif pPos == 2:
+                                        pointIdList.append(long(rowBase + smcNum * 2 + 2))
+                                    elif pPos == 3:
+                                        if smcNum == 1:
+                                            pointIdList.append(long(rowBase + 1))
+                                        else:
+                                            pointIdList.append(long(rowBase + smcNum * 2))
+                            else:
+                                if smcNum == 0:
+                                    if pPos == 2:
+                                        pointIdList.append(long(rowBase + 1))
+                                    elif pPos == 3:
+                                        pointIdList.append(long(rowBase))
+                                else:
+                                    if pPos == 0:
+                                        pointIdList.append(long(reorderedPoints.GetNumberOfPoints() - 1))
+                                    elif pPos == 2:
+                                        pointIdList.append(long(rowBase + smcNum + 1))
+                                    elif pPos == 3:
+                                        pointIdList.append(long(rowBase + smcNum))
+
+                    print pointIdList, rowBase
+    
+                    # Insert the ids into the cell array.
+                    newCell = vtk.vtkQuad()
+                    newCell.GetPointIds().Reset()
+                    for id in pointIdList[1:]:
+                        newCell.GetPointIds().InsertNextId(id)
+                    reorderedCellArray.InsertNextCell(newCell)
                     
                     # Write the ids to the TXT file.
                     pointIdListStr = ' '.join(str(i) for i in pointIdList)
                     cellsOf.write(pointIdListStr + '\n')
+                rowBase = rowBasePrev
 
-                    # Write the appropriate points to the TXT file.
-                    for pPos in range(0, smcCell.GetNumberOfPoints()):
-                        writePoint = False
-                        if rowNum == 0:
-                            if smcNum == 0:
-                                writePoint = True
-                            elif pPos == 1 or pPos == 2:
-                                writePoint = True
-                        else:
-                            if smcNum == 0:
-                                if pPos == 0 or pPos == 1:
-                                    writePoint = True
-                            else:
-                                if pPos == 1:
-                                    writePoint = True
-                        if writePoint == True:
-                            # print pPos,
-                            point = reorderedSMCMeshBranch.GetPoint(smcCell.GetPointId(pPos))
-                            pointStr = ' '.join(format(i , '.6f') for i in point)
-                            pointsOf.write(pointStr + '\n')
-            # print '\n'
+        # print '\n'
+        print "There are", reorderedPoints.GetNumberOfPoints(), "SMCs points for label", label, "..."
+        print "There are", reorderedCellArray.GetNumberOfCells(), "SMCs cells for label", label, "..."
+
+        # Create new vtkPolyData object for the new reordered mesh.
+        reorderedSMCs = vtk.vtkPolyData()
+        
+        # Put the reordered points and cells in to the mesh.
+        reorderedSMCs.SetPoints(reorderedPoints)
+        reorderedSMCs.SetPolys(reorderedCellArray)
 
         # Write the VTK SMC mesh file.
         reorderedMeshWriter = vtk.vtkXMLPolyDataWriter()
-        reorderedMeshWriter.SetInput(reorderedSMCMeshBranch)
+        reorderedMeshWriter.SetInput(reorderedSMCs)
         reorderedMeshWriter.SetFileName(smcVTKFiles[label])
         reorderedMeshWriter.Update()
-        
+
     parentPointsFile.close()
     parentCellsFile.close()
-    
+
     leftPointsFile.close()
     leftCellsFile.close()
-    
+
     rightPointsFile.close()
     rightCellsFile.close()
 
