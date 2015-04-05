@@ -13,27 +13,29 @@ import os
 import sys
 import vtk
 
-os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c4032')
-
 numECsPerCol = 4
 numSMCsPerRow = 4
 
 
-'''
+# '''
+os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c216')
 numQuadsPerRing0 = 12
 meshSet0 = [
 "quadMeshFullc216.vtp",
 "quadMeshFullECc216.vtp",
 "quadMeshFullSMCc216.vtp"
 ]
-''' and None
+# ''' and None
 
+'''
+os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c4032')
 numQuadsPerRing0 = 48
 meshSet0 = [
 "quadMeshFullc4032.vtp",
 "quadMeshFullECc4032.vtp",
 "quadMeshFullSMCc4032.vtp"
 ]
+''' and None
 
 numECsPerRow = numSMCsPerRow * 5
 numSMCsPerCol = numECsPerCol * 13
@@ -274,7 +276,35 @@ def main():
 
     # For every label in the range of labels we want to extract all ECs.
     for label in labelRange:
-        # Can not use vtkThreshold filter to extract the cells because they are not labelled.
+
+        # Keep track of how many branches we need to skip.
+        numECsPerLabel = numQuadsPerRing0 * numRingsPerLabel[label] * numECsPerQuad
+        ecCellOffset = label * numECsPerLabel
+
+        print "ecCellOffset", ecCellOffset
+
+        # Collect cell ids to select.
+        selectionIds = vtk.vtkIdTypeArray()
+        for sId in range(0, numECsPerLabel):
+            selectionIds.InsertNextValue(ecCellOffset + sId)
+
+        # Create selecion node.
+        selectionNode = vtk.vtkSelectionNode()
+        selectionNode.SetFieldType(selectionNode.CELL)
+        selectionNode.SetContentType(selectionNode.INDICES)
+        selectionNode.SetSelectionList(selectionIds)
+
+        # Create selection.
+        selection = vtk.vtkSelection()
+        selection.AddNode(selectionNode)
+
+        # Use vtkSelection filter.
+        selectionExtractor = vtk.vtkExtractSelection()
+        selectionExtractor.SetInput(0, ecMesh)
+        selectionExtractor.SetInput(1, selection)
+        selectionExtractor.Update()
+
+        extractedECs = selectionExtractor.GetOutput()
 
         # Ring ids list for traversal.
         ringIds = range(0, numRingsPerLabel[label])
@@ -287,24 +317,6 @@ def main():
         # The ECs are organised in rings of blocks of cells.
         # New vtkCellArray for storing reordeced cells.
         reorderedCellArray = vtk.vtkCellArray()
-
-        # Create new vtkPolyData object for the new reordered mesh.
-        reorderedECMeshBranch = vtk.vtkPolyData()
-        # Use the old points.
-        # We are cheating here, because we are using all points,
-        # but only the ones participating in reordered cells will show
-        # and only they will be written out to the stupid TXT files.
-        reorderedECMeshBranch.SetPoints(ecMesh.GetPoints())
-
-        # Extracting the cells on the basis of the index.
-        # We only want cells that correspond to the quads withthe given label
-        # in the task mesh.
-
-        # Keep track of how many branches we need to skip.
-        ecCellOffset = label * numQuadsPerRing0 * numRingsPerLabel[label] * \
-        numECsPerQuad
-
-        print "ecCellOffset", ecCellOffset
 
         # Iterate over the rings in reverse order.
         for ringNum in ringIds:
@@ -319,15 +331,20 @@ def main():
                     for ecNum in range(0, numECsPerRow):
                         # Calculate the 'real' ec cell id and get the corresponding cell.
                         ecId = quadId * numECsPerQuad + rowNum * numECsPerRow + ecNum
-                        ecId = ecCellOffset + ecId
-                        ecCell = ecMesh.GetCell(ecId)
+                        ecCell = extractedECs.GetCell(ecId)
                         reorderedCellArray.InsertNextCell(ecCell)
+
+        # Create new vtkPolyData object for the new reordered mesh.
+        reorderedECMeshBranch = vtk.vtkPolyData()
+
+        # Insert our new points.
+        reorderedECMeshBranch.SetPoints(extractedECs.GetPoints())
 
         # Set the reordered cells to the reordered ECs mesh.
         reorderedECMeshBranch.SetPolys(reorderedCellArray)
 
-        print "There are", reorderedECMeshBranch.GetNumberOfCells(), \
-        "ECs for label", label, "..."
+        print "There are", reorderedECMeshBranch.GetNumberOfPoints(), "ECs points for label", label, "..."
+        print "There are", reorderedECMeshBranch.GetNumberOfCells(), "ECs cells for label", label, "..."
 
         # Decide which TXT files to write to.
         pointsOf = ''
@@ -477,7 +494,35 @@ def main():
 
     # For every label in the range of labels we want to extract all SMCs.
     for label in labelRange:
-        # Can not use vtkThreshold filter to extract the cells because they are not labelled.
+
+        # Keep track of how many branches we need to skip.
+        numSMCsPerLabel = numQuadsPerRing0 * numRingsPerLabel[label] * numSMCsPerQuad
+        smcCellOffset = label * numSMCsPerLabel
+
+        print "smcCellOffset", smcCellOffset
+
+        # Collect cell ids to select.
+        selectionIds = vtk.vtkIdTypeArray()
+        for sId in range(0, numSMCsPerLabel):
+            selectionIds.InsertNextValue(smcCellOffset + sId)
+
+        # Create selecion node.
+        selectionNode = vtk.vtkSelectionNode()
+        selectionNode.SetFieldType(selectionNode.CELL)
+        selectionNode.SetContentType(selectionNode.INDICES)
+        selectionNode.SetSelectionList(selectionIds)
+
+        # Create selection.
+        selection = vtk.vtkSelection()
+        selection.AddNode(selectionNode)
+
+        # Use vtkSelection filter.
+        selectionExtractor = vtk.vtkExtractSelection()
+        selectionExtractor.SetInput(0, smcMesh)
+        selectionExtractor.SetInput(1, selection)
+        selectionExtractor.Update()
+        
+        extractedSMCs = selectionExtractor.GetOutput()
 
         # Ring ids list for traversal.
         ringIds = range(0, numRingsPerLabel[label])
@@ -490,24 +535,6 @@ def main():
         # The SMCs are organised in rings of blocks of cells.
         # New vtkCellArray for storing reordeced cells.
         reorderedCellArray = vtk.vtkCellArray()
-
-        # Create new vtkPolyData object for the new reordered mesh.
-        reorderedSMCMeshBranch = vtk.vtkPolyData()
-        # Use the old points.
-        # We are cheating here, because we are using all points,
-        # but only the ones participating in reordered cells will show
-        # and only they will be written out to the stupid TXT files.
-        reorderedSMCMeshBranch.SetPoints(smcMesh.GetPoints())
-
-        # Extracting the cells on the basis of the index.
-        # We only want cells that correspond to the quads withthe given label
-        # in the task mesh.
-
-        # Keep track of how many branches we need to skip.
-        smcCellOffset = label * numQuadsPerRing0 * numRingsPerLabel[label] * \
-        numSMCsPerQuad
-
-        print "smcCellOffset", smcCellOffset
 
         # Iterate over the rings in reverse order.
         for ringNum in ringIds:
@@ -522,15 +549,20 @@ def main():
                     for smcNum in range(0, numSMCsPerRow):
                         # Calculate the 'real' smc cell id and get the corresponding cell.
                         smcId = quadId * numSMCsPerQuad + rowNum * numSMCsPerRow + smcNum
-                        smcId = smcCellOffset + smcId
-                        smcCell = smcMesh.GetCell(smcId)
+                        smcCell = extractedSMCs.GetCell(smcId)
                         reorderedCellArray.InsertNextCell(smcCell)
+
+        # Create new vtkPolyData object for the new reordered mesh.
+        reorderedSMCMeshBranch = vtk.vtkPolyData()
+        
+        # Insert our new points.
+        reorderedSMCMeshBranch.SetPoints(extractedSMCs.GetPoints())
 
         # Set the reordered cells to the reordered SMCs mesh.
         reorderedSMCMeshBranch.SetPolys(reorderedCellArray)
 
-        print "There are", reorderedSMCMeshBranch.GetNumberOfCells(), \
-        "SMCs for label", label, "..."
+        print "There are", reorderedSMCMeshBranch.GetNumberOfPoints(), "SMCs points for label", label, "..."
+        print "There are", reorderedSMCMeshBranch.GetNumberOfCells(), "SMCs cells for label", label, "..."
 
         # Decide which TXT files to write to.
         pointsOf = ''
