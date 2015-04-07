@@ -16,7 +16,8 @@ public:
 	static const char *RADII_VECTORS_ARR_NAME;
 	static const char *RADII_SCALARS_ARR_NAME;
 	static const char *DERIV_ARR_NAME;
-	static const char *CELL_DATA_ARR_NAME;
+	static const char *BRANCH_ID_ARR_NAME;
+	static const char *GRID_COORDS_ARR_NAME;
 
 	static const int SMC_CIRC;
 	static const int SMC_AXIAL;

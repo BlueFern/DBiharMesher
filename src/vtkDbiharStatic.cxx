@@ -38,7 +38,8 @@
 const char *vtkDbiharStatic::RADII_VECTORS_ARR_NAME = {"radiiVectors"};
 const char *vtkDbiharStatic::RADII_SCALARS_ARR_NAME = {"radiiScalars"};
 const char *vtkDbiharStatic::DERIV_ARR_NAME = {"derivVectors"};
-const char *vtkDbiharStatic::CELL_DATA_ARR_NAME = {"branchId"};
+const char *vtkDbiharStatic::BRANCH_ID_ARR_NAME = {"branchId"};
+const char *vtkDbiharStatic::GRID_COORDS_ARR_NAME = {"gridCoords"};
 
 // The following constants are in micrometres.
 const int vtkDbiharStatic::SMC_CIRC = 50;

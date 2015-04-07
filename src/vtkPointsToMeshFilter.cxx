@@ -1,11 +1,4 @@
-#include <cmath>
-#include <algorithm>
-
 #include <vtkObjectFactory.h>
-#include <vtkStreamingDemandDrivenPipeline.h>
-#include <vtkInformationVector.h>
-#include <vtkInformation.h>
-#include <vtkDataObject.h>
 #include <vtkSmartPointer.h>
 #include <vtkIdList.h>
 #include <vtkCellArray.h>
@@ -18,7 +11,6 @@
 #include "vtkPointsToMeshFilter.h"
 
 vtkStandardNewMacro(vtkPointsToMeshFilter);
-
 
 vtkPointsToMeshFilter::vtkPointsToMeshFilter()
 {
@@ -41,7 +33,7 @@ int vtkPointsToMeshFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 	// Test Dimensions is not NULL and has been initialised.
 	if (Dimensions->GetNumberOfTuples() < 2)
 	{
-		vtkErrorMacro("Require 3 or more tuples in Dimensions array (Got " << Dimensions->GetNumberOfTuples() << ").");
+		vtkErrorMacro("Three or more tuples are expected in the Dimensions array (" << Dimensions->GetNumberOfTuples() << ").");
 		exit(EXIT_FAILURE);
 	}
 
@@ -69,15 +61,20 @@ int vtkPointsToMeshFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 		exit(EXIT_FAILURE);
 	}
 
-	vtkSmartPointer<vtkPolyData> result = vtkSmartPointer<vtkPolyData>::New();
-	vtkSmartPointer<vtkIntArray> cellData = vtkSmartPointer<vtkIntArray>::New();
+	vtkSmartPointer<vtkIntArray> branchIdCellData = vtkSmartPointer<vtkIntArray>::New();
+	branchIdCellData->SetName(vtkDbiharStatic::BRANCH_ID_ARR_NAME);
+
+	vtkSmartPointer<vtkIntArray> gridCoordinatesCellData = vtkSmartPointer<vtkIntArray>::New();
+	gridCoordinatesCellData->SetName(vtkDbiharStatic::GRID_COORDS_ARR_NAME);
+	gridCoordinatesCellData->SetNumberOfComponents(2);
+
 	vtkSmartPointer<vtkCellArray> quads = vtkSmartPointer<vtkCellArray>::New();
 	vtkSmartPointer<vtkIdList> quad = vtkSmartPointer<vtkIdList>::New();
 	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
 
-	double point[3] = {0,0,0};
-	int start = 0;
-	int end = 0;
+	double point[3] = {0, 0, 0};
+	double gridCoords[2] = {0, 0};
+
 	int halfLoop = (Dimensions->GetValue(0) + 1);
 	int numPointsLoop = 2 * Dimensions->GetValue(0); // Only used for quads.
 
@@ -98,29 +95,40 @@ int vtkPointsToMeshFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 	int quadPosition = 0;
 	int cellDataId = 0;
 
-	for (int branch = 1; branch <= numPatches; branch++) // Looping over the number of branches (once if straight segment).
+	int start = 0;
+	int end = 0;
+
+	// Looping over the number of branches (once if straight segment).
+	for (int branch = 1; branch <= numPatches; branch++)
 	{
-		for (int i = 0; i < Dimensions->GetValue(branch) + 1; i++) // For each ring in a given branch.
+		// For each ring in a given branch.
+		for (int i = 0; i < Dimensions->GetValue(branch) + 1; i++)
 		{
 			k++;
 			start = branchStart + i * (Dimensions->GetValue(0) + 1);
 			end = start + (Dimensions->GetValue(0) + 1);
 
-			for (int j = start; j < end; j++) // Bottom half of ring.
+			// Bottom half of ring.
+			for (int j = start; j < end; j++)
 			{
 				input->GetPoint(j, point);
 				points->InsertNextPoint(point);
 
-				// Build quads. The points of the quads are not yet in the points array, but we know where they will be based on
-				// values in the input dimensions array.
-				if (i < Dimensions->GetValue(branch) && j + 1 < end) // Don't make quads on last loop.
+				// Build quads. The points of the quads are not yet in the points array,
+				// but we know where they will be based on values in the input dimensions array.
+
+				// Don't make quads in the last iteration of the loop.
+				if (i < Dimensions->GetValue(branch) && j + 1 < end)
 				{
 					quad->InsertUniqueId(quadPosition);
 					quad->InsertUniqueId(quadPosition + 1);
 					quad->InsertUniqueId(quadPosition + numPointsLoop + 1);
 					quad->InsertUniqueId(quadPosition + numPointsLoop);
 					quads->InsertNextCell(quad);
-					cellData->InsertNextValue(cellDataId);
+					branchIdCellData->InsertNextValue(cellDataId);
+					gridCoords[0] = i;
+					gridCoords[1] = j - start;
+					gridCoordinatesCellData->InsertNextTuple(gridCoords);
 					quad->Reset();
 					quadPosition++;
 				}
@@ -128,10 +136,11 @@ int vtkPointsToMeshFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 
 			reversedEnd = reversedStart - halfLoop;
 
-			for (int j = reversedStart; j > reversedEnd; j--) // Top half of the ring.
+			// Top half of the ring.
+			for (int j = reversedStart; j > reversedEnd; j--)
 			{
-
-				if (j < reversedStart && j > reversedEnd + 1) // Duplicate points.
+				// Duplicate points.
+				if (j < reversedStart && j > reversedEnd + 1)
 				{
 					input->GetPoint(j, point);
 					points->InsertNextPoint(point);
@@ -145,7 +154,10 @@ int vtkPointsToMeshFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 					quad->InsertUniqueId(quadPosition + numPointsLoop + 1);
 					quad->InsertUniqueId(quadPosition + numPointsLoop);
 					quads->InsertNextCell(quad);
-					cellData->InsertNextValue(cellDataId);
+					branchIdCellData->InsertNextValue(cellDataId);
+					gridCoords[0] = i;
+					gridCoords[1] = reversedStart - j + halfLoop;
+					gridCoordinatesCellData->InsertNextTuple(gridCoords);
 					quad->Reset();
 					quadPosition++;
 				}
@@ -159,7 +171,10 @@ int vtkPointsToMeshFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 				quad->InsertUniqueId(quadPosition + 1);
 				quad->InsertUniqueId(quadPosition + numPointsLoop);
 				quads->InsertNextCell(quad);
-				cellData->InsertNextValue(cellDataId);
+				branchIdCellData->InsertNextValue(cellDataId);
+				gridCoords[0] = i;
+				gridCoords[1] = numPointsLoop;
+				gridCoordinatesCellData->InsertNextTuple(gridCoords);
 				quad->Reset();
 				quadPosition++;
 			}
@@ -169,7 +184,6 @@ int vtkPointsToMeshFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 			{
 				this->UpdateProgress(static_cast<double>(stage++) / static_cast<double>(11));
 			}
-
 		}
 
 		// End early if in last iteration of loop.
@@ -181,7 +195,6 @@ int vtkPointsToMeshFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 		cellDataId++;
 
 		// Find the starting points of the rings and quads in the next branch.
-
 		branchStart = halfLoop * (Dimensions->GetValue(1) + 1);
 		for (int k = 2; k <= branch; k++)
 		{
@@ -194,10 +207,11 @@ int vtkPointsToMeshFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 		reversedStart = branchStart + (2 * halfLoop * (Dimensions->GetValue(branch + 1) + 1)) - 1;
 
 		quadPosition += numPointsLoop;
-
 	}
-	cellData->SetName(vtkDbiharStatic::CELL_DATA_ARR_NAME);
-	result->GetCellData()->SetScalars(cellData);
+
+	vtkSmartPointer<vtkPolyData> result = vtkSmartPointer<vtkPolyData>::New();
+	result->GetCellData()->SetScalars(branchIdCellData);
+	result->GetCellData()->AddArray(gridCoordinatesCellData);
 	result->SetPoints(points);
 	result->SetPolys(quads);
 
