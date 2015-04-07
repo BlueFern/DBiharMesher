@@ -93,16 +93,15 @@ int vtkPointsToMeshFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 	int reversedStart = numPoints - 1;
 	int reversedEnd = reversedStart - halfLoop;
 	int quadPosition = 0;
-	int cellDataId = 0;
 
 	int start = 0;
 	int end = 0;
 
 	// Looping over the number of branches (once if straight segment).
-	for (int branch = 1; branch <= numPatches; branch++)
+	for (int branchId = 0; branchId < numPatches; branchId++)
 	{
 		// For each ring in a given branch.
-		for (int i = 0; i < Dimensions->GetValue(branch) + 1; i++)
+		for (int i = 0; i < Dimensions->GetValue(branchId + 1) + 1; i++)
 		{
 			k++;
 			start = branchStart + i * (Dimensions->GetValue(0) + 1);
@@ -118,14 +117,14 @@ int vtkPointsToMeshFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 				// but we know where they will be based on values in the input dimensions array.
 
 				// Don't make quads in the last iteration of the loop.
-				if (i < Dimensions->GetValue(branch) && j + 1 < end)
+				if (i < Dimensions->GetValue(branchId + 1) && j + 1 < end)
 				{
 					quad->InsertUniqueId(quadPosition);
 					quad->InsertUniqueId(quadPosition + 1);
 					quad->InsertUniqueId(quadPosition + numPointsLoop + 1);
 					quad->InsertUniqueId(quadPosition + numPointsLoop);
 					quads->InsertNextCell(quad);
-					branchIdCellData->InsertNextValue(cellDataId);
+					branchIdCellData->InsertNextValue(branchId);
 					gridCoords[0] = i;
 					gridCoords[1] = j - start;
 					gridCoordinatesCellData->InsertNextTuple(gridCoords);
@@ -147,14 +146,14 @@ int vtkPointsToMeshFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 				}
 
 				// Creating top half quads.
-				if (i < Dimensions->GetValue(branch) && j > reversedEnd + 2)
+				if (i < Dimensions->GetValue(branchId + 1) && j > reversedEnd + 2)
 				{
 					quad->InsertUniqueId(quadPosition);
 					quad->InsertUniqueId(quadPosition + 1);
 					quad->InsertUniqueId(quadPosition + numPointsLoop + 1);
 					quad->InsertUniqueId(quadPosition + numPointsLoop);
 					quads->InsertNextCell(quad);
-					branchIdCellData->InsertNextValue(cellDataId);
+					branchIdCellData->InsertNextValue(branchId);
 					gridCoords[0] = i;
 					gridCoords[1] = reversedStart - j + halfLoop;
 					gridCoordinatesCellData->InsertNextTuple(gridCoords);
@@ -164,14 +163,14 @@ int vtkPointsToMeshFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 			}
 
 			// Connecting the last quad in the ring to the first.
-			if (i < Dimensions->GetValue(branch)) // Again, no quads on the last ring.
+			if (i < Dimensions->GetValue(branchId + 1)) // Again, no quads on the last ring.
 			{
 				quad->InsertUniqueId(quadPosition);
 				quad->InsertUniqueId(quadPosition - (numPointsLoop - 1));
 				quad->InsertUniqueId(quadPosition + 1);
 				quad->InsertUniqueId(quadPosition + numPointsLoop);
 				quads->InsertNextCell(quad);
-				branchIdCellData->InsertNextValue(cellDataId);
+				branchIdCellData->InsertNextValue(branchId);
 				gridCoords[0] = i;
 				gridCoords[1] = numPointsLoop;
 				gridCoordinatesCellData->InsertNextTuple(gridCoords);
@@ -187,24 +186,23 @@ int vtkPointsToMeshFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 		}
 
 		// End early if in last iteration of loop.
-		if (branch + 1 > numPatches)
+		if (branchId + 1 >= numPatches)
 		{
 			break;
 		}
 
-		cellDataId++;
-
 		// Find the starting points of the rings and quads in the next branch.
 		branchStart = halfLoop * (Dimensions->GetValue(1) + 1);
-		for (int k = 2; k <= branch; k++)
+
+		for (int k = 2; k <= branchId + 1; k++)
 		{
 			branchStart +=  2 * halfLoop * (Dimensions->GetValue(k) + 1);
 		}
 
 		// Duplicating points between branches is intended. Move back half a loop for every branch we've passed.
-		branchStart -= branch * halfLoop;
+		branchStart -= (branchId + 1) * halfLoop;
 
-		reversedStart = branchStart + (2 * halfLoop * (Dimensions->GetValue(branch + 1) + 1)) - 1;
+		reversedStart = branchStart + (2 * halfLoop * (Dimensions->GetValue(branchId + 2) + 1)) - 1;
 
 		quadPosition += numPointsLoop;
 	}
