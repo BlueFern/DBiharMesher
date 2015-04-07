@@ -399,6 +399,24 @@ target_link_libraries(testPipelineFullc4032
 	vtkCentrelineResampler
 	${testLibs})
 
+add_executable(testPipelineFullc8064
+	test/testPipelineFullc8064.cxx)
+target_link_libraries(testPipelineFullc8064
+	vtkDbiharStatic
+	vtkScalarRadiiToVectorsFilter
+	vtkFiltersGeometry
+	vtkSubdivideMesh
+	vtkSubdivideQuadFilter
+	vtkCentrelineToDbiharPatch
+	vtkDbiharPatchFilter
+	vtkCentrelinePartitioner
+	vtkPointsToMeshFilter
+	vtkSkipSegmentFilter
+	vtkEndCapFilter
+	vtkRescaleUnits
+	vtkCentrelineResampler
+	${testLibs})
+
 add_executable(DumpMeshToLegacyFormat
 	util/DumpMeshToLegacyFormat.cxx)
 target_link_libraries(DumpMeshToLegacyFormat

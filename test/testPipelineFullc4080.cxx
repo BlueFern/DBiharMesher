@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
 	vtkSmartPointer<vtkIdList> bifurcationIds = vtkSmartPointer<vtkIdList>::New();
 	verts->GetNextCell(bifurcationIds);
 
-	int numRadialQuads = 40;
+	int numRadialQuads = 20;
 	vtkSmartPointer<vtkAppendPoints> appendPoints;
 	vtkSmartPointer<vtkUnsignedIntArray> pointsToMeshDimensions;
 

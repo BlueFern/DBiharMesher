@@ -17,7 +17,7 @@ numECsPerCol = 4
 numSMCsPerRow = 4
 
 
-# '''
+'''
 os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c216')
 numQuadsPerRing0 = 12
 meshSet0 = [
@@ -25,15 +25,35 @@ meshSet0 = [
 "quadMeshFullECc216.vtp",
 "quadMeshFullSMCc216.vtp"
 ]
-# ''' and None
+''' and None
 
-'''
+# '''
 os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c4032')
 numQuadsPerRing0 = 48
 meshSet0 = [
 "quadMeshFullc4032.vtp",
 "quadMeshFullECc4032.vtp",
 "quadMeshFullSMCc4032.vtp"
+]
+# ''' and None
+
+'''
+os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c4080')
+numQuadsPerRing0 = 40
+meshSet0 = [
+"quadMeshFullc4080.vtp",
+"quadMeshFullECc4080.vtp",
+"quadMeshFullSMCc4080.vtp"
+]
+''' and None
+
+'''
+os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c8112')
+numQuadsPerRing0 = 40
+meshSet0 = [
+"quadMeshFullc8112.vtp",
+"quadMeshFullECc8112.vtp",
+"quadMeshFullSMCc8112.vtp"
 ]
 ''' and None
 
@@ -813,7 +833,7 @@ def main():
                                     elif pPos == 3:
                                         pointIdList.append(long(rowBase + smcNum))
 
-                    print pointIdList, rowBase
+                    # print pointIdList, rowBase
     
                     # Insert the ids into the cell array.
                     newCell = vtk.vtkQuad()

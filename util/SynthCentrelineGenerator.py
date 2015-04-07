@@ -61,12 +61,21 @@ segmentList4 = [1.7,[(1.7,60),None,None], [(1.7,120),None,None]]
 
 # A centreline for a mesh with 4080 cores.
 segmentList5 = [8.84,[(8.84,60),None,None], [(8.84,120),None,None]]
-radiusBase = 1.2732395447351628
+# radiusBase = 1.2732395447351628
 
-# A centreline for a meth with 4032 cores.
+# A centreline for a mesh with 4032 cores.
 segmentList6 = [7.2,[(7.2,60),None,None], [(7.2,120),None,None]]
 # radiusBase = 1.5278874536821951
 
+# A centreline for a mesh with 8064 cores, 48x56
+segmentList7 = [14.56,[(14.56,60),None,None], [(14.56,120),None,None]]
+# radiusBase = 1.5278874536821951
+
+# A centreline for a mesh with 8064 cores. 64x42
+# l = 10.920
+# r = 2.0371832715762603
+segmentList7 = [10.92,[(10.92,60),None,None], [(10.92,120),None,None]]
+radiusBase = 2.0371832715762603
 
 # If sphereRadius is set to None, the centreline is generated in the XY plane.
 # Otherwise the centreline is wrapped on a sphere of the specified radius.
@@ -254,7 +263,7 @@ def main():
     
     global centreline
     
-    buildCentreline(segmentList5)
+    buildCentreline(segmentList7)
     
     print "Number of points in the centreline:", points.GetNumberOfPoints()
     centreline.SetPoints(points)    
