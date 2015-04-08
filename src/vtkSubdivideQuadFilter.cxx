@@ -50,6 +50,7 @@ void vtkSubdivideQuadFilter::copyPointsArray(double* array1, double* array2)
 		array2[i] = array1[i];
 	}
 }
+
 int vtkSubdivideQuadFilter::RequestData(vtkInformation *vtkNotUsed(request),
 		vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
@@ -149,9 +150,9 @@ int vtkSubdivideQuadFilter::RequestData(vtkInformation *vtkNotUsed(request),
 
 		}
 	}
-
-	else // No new rows to create, just use top and bottom edges.
+	else
 	{
+		// No new rows to create, just use top and bottom edges.
 		vtkSmartPointer<vtkPoints> allPoints = vtkSmartPointer<vtkPoints>::New();
 
 		// Necessary for the correct ordering of points.

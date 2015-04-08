@@ -45,14 +45,19 @@ int vtkPointsToMeshFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 	int numQuads = 0;
 	int numPoints = 0;
 
+	// TODO: This code needs to be straighten out a bit in terms
+	// of reducing the number of variable and choosing better varibale names.
+
 	for (int i = 1; i < Dimensions->GetNumberOfTuples(); i++)
 	{
 		numQuads += 2 * (Dimensions->GetValue(i) + 1);
 	}
+
 	if (numPatches > 1)
 	{
 		numQuads -= numPatches; // Removes overlapping points between branches.
 	}
+
 	numPoints = (Dimensions->GetValue(0) + 1) * numQuads;
 
 	if (input->GetNumberOfPoints() != numPoints)
@@ -155,7 +160,7 @@ int vtkPointsToMeshFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 					quads->InsertNextCell(quad);
 					branchIdCellData->InsertNextValue(branchId);
 					gridCoords[0] = i;
-					gridCoords[1] = reversedStart - j + halfLoop;
+					gridCoords[1] = reversedStart - j + halfLoop - 1;
 					gridCoordinatesCellData->InsertNextTuple(gridCoords);
 					quad->Reset();
 					quadPosition++;
@@ -172,7 +177,7 @@ int vtkPointsToMeshFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 				quads->InsertNextCell(quad);
 				branchIdCellData->InsertNextValue(branchId);
 				gridCoords[0] = i;
-				gridCoords[1] = numPointsLoop;
+				gridCoords[1] = numPointsLoop - 1;
 				gridCoordinatesCellData->InsertNextTuple(gridCoords);
 				quad->Reset();
 				quadPosition++;

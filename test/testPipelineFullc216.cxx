@@ -254,5 +254,7 @@ int main(int argc, char* argv[]) {
 	vtkDbiharStatic::WriteStlData(triMeshJoiner->GetOutput(), "triMeshWithCapsFullc216.stl");
 #endif
 
+	std::cout << "Exiting " << __FILE__ << std::endl;
+
 	return EXIT_SUCCESS;
 }
