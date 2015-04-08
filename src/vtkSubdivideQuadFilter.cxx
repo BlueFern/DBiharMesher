@@ -66,7 +66,6 @@ int vtkSubdivideQuadFilter::RequestData(vtkInformation *vtkNotUsed(request),
 		exit(EXIT_FAILURE);
 	}
 
-
 	vtkSmartPointer<vtkPoints> topEdge = vtkSmartPointer<vtkPoints>::New();
 	vtkSmartPointer<vtkPoints> bottomEdge = vtkSmartPointer<vtkPoints>::New();
 	vtkSmartPointer<vtkPoints> splineInputPoints = vtkSmartPointer<vtkPoints>::New();

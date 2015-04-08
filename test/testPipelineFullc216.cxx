@@ -189,6 +189,7 @@ int main(int argc, char* argv[]) {
 #if 1
 	int numECs = 4;
 	int numSMCs = 4;
+
 	vtkSmartPointer<vtkSubdivideMesh> subdivideECMesh = vtkSmartPointer<vtkSubdivideMesh>::New();
 	//subdivideECMesh->DebugOn();
 	subdivideECMesh->SetInputData(fullMeshJoiner->GetOutput());
