@@ -11,12 +11,25 @@ import vtk
 import numpy
 import matplotlib.pyplot as pyplot
 
-# This is for 216 mesh.
+# This is for the c216 mesh.
+'''
+os.chdir("/home/constantine/BlueFern/DbiharPatchFilter/tmpData/c216")
 meshFile = "quadMeshFullECc216.vtp"
 numBranches = 3
 numQuads = 216
 numECsPerCol = 4
 jplcGradient = 0.15
+''' and None
+
+# This is for the c4032 mesh.
+# '''
+os.chdir("/home/constantine/BlueFern/DbiharPatchFilter/tmpData/c4032")
+meshFile = "quadMeshFullECc4032.vtp"
+numBranches = 3
+numQuads = 216
+numECsPerCol = 4
+jplcGradient = 0.15
+# ''' and None
 
 jplcMin = 0.2
 jplcMax = 2.7
@@ -27,8 +40,6 @@ def sigmoidJPLC(x):
     return jplcMin + (jplcMax / (1.0 + numpy.exp(-jplcGradient * x)))
 
 def main():
-    # While in devel and debug mode.
-    os.chdir("/home/constantine/BlueFern/DbiharPatchFilter/tmpData/c216")
     # Report our CWD just for testing purposes.
     print "CWD:", os.getcwd()    
 
