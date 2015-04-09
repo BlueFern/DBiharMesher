@@ -43,9 +43,7 @@ int vtkSubdivideMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInform
 	int numberOfQuads = input->GetNumberOfCells();
 
 	vtkSmartPointer<vtkIntArray> branchIdArray = vtkIntArray::SafeDownCast(input->GetCellData()->GetArray(vtkDbiharStatic::BRANCH_ID_ARR_NAME));
-	branchIdArray->Print(std::cout);
 	vtkSmartPointer<vtkIntArray> gridCoordsArray = vtkIntArray::SafeDownCast(input->GetCellData()->GetArray(vtkDbiharStatic::GRID_COORDS_ARR_NAME));
-	gridCoordsArray->Print(std::cout);
 
 	std::map<int, std::pair<int, int> > branchDimsensions;
 	std::map<int, std::pair<int, int> >::iterator iter;

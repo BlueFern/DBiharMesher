@@ -197,7 +197,7 @@ int main(int argc, char* argv[]) {
 	subdivideECMesh->SetRows((vtkDbiharStatic::SMC_CIRC / vtkDbiharStatic::EC_CIRC) * numSMCs);
 	//subdivideECMesh->SetHeight(vtkDbiharStatic::EC_CIRC);
 	//subdivideECMesh->SetLength(vtkDbiharStatic::EC_AXIAL);
-	subdivideECMesh->Print(std::cout);
+	//subdivideECMesh->Print(std::cout);
 	subdivideECMesh->Update();
 
 	vtkDbiharStatic::WritePolyData(subdivideECMesh->GetOutput(), "quadMeshFullECc216.vtp");
@@ -209,7 +209,7 @@ int main(int argc, char* argv[]) {
 	subdivideSMCMesh->SetRows(numSMCs);
 	//subdivideSMCMesh->SetHeight(vtkDbiharStatic::SMC_CIRC);
 	//subdivideSMCMesh->SetLength(vtkDbiharStatic::SMC_AXIAL);
-	subdivideSMCMesh->Print(std::cout);
+	//subdivideSMCMesh->Print(std::cout);
 	subdivideSMCMesh->Update();
 
 	vtkDbiharStatic::WritePolyData(subdivideSMCMesh->GetOutput(), "quadMeshFullSMCc216.vtp");

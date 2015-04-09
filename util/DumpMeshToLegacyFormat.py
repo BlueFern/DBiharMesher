@@ -17,28 +17,28 @@ numECsPerCol = 4
 numSMCsPerRow = 4
 
 
-'''
-os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c216')
+#'''
+#os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c216')
 numQuadsPerRing0 = 12
 meshSet0 = [
 "quadMeshFullc216.vtp",
 "quadMeshFullECc216.vtp",
 "quadMeshFullSMCc216.vtp"
 ]
-''' and None
+#''' and None
 
-# '''
-os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c4032')
+'''
+#os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c4032')
 numQuadsPerRing0 = 48
 meshSet0 = [
 "quadMeshFullc4032.vtp",
 "quadMeshFullECc4032.vtp",
 "quadMeshFullSMCc4032.vtp"
 ]
-# ''' and None
+''' and None
 
 '''
-os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c4080')
+#os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c4080')
 numQuadsPerRing0 = 40
 meshSet0 = [
 "quadMeshFullc4080.vtp",
@@ -48,7 +48,7 @@ meshSet0 = [
 ''' and None
 
 '''
-os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c8112')
+#os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c8112')
 numQuadsPerRing0 = 40
 meshSet0 = [
 "quadMeshFullc8112.vtp",
@@ -586,7 +586,7 @@ def main():
         centroidFilter.SetInput(reorderedECs)
         centroidFilter.Update()
 
-        # Create a vertex for each point.
+        # Create a vertex cell for each point.
         pointsToVerticesFilter = vtk.vtkVertexGlyphFilter()
         pointsToVerticesFilter.SetInput(centroidFilter.GetOutput())
         pointsToVerticesFilter.Update()
