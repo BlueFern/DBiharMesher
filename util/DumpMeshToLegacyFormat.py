@@ -2,7 +2,7 @@
 """
 Created on Tue Mar 31 17:09:57 2015
 
-This script converts output from WrapDbihar code to be suitabl for the
+This script converts output from WrapDbihar code to the format expected by the
 legacy Coupled Cells code.
 
 The code reorders cells and produces the required files in TXT format.
@@ -10,12 +10,16 @@ VTK files are written out for visual verification.
 """
 
 import os
-import sys
 import vtk
 
 numECsPerCol = 4
 numSMCsPerRow = 4
 
+numECsPerRow = numSMCsPerRow * 5
+numSMCsPerCol = numECsPerCol * 13
+
+numECsPerQuad = numECsPerRow * numECsPerCol
+numSMCsPerQuad = numSMCsPerCol * numSMCsPerRow
 
 #'''
 #os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c216')
@@ -47,21 +51,16 @@ meshSet0 = [
 ]
 ''' and None
 
+# Actually there are two 8064 meshes in subdirectories.
 '''
-#os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c8112')
+#os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c8064')
 numQuadsPerRing0 = 40
 meshSet0 = [
-"quadMeshFullc8112.vtp",
-"quadMeshFullECc8112.vtp",
-"quadMeshFullSMCc8112.vtp"
+"quadMeshFullc8064.vtp",
+"quadMeshFullECc8064.vtp",
+"quadMeshFullSMCc8064.vtp"
 ]
 ''' and None
-
-numECsPerRow = numSMCsPerRow * 5
-numSMCsPerCol = numECsPerCol * 13
-
-numECsPerQuad = numECsPerRow * numECsPerCol
-numSMCsPerQuad = numSMCsPerCol * numSMCsPerRow
 
 # VTK files to write.
 taskVTKFiles = [
@@ -88,6 +87,7 @@ smcVTKFiles = [
 "vtk/smc_mesh_right_daughter.vtp"
 ]
 
+# TXT files to write.
 taskTXTFiles = [
 "txt/parent_points.txt",
 "txt/parent_cells.txt",
@@ -126,7 +126,7 @@ smcTXTFiles = [
 
 def main():
     # This is where the data is for testing purposes.
-    print "Current working directory:", os.getcwd()    
+    print "Current working directory:", os.getcwd()
 
     # Working with the task mesh.
     # Working with the task mesh.
@@ -142,7 +142,7 @@ def main():
     taskMesh.GetCellData().GetScalars().GetRange(labelRange, 0)
 
     # Convert label range to a list of labels.
-    labelRange = range(int(labelRange[0]), int(labelRange[1]) + 1)    
+    labelRange = range(int(labelRange[0]), int(labelRange[1]) + 1)
     print "Labels found in task mesh:", labelRange
 
     # Prepare the stupid TXT files for output.
@@ -326,10 +326,7 @@ def main():
     ringsPerLabelVals = numRingsPerLabel.values()
     
     # Check all rings per label values are the same.
-    if ringsPerLabelVals[1:] != ringsPerLabelVals[:-1]:
-        sys.exit("ERROR: All values of rings per label must be identical. Generated output is invalid ...")
-    else:
-        print "OK: All values of rings per label are identical ..."
+    assert ringsPerLabelVals[1:] != ringsPerLabelVals[:-1], "All values of rings per label must be identical. Generated output is invalid ..."
 
     # Working with EC mesh.
     # Working with EC mesh.

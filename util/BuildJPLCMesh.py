@@ -15,6 +15,7 @@ import matplotlib.pyplot as pyplot
 '''
 os.chdir("/home/constantine/BlueFern/DbiharPatchFilter/tmpData/c216")
 meshFile = "quadMeshFullECc216.vtp"
+jplcFile = "quadMeshFullJPLCc216.vtp"
 numBranches = 3
 numQuads = 216
 numECsPerCol = 4
@@ -22,13 +23,25 @@ jplcGradient = 0.15
 ''' and None
 
 # This is for the c4032 mesh.
-# '''
+'''
 os.chdir("/home/constantine/BlueFern/DbiharPatchFilter/tmpData/c4032")
 meshFile = "quadMeshFullECc4032.vtp"
+jplcFile = "quadMeshFullJPLCc4032.vtp"
 numBranches = 3
-numQuads = 216
+numQuads = 4032
 numECsPerCol = 4
-jplcGradient = 0.15
+jplcGradient = 0.05
+''' and None
+
+# This is for the c4080 mesh.
+# '''
+os.chdir("/home/constantine/BlueFern/DbiharPatchFilter/tmpData/c4080")
+meshFile = "quadMeshFullECc4080.vtp"
+jplcFile = "quadMeshFullJPLCc4080.vtp"
+numBranches = 3
+numQuads = 4080
+numECsPerCol = 4
+jplcGradient = 0.03
 # ''' and None
 
 jplcMin = 0.2
@@ -55,12 +68,10 @@ def main():
     # from the reorderedECMeshBranch.
     centroidFilter = vtk.vtkCellCenters()
     centroidFilter.SetInput(mesh)
-    # centroidFilter.Update()
 
     # Create a vertex cell for each point.
     pointsToVerticesFilter = vtk.vtkVertexGlyphFilter()
     pointsToVerticesFilter.SetInputConnection(centroidFilter.GetOutputPort())
-    #pointsToVerticesFilter.SetInput(centroidFilter.GetOutput())
     pointsToVerticesFilter.Update()
     
     jplcDataset = pointsToVerticesFilter.GetOutput()
@@ -98,6 +109,10 @@ def main():
         
         # For the first branch the parametric distance value must be in the
         # range [maxDist - 1, 0). Range values are required for this.
+        
+        # TODO: The JPLC calculations here are repeated many times for the same value
+        # of the parametric distnace. It would make sense to have a lookup table for previously
+        # calculated values.
         if branchId == 0:
             distVal = axialDist.GetValue(cellId) - axialDistRange[1] - 1
             jplcVal = sigmoidJPLC(distVal)
@@ -115,7 +130,7 @@ def main():
     jplcDataset.GetCellData().AddArray(jplcArray)
     
     jplcMapWriter = vtk.vtkXMLPolyDataWriter()
-    jplcMapWriter.SetFileName("jplc.vtp")
+    jplcMapWriter.SetFileName(jplcFile)
     jplcMapWriter.SetInput(jplcDataset)
     jplcMapWriter.Update()
     

@@ -112,6 +112,8 @@ int vtkSubdivideMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInform
 
 		vtkSmartPointer<vtkPolyData> subdividedQuad = subdivideQuadFilter->GetOutput();
 
+		// TODO: Add a bool flag to this filter which disables the parametric grid coordinates calculation by default.
+
 		// For the processed quad add grid coordinates array.
 		// Iterate over the cells of the subdivided quad and on the basis
 		// of the number of current quad and the number of quads in each row,
