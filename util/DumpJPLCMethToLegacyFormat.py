@@ -21,12 +21,12 @@ numSMCsPerCol = numECsPerCol * 13
 numECsPerQuad = numECsPerRow * numECsPerCol
 numSMCsPerQuad = numSMCsPerCol * numSMCsPerRow
 
-#'''
-os.chdir('/home/constantine/BlueFern/DbiharPatchFilter/tmpData/c216')
+'''
+os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c216')
 numQuadsPerRing0 = 12
 taskMeshIn = "quadMeshFullc216.vtp"
 jplcMeshIn = "quadMeshFullJPLCc216.vtp"
-#''' and None
+''' and None
 
 '''
 #os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c4032')
@@ -35,12 +35,12 @@ taskMeshIn = "quadMeshFullc4032.vtp"
 jplcMeshIn = "quadMeshFullJPLCc4032.vtp"
 ''' and None
 
-'''
-#os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c4080')
+#'''
+os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c4080')
 numQuadsPerRing0 = 40
 taskMeshIn = "quadMeshFullc4080.vtp"
 jplcMeshIn = "quadMeshFullJPLCc4080.vtp"
-''' and None
+#''' and None
 
 '''
 #os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c8112')

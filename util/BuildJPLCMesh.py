@@ -13,7 +13,7 @@ import matplotlib.pyplot as pyplot
 
 # This is for the c216 mesh.
 '''
-os.chdir("/home/constantine/BlueFern/DbiharPatchFilter/tmpData/c216")
+os.chdir("/home/cza14/BlueFern/WrapDbihar/tmpData/c216")
 meshFile = "quadMeshFullECc216.vtp"
 jplcFile = "quadMeshFullJPLCc216.vtp"
 numBranches = 3
@@ -24,7 +24,7 @@ jplcGradient = 0.15
 
 # This is for the c4032 mesh.
 '''
-os.chdir("/home/constantine/BlueFern/DbiharPatchFilter/tmpData/c4032")
+os.chdir("/home/cza14/BlueFern/WrapDbihar/tmpData/c4032")
 meshFile = "quadMeshFullECc4032.vtp"
 jplcFile = "quadMeshFullJPLCc4032.vtp"
 numBranches = 3
@@ -35,7 +35,7 @@ jplcGradient = 0.05
 
 # This is for the c4080 mesh.
 # '''
-os.chdir("/home/constantine/BlueFern/DbiharPatchFilter/tmpData/c4080")
+os.chdir("/home/cza14/BlueFern/WrapDbihar/tmpData/c4080")
 meshFile = "quadMeshFullECc4080.vtp"
 jplcFile = "quadMeshFullJPLCc4080.vtp"
 numBranches = 3

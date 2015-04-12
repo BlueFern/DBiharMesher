@@ -21,7 +21,7 @@ numSMCsPerCol = numECsPerCol * 13
 numECsPerQuad = numECsPerRow * numECsPerCol
 numSMCsPerQuad = numSMCsPerCol * numSMCsPerRow
 
-#'''
+'''
 #os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c216')
 numQuadsPerRing0 = 12
 meshSet0 = [
@@ -29,7 +29,7 @@ meshSet0 = [
 "quadMeshFullECc216.vtp",
 "quadMeshFullSMCc216.vtp"
 ]
-#''' and None
+''' and None
 
 '''
 #os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c4032')
@@ -41,15 +41,15 @@ meshSet0 = [
 ]
 ''' and None
 
-'''
-#os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c4080')
+# '''
+os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c4080')
 numQuadsPerRing0 = 40
 meshSet0 = [
 "quadMeshFullc4080.vtp",
 "quadMeshFullECc4080.vtp",
 "quadMeshFullSMCc4080.vtp"
 ]
-''' and None
+# ''' and None
 
 # Actually there are two 8064 meshes in subdirectories.
 '''
@@ -326,7 +326,7 @@ def main():
     ringsPerLabelVals = numRingsPerLabel.values()
     
     # Check all rings per label values are the same.
-    assert ringsPerLabelVals[1:] != ringsPerLabelVals[:-1], "All values of rings per label must be identical. Generated output is invalid ..."
+    assert ringsPerLabelVals[1:] == ringsPerLabelVals[:-1], "All values of rings per label must be identical. Generated output is invalid ..."
 
     # Working with EC mesh.
     # Working with EC mesh.
