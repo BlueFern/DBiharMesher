@@ -25,6 +25,7 @@ numSMCsPerQuad = numSMCsPerCol * numSMCsPerRow
 os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c216')
 numQuadsPerRing0 = 12
 taskMeshIn = "quadMeshFullc216.vtp"
+ecMeshIn = "quadMeshFullJPLCc216.vtp"
 jplcMeshIn = "quadMeshFullJPLCc216.vtp"
 ''' and None
 
@@ -32,6 +33,7 @@ jplcMeshIn = "quadMeshFullJPLCc216.vtp"
 #os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c4032')
 numQuadsPerRing0 = 48
 taskMeshIn = "quadMeshFullc4032.vtp"
+ecMeshIn = "quadMeshFullECc4032.vtp"
 jplcMeshIn = "quadMeshFullJPLCc4032.vtp"
 ''' and None
 
@@ -39,14 +41,16 @@ jplcMeshIn = "quadMeshFullJPLCc4032.vtp"
 os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c4080')
 numQuadsPerRing0 = 40
 taskMeshIn = "quadMeshFullc4080.vtp"
+ecMeshIn = "quadMeshFullECc4080.vtp"
 jplcMeshIn = "quadMeshFullJPLCc4080.vtp"
 #''' and None
 
 '''
-#os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c8112')
+#os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c8064')
 numQuadsPerRing0 = 40
-taskMeshIn = "quadMeshFullc4080.vtp"
-jplcMeshIn = "quadMeshFullJPLCc8112.vtp"
+taskMeshIn = "quadMeshFullc8064.vtp"
+ecMeshIn = "quadMeshFullECc8064.vtp"
+jplcMeshIn = "quadMeshFullJPLCc8064.vtp"
 ''' and None
 
 
@@ -74,6 +78,12 @@ def main():
 
     taskMesh = taskMeshReader.GetOutput()
     
+    ecMeshReader = vtk.vtkXMLPolyDataReader()
+    ecMeshReader.SetFileName(ecMeshIn)
+    ecMeshReader.Update()
+    
+    ecMesh = ecMeshReader.GetOutput()
+    
     # Get the range of branch labels.
     labelRange = [0, 0]
     taskMesh.GetCellData().GetScalars().GetRange(labelRange, 0)
@@ -100,12 +110,12 @@ def main():
         numRingsPerLabel[label] = numQuadRowsPerBranch
 
     # Working with EC mesh only
-    ecMeshReader = vtk.vtkXMLPolyDataReader()
-    ecMeshReader.SetFileName(jplcMeshIn)
-    ecMeshReader.Update()
+    jplcMeshReader = vtk.vtkXMLPolyDataReader()
+    jplcMeshReader.SetFileName(jplcMeshIn)
+    jplcMeshReader.Update()
 
     # Original ECs mesh to work with.
-    jplcMesh = ecMeshReader.GetOutput()
+    jplcMesh = jplcMeshReader.GetOutput()
     print "There are", jplcMesh.GetNumberOfCells(), "JPLC values in total ..."
 
     # Prepare the stupid TXT files for output.    
@@ -153,6 +163,9 @@ def main():
         rowIds = range(0, numECsPerCol)
         rowIds.reverse()
 
+        # New vtkPoints for storing reordered points.
+        reorderedPoints = vtk.vtkPoints()
+
         # New vtkCellArray for storing reordeced cells.
         reorderedCellArray = vtk.vtkCellArray()
         
@@ -185,8 +198,17 @@ def main():
                     for cellNum in range(0, numECsPerRow):
                         # Calculate the 'real' ec cell id and get the corresponding cell.
                         realId = quadId * numECsPerQuad + rowNum * numECsPerRow + cellNum
-                        cell = extractedCells.GetCell(realId)
-                        reorderedCellArray.InsertNextCell(cell)
+                        # Get the corresponding cell from the ecMesh.
+                        cell = ecMesh.GetCell(label * numECsPerLabel + realId)
+                        cellPoints = cell.GetPoints()
+                        
+                        # This is for writing out the surface files for visualisation.
+                        newCell = vtk.vtkQuad()
+                        for ptId in range(0, cellPoints.GetNumberOfPoints()):
+                            newCell.GetPointIds().SetId(ptId, reorderedPoints.InsertNextPoint(cellPoints.GetPoint(ptId)))
+                            print newCell.GetPointIds().GetNumberOfIds()
+                        
+                        reorderedCellArray.InsertNextCell(newCell)
                         
                         jplcVal = extractedCells.GetCellData().GetArray("initialJPLC").GetValue(realId)
                         
@@ -199,10 +221,10 @@ def main():
         reorderedJPLCBranch = vtk.vtkPolyData()
 
         # Insert our new points.
-        reorderedJPLCBranch.SetPoints(extractedCells.GetPoints())
+        reorderedJPLCBranch.SetPoints(reorderedPoints)
 
         # Set the reordered cells to the reordered JPLC mesh.
-        reorderedJPLCBranch.SetVerts(reorderedCellArray)
+        reorderedJPLCBranch.SetPolys(reorderedCellArray)
         
         # Set the reordered JPLC values to the reordered JPLC mesh.
         reorderedJPLCBranch.GetCellData().AddArray(reorderedJPLCArray)

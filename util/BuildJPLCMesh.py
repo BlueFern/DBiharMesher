@@ -111,8 +111,8 @@ def main():
         # range [maxDist - 1, 0). Range values are required for this.
         
         # TODO: The JPLC calculations here are repeated many times for the same value
-        # of the parametric distnace. It would make sense to have a lookup table for previously
-        # calculated values.
+        # of the parametric distnace. It would make sense to have a lookup table (dictionary)
+        # for previously calculated values.
         if branchId == 0:
             distVal = axialDist.GetValue(cellId) - axialDistRange[1] - 1
             jplcVal = sigmoidJPLC(distVal)
