@@ -24,6 +24,9 @@
 #include "vtkCentrelineResampler.h"
 #include "wrapDbiharConfig.h"
 
+#include <sstream>
+#define SSTR( x ) dynamic_cast< std::ostringstream & >( ( std::ostringstream() << std::dec << x ) ).str()
+
 int main(int argc, char* argv[]) {
 
 	std::cout << "Starting " << __FILE__ << std::endl;
@@ -215,7 +218,6 @@ int main(int argc, char* argv[]) {
 #endif
 
 #if 1
-	vtkSmartPointer<vtkAppendPolyData> capJoiner = vtkSmartPointer<vtkAppendPolyData>::New();
 
 	for (int i = 0; i < endPointIds->GetNumberOfIds(); i++)
 	{
@@ -231,26 +233,28 @@ int main(int argc, char* argv[]) {
 		skipSegmentFilter->SetPointId(endPointIds->GetId(i));
 		skipSegmentFilter->SetNumberOfRadialQuads(numRadialQuads);
 		skipSegmentFilter->Update();
-		capJoiner->AddInputData(skipSegmentFilter->GetOutput());
+
+		fullMeshJoiner->AddInputData(skipSegmentFilter->GetOutput());
 
 		vtkSmartPointer<vtkEndCapFilter> endCapFilter = vtkSmartPointer<vtkEndCapFilter>::New();
 		endCapFilter->SetInputData(skipSegmentFilter->GetOutput());
 		endCapFilter->Update();
-		capJoiner->AddInputData(endCapFilter->GetOutput());
+
+		vtkSmartPointer<vtkTriangleFilter> triangleCapFilter = vtkSmartPointer<vtkTriangleFilter>::New();
+		triangleCapFilter->SetInputData(endCapFilter->GetOutput());
+		triangleCapFilter->Update();
+
+		vtkDbiharStatic::WriteStlData(triangleCapFilter->GetOutput(), SSTR("triCap_" << i << "_c4080.stl"));
 	}
-	capJoiner->Update();
 
-	vtkSmartPointer<vtkAppendPolyData> triMeshJoiner = vtkSmartPointer<vtkAppendPolyData>::New();
-	triMeshJoiner->AddInputData(capJoiner->GetOutput());
+	fullMeshJoiner->Update();
 
-	vtkSmartPointer<vtkTriangleFilter> triangleFilter = vtkSmartPointer<vtkTriangleFilter>::New();
-	triangleFilter->SetInputData(fullMeshJoiner->GetOutput());
-	triangleFilter->Update();
-	triMeshJoiner->AddInputData(triangleFilter->GetOutput());
+	vtkSmartPointer<vtkTriangleFilter> triangleFullMeshFilter = vtkSmartPointer<vtkTriangleFilter>::New();
+	triangleFullMeshFilter->AddInputData(fullMeshJoiner->GetOutput());
 
-	triMeshJoiner->Update();
+	triangleFullMeshFilter->Update();
 
-	vtkDbiharStatic::WriteStlData(triMeshJoiner->GetOutput(), "triMeshWithCapsFullc4080.stl");
+	vtkDbiharStatic::WriteStlData(triangleFullMeshFilter->GetOutput(), "triMeshWithCapsFullc4080.stl");
 #endif
 
 	std::cout << "Exiting " << __FILE__ << std::endl;
