@@ -189,7 +189,6 @@ int main(int argc, char* argv[]) {
 	vtkDbiharStatic::ShowPolyData(fullMeshJoiner->GetOutput());
 	vtkDbiharStatic::WritePolyData(fullMeshJoiner->GetOutput(), "quadMeshFullc4080.vtp");
 
-#if 1
 	int numECs = 4;
 	int numSMCs = 4;
 	vtkSmartPointer<vtkSubdivideMesh> subdivideECMesh = vtkSmartPointer<vtkSubdivideMesh>::New();
@@ -215,10 +214,8 @@ int main(int argc, char* argv[]) {
 	subdivideSMCMesh->Update();
 
 	vtkDbiharStatic::WritePolyData(subdivideSMCMesh->GetOutput(), "quadMeshFullSMCc4080.vtp");
-#endif
 
-#if 1
-
+	int skipLength = 16;
 	for (int i = 0; i < endPointIds->GetNumberOfIds(); i++)
 	{
 		vtkSmartPointer<vtkSkipSegmentFilter> skipSegmentFilter = vtkSmartPointer<vtkSkipSegmentFilter>::New();
@@ -229,7 +226,7 @@ int main(int argc, char* argv[]) {
 
 		// Process only outlet on consecutive iterations.
 		skipSegmentFilter->SetOutlet(i != 0);
-		skipSegmentFilter->SetSkipSize(10);
+		skipSegmentFilter->SetSkipSize(skipLength);
 		skipSegmentFilter->SetPointId(endPointIds->GetId(i));
 		skipSegmentFilter->SetNumberOfRadialQuads(numRadialQuads);
 		skipSegmentFilter->Update();
@@ -254,8 +251,7 @@ int main(int argc, char* argv[]) {
 
 	triangleFullMeshFilter->Update();
 
-	vtkDbiharStatic::WriteStlData(triangleFullMeshFilter->GetOutput(), "triMeshWithCapsFullc4080.stl");
-#endif
+	vtkDbiharStatic::WriteStlData(triangleFullMeshFilter->GetOutput(), "triMeshFullc4080.stl");
 
 	std::cout << "Exiting " << __FILE__ << std::endl;
 
