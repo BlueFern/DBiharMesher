@@ -32,7 +32,8 @@ int main(int argc, char* argv[]) {
 	std::cout << "Starting " << __FILE__ << std::endl;
 
 	vtkSmartPointer<vtkGenericDataObjectReader> vesselCentrelineReader = vtkSmartPointer<vtkGenericDataObjectReader>::New();
-	vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/../tmpData/c8064/64x42/c8064Centreline.vtk").c_str());
+	vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/../tmpData/c8064/48x50/c8064Centreline.vtk").c_str());
+	// vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/../tmpData/c8064/64x42/c8064Centreline.vtk").c_str());
 	vesselCentrelineReader->Update();
 
 	vtkPolyData *vesselCentreline = vtkPolyData::SafeDownCast(vesselCentrelineReader->GetOutput());
@@ -61,7 +62,7 @@ int main(int argc, char* argv[]) {
 	centrelinePartitioner->Update();
 
 	vtkDbiharStatic::ShowPolyData(centrelinePartitioner->GetOutput());
-	vtkDbiharStatic::WritePolyData(centrelinePartitioner->GetOutput(), "c8064CentrelinePartitioned.vtp");
+	// vtkDbiharStatic::WritePolyData(centrelinePartitioner->GetOutput(), "c8064CentrelinePartitioned.vtp");
 
 	vtkPolyData *partitionedCentreline = centrelinePartitioner->GetOutput();
 
@@ -189,7 +190,6 @@ int main(int argc, char* argv[]) {
 	vtkDbiharStatic::ShowPolyData(fullMeshJoiner->GetOutput());
 	vtkDbiharStatic::WritePolyData(fullMeshJoiner->GetOutput(), "quadMeshFullc8064.vtp");
 
-#if 1
 	int numECs = 4;
 	int numSMCs = 4;
 	vtkSmartPointer<vtkSubdivideMesh> subdivideECMesh = vtkSmartPointer<vtkSubdivideMesh>::New();
@@ -215,8 +215,8 @@ int main(int argc, char* argv[]) {
 	subdivideSMCMesh->Update();
 
 	vtkDbiharStatic::WritePolyData(subdivideSMCMesh->GetOutput(), "quadMeshFullSMCc8064.vtp");
-#endif
 
+	int skipLength = 16;
 	for (int i = 0; i < endPointIds->GetNumberOfIds(); i++)
 	{
 		vtkSmartPointer<vtkSkipSegmentFilter> skipSegmentFilter = vtkSmartPointer<vtkSkipSegmentFilter>::New();
@@ -227,7 +227,7 @@ int main(int argc, char* argv[]) {
 
 		// Process only outlet on consecutive iterations.
 		skipSegmentFilter->SetOutlet(i != 0);
-		skipSegmentFilter->SetSkipSize(10);
+		skipSegmentFilter->SetSkipSize(skipLength);
 		skipSegmentFilter->SetPointId(endPointIds->GetId(i));
 		skipSegmentFilter->SetNumberOfRadialQuads(numRadialQuads);
 		skipSegmentFilter->Update();
