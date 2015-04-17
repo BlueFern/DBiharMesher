@@ -21,18 +21,16 @@ numSMCsPerCol = numECsPerCol * 13
 numECsPerQuad = numECsPerRow * numECsPerCol
 numSMCsPerQuad = numSMCsPerCol * numSMCsPerRow
 
-'''
-#os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c216')
+# '''
 numQuadsPerRing0 = 12
 meshSet0 = [
 "quadMeshFullc216.vtp",
 "quadMeshFullECc216.vtp",
 "quadMeshFullSMCc216.vtp"
 ]
-''' and None
+# ''' and None
 
 '''
-#os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c4032')
 numQuadsPerRing0 = 48
 meshSet0 = [
 "quadMeshFullc4032.vtp",
@@ -41,19 +39,17 @@ meshSet0 = [
 ]
 ''' and None
 
-# '''
-os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c4080')
+'''
 numQuadsPerRing0 = 40
 meshSet0 = [
 "quadMeshFullc4080.vtp",
 "quadMeshFullECc4080.vtp",
 "quadMeshFullSMCc4080.vtp"
 ]
-# ''' and None
+''' and None
 
 # Actually there are two 8064 meshes in subdirectories.
 '''
-#os.chdir('/home/cza14/BlueFern/WrapDbihar/tmpData/c8064')
 numQuadsPerRing0 = 40
 meshSet0 = [
 "quadMeshFullc8064.vtp",
