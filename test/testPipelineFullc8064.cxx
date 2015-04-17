@@ -31,10 +31,15 @@ int main(int argc, char* argv[]) {
 
 	std::cout << "Starting " << __FILE__ << std::endl;
 
+	int numRadialQuads = 24;
+	// int numRadialQuads = 32;
+
 	vtkSmartPointer<vtkGenericDataObjectReader> vesselCentrelineReader = vtkSmartPointer<vtkGenericDataObjectReader>::New();
 	vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/../tmpData/c8064/48x50/c8064Centreline.vtk").c_str());
 	// vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/../tmpData/c8064/64x42/c8064Centreline.vtk").c_str());
 	vesselCentrelineReader->Update();
+
+
 
 	vtkPolyData *vesselCentreline = vtkPolyData::SafeDownCast(vesselCentrelineReader->GetOutput());
 
@@ -85,7 +90,6 @@ int main(int argc, char* argv[]) {
 	vtkSmartPointer<vtkIdList> bifurcationIds = vtkSmartPointer<vtkIdList>::New();
 	verts->GetNextCell(bifurcationIds);
 
-	int numRadialQuads = 32;
 	vtkSmartPointer<vtkAppendPoints> appendPoints;
 	vtkSmartPointer<vtkUnsignedIntArray> pointsToMeshDimensions;
 
