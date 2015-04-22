@@ -73,6 +73,7 @@ int vtkSubdivideMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInform
 
 	std::map<int, int> labelRowOffsets;
 
+#if 0
 	// We need to remember the maximum number of rows per label.
 	// Like a cumulative value.
 	std::map<int, int> maxRowsPerLabel;
@@ -80,6 +81,7 @@ int vtkSubdivideMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInform
 	{
 		maxRowsPerLabel[iter->first] = 0;
 	}
+#endif
 
 	// Every 10%, for progress function.
 	int percentOfTotal  = numberOfQuads / 10;
@@ -128,18 +130,18 @@ int vtkSubdivideMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInform
 		for(int cellId = 0; cellId < numberOfCellsPerQuad; cellId++)
 		{
 			// Figure out the column and row.
-			int rowId = cellId / this->Rows;
-			int colId = cellId - rowId * this->Rows;
+			int rowId = cellId / this->Columns;
+			int colId = cellId - rowId * this->Columns;
 
 			// Remember the first global row id as offset for this label.
-			int globalRowId = (quadId / branchDimsensions[branchId].second) * this->Columns + rowId;
+			int globalRowId = (quadId / branchDimsensions[branchId].second) * this->Rows + rowId;
 			std::map<int, int>::iterator iter = labelRowOffsets.find(branchId);
 			if(iter == labelRowOffsets.end())
 				labelRowOffsets[branchId] = globalRowId;
 
 			// Roll back the row id to start from zero for this label.
 			gridCoords[0] = globalRowId - labelRowOffsets[branchId];
-			gridCoords[1] = (quadId % branchDimsensions[branchId].second) * this->Rows + colId;
+			gridCoords[1] = (quadId % branchDimsensions[branchId].second) * this->Columns + colId;
 
 			gridCoordinatesCellData->InsertNextTuple(gridCoords);
 		}
