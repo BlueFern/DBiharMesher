@@ -67,14 +67,12 @@ segmentList5 = [8.84,[(8.84,60),None,None], [(8.84,120),None,None]]
 segmentList6 = [7.2,[(7.2,60),None,None], [(7.2,120),None,None]]
 # radiusBase = 1.5278874536821951
 
-# A centreline for a mesh with 8064 cores, 48x56
+# A centreline for a mesh with 8064 cores, 56x48
 segmentList7 = [14.56,[(14.56,60),None,None], [(14.56,120),None,None]]
 # radiusBase = 1.5278874536821951
 
-# A centreline for a mesh with 8064 cores. 64x42
-# l = 10.920
-# r = 2.0371832715762603
-segmentList7 = [10.92,[(10.92,60),None,None], [(10.92,120),None,None]]
+# A centreline for a mesh with 8064 cores. 42x64
+segmentList8 = [10.92,[(10.92,60),None,None], [(10.92,120),None,None]]
 radiusBase = 2.0371832715762603
 
 # If sphereRadius is set to None, the centreline is generated in the XY plane.
