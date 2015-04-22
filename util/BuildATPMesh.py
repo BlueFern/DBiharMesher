@@ -12,14 +12,14 @@ import numpy
 import matplotlib.pyplot as pyplot
 
 # This is for the c216 mesh.
-# '''
+'''
 meshFile = "quadMeshFullECc216.vtp"
 atpFile = "quadMeshFullATPc216.vtp"
 numBranches = 3
 numQuads = 216
 numECsPerCol = 4
 atpGradient = 0.15
-# ''' and None
+''' and None
 
 # This is for the c4032 mesh.
 '''
@@ -32,17 +32,17 @@ atpGradient = 0.05
 ''' and None
 
 # This is for the c4080 mesh.
-'''
+# '''
 meshFile = "quadMeshFullECc4080.vtp"
 atpFile = "quadMeshFullATPc4080.vtp"
 numBranches = 3
 numQuads = 4080
 numECsPerCol = 4
-atpGradient = 0.03
-''' and None
+atpGradient = 0.02
+# ''' and None
 
 atpMin = 0.1
-atpMax = 2.0
+atpMax = 1.0
 
 # Sigmoid function for providing ATP values. The atpGradient variable
 # controls the "spread" of the values across the given domain.
@@ -59,6 +59,7 @@ def main():
     meshReader.Update()
 
     mesh = meshReader.GetOutput()
+    print mesh.GetNumberOfCells()
     
     # Put it through centroids filter.
     # Use VTK centroid filter to get the centroids in the right order
