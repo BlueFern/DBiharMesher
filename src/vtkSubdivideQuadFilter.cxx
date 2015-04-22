@@ -74,7 +74,7 @@ int vtkSubdivideQuadFilter::RequestData(vtkInformation *vtkNotUsed(request),
 
 	splineInputPoints->SetNumberOfPoints(2);
 
-	if (this->Columns == 1)
+	if (this->Rows == 1)
 	{
 		topEdge->InsertPoint(0, input->GetPoint(0));
 		topEdge->InsertPoint(1, input->GetPoint(3));
@@ -96,7 +96,7 @@ int vtkSubdivideQuadFilter::RequestData(vtkInformation *vtkNotUsed(request),
 
 		vtkSmartPointer<vtkParametricFunctionSource> splinePointsSource = vtkSmartPointer<vtkParametricFunctionSource>::New();
 		splinePointsSource->SetParametricFunction(parametricSpline);
-		splinePointsSource->SetUResolution(this->Columns);
+		splinePointsSource->SetUResolution(this->Rows);
 		splinePointsSource->Update();
 
 		topEdge = splinePointsSource->GetOutput()->GetPoints();
@@ -112,20 +112,20 @@ int vtkSubdivideQuadFilter::RequestData(vtkInformation *vtkNotUsed(request),
 
 		vtkSmartPointer<vtkParametricFunctionSource> splinePointsSource2 = vtkSmartPointer<vtkParametricFunctionSource>::New();
 		splinePointsSource2->SetParametricFunction(parametricSpline2);
-		splinePointsSource2->SetUResolution(this->Columns);
+		splinePointsSource2->SetUResolution(this->Rows);
 		splinePointsSource2->Update();
 
 		bottomEdge = splinePointsSource2->GetOutput()->GetPoints();
 	}
 
-	this->UpdateProgress(static_cast<double>(1) / static_cast<double>(this->Columns + 1));
+	this->UpdateProgress(static_cast<double>(1) / static_cast<double>(this->Rows + 1));
 	int test = topEdge->GetNumberOfPoints();
 
 	// Build points down columns.
 
-	if (this->Rows > 1)
+	if (this->Columns > 1)
 	{
-		for (int i = 0; i < this->Columns + 1; i++)
+		for (int i = 0; i < this->Rows + 1; i++)
 		{
 
 			splineInputPoints->SetPoint(0,topEdge->GetPoint(i));
@@ -138,14 +138,14 @@ int vtkSubdivideQuadFilter::RequestData(vtkInformation *vtkNotUsed(request),
 
 			vtkSmartPointer<vtkParametricFunctionSource> sps = vtkSmartPointer<vtkParametricFunctionSource>::New();
 			sps->SetParametricFunction(parametricSplineCol);
-			sps->SetUResolution(this->Rows);
+			sps->SetUResolution(this->Columns);
 			sps->Update();
 
 			vtkSmartPointer<vtkPolyData> pointSet = vtkSmartPointer<vtkPolyData>::New();
 			pointSet->SetPoints(sps->GetOutput()->GetPoints());
 			appendPoints->AddInputData(pointSet);
 
-			this->UpdateProgress(static_cast<double>(i + 2) / static_cast<double>(this->Columns + 1));
+			this->UpdateProgress(static_cast<double>(i + 2) / static_cast<double>(this->Rows + 1));
 
 		}
 	}
@@ -172,12 +172,12 @@ int vtkSubdivideQuadFilter::RequestData(vtkInformation *vtkNotUsed(request),
 
 	vtkSmartPointer<vtkStructuredGrid> structuredGrid = vtkSmartPointer<vtkStructuredGrid>::New();
 	structuredGrid->SetPoints(appendPoints->GetOutput()->GetPoints());
-	structuredGrid->SetDimensions(this->Rows + 1, this->Columns + 1, 1);
+	structuredGrid->SetDimensions(this->Columns + 1, this->Rows + 1, 1);
 
 	vtkSmartPointer<vtkStructuredGridGeometryFilter> structuredGridGeomFilter = vtkSmartPointer<vtkStructuredGridGeometryFilter>::New();
 	structuredGridGeomFilter->SetInputData(structuredGrid);
 
-	int extent[6] = {0, this->Rows + 1, 0, this->Columns + 1, 0, 0};
+	int extent[6] = {0, this->Columns + 1, 0, this->Rows + 1, 0, 0};
 	structuredGridGeomFilter->SetExtent(extent);
 	structuredGridGeomFilter->Update();
 

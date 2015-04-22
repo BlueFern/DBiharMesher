@@ -17,14 +17,15 @@ int main(int argc, char* argv[]) {
 	std::cout << "Starting " << __FILE__ << std::endl;
 
 	vtkSmartPointer<vtkXMLPolyDataReader> pointsReader = vtkSmartPointer<vtkXMLPolyDataReader>::New();
-	pointsReader->SetFileName((std::string(TEST_DATA_DIR) + "/mesh0.vtp").c_str());
+	pointsReader->SetFileName((std::string(TEST_DATA_DIR) + "/test/testSubdivideMesh.vtp").c_str());
 
 	pointsReader->Update();
 
-	vtkDbiharStatic::ShowPolyData(pointsReader->GetOutput());
+	vtkDbiharStatic::WritePolyData(pointsReader->GetOutput(), "t1.vtp");
+
 	vtkSmartPointer<vtkSubdivideMesh> subdivideMesh = vtkSmartPointer<vtkSubdivideMesh>::New();
 	subdivideMesh->SetInputData(pointsReader->GetOutput());
-	subdivideMesh->SetColumns(2);
+	subdivideMesh->SetColumns(5);
 	subdivideMesh->SetRows(1);
 	subdivideMesh->Print(std::cout);
 	subdivideMesh->Update();
