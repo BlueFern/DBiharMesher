@@ -363,24 +363,6 @@ target_link_libraries(testPipelineFullc216
 	vtkCentrelineResampler
 	${testLibs})
 
-add_executable(testPipelineFullc4080
-	test/testPipelineFullc4080.cxx)
-target_link_libraries(testPipelineFullc4080
-	vtkDbiharStatic
-	vtkScalarRadiiToVectorsFilter
-	vtkFiltersGeometry
-	vtkSubdivideMesh
-	vtkSubdivideQuadFilter
-	vtkCentrelineToDbiharPatch
-	vtkDbiharPatchFilter
-	vtkCentrelinePartitioner
-	vtkPointsToMeshFilter
-	vtkSkipSegmentFilter
-	vtkEndCapFilter
-	vtkRescaleUnits
-	vtkCentrelineResampler
-	${testLibs})
-
 add_executable(testPipelineFullc4032
 	test/testPipelineFullc4032.cxx)
 target_link_libraries(testPipelineFullc4032
@@ -416,6 +398,43 @@ target_link_libraries(testPipelineFullc8064
 	vtkRescaleUnits
 	vtkCentrelineResampler
 	${testLibs})
+
+add_executable(meshGen4080
+	src/meshGen4080.cxx)
+target_link_libraries(meshGen4080
+	vtkDbiharStatic
+	vtkScalarRadiiToVectorsFilter
+	vtkFiltersGeometry
+	vtkSubdivideMesh
+	vtkSubdivideQuadFilter
+	vtkCentrelineToDbiharPatch
+	vtkDbiharPatchFilter
+	vtkCentrelinePartitioner
+	vtkPointsToMeshFilter
+	vtkSkipSegmentFilter
+	vtkEndCapFilter
+	vtkRescaleUnits
+	vtkCentrelineResampler
+	${testLibs})
+
+add_executable(meshGen8064
+	src/meshGen8064.cxx)
+target_link_libraries(meshGen8064
+	vtkDbiharStatic
+	vtkScalarRadiiToVectorsFilter
+	vtkFiltersGeometry
+	vtkSubdivideMesh
+	vtkSubdivideQuadFilter
+	vtkCentrelineToDbiharPatch
+	vtkDbiharPatchFilter
+	vtkCentrelinePartitioner
+	vtkPointsToMeshFilter
+	vtkSkipSegmentFilter
+	vtkEndCapFilter
+	vtkRescaleUnits
+	vtkCentrelineResampler
+	${testLibs})
+
 
 add_executable(DumpMeshToLegacyFormat
 	util/DumpMeshToLegacyFormat.cxx)
