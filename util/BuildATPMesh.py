@@ -32,11 +32,21 @@ atpGradient = 0.05
 ''' and None
 
 # This is for the c4080 mesh.
-# '''
+'''
 meshFile = "quadMeshFullECc4080.vtp"
 atpFile = "quadMeshFullATPc4080.vtp"
 numBranches = 3
 numQuads = 4080
+numECsPerCol = 4
+atpGradient = 0.02
+''' and None
+
+# This is for the c8064 mesh.
+# '''
+meshFile = "quadMeshFullECc8064.vtp"
+atpFile = "quadMeshFullATPc8064.vtp"
+numBranches = 3
+numQuads = 8064
 numECsPerCol = 4
 atpGradient = 0.02
 # ''' and None

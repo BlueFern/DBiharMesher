@@ -21,14 +21,14 @@ numSMCsPerCol = numECsPerCol * 13
 numECsPerQuad = numECsPerRow * numECsPerCol
 numSMCsPerQuad = numSMCsPerCol * numSMCsPerRow
 
-# '''
+'''
 numQuadsPerRing0 = 12
 meshSet0 = [
 "quadMeshFullc216.vtp",
 "quadMeshFullECc216.vtp",
 "quadMeshFullSMCc216.vtp"
 ]
-# ''' and None
+''' and None
 
 '''
 numQuadsPerRing0 = 48
@@ -48,15 +48,14 @@ meshSet0 = [
 ]
 ''' and None
 
-# Actually there are two 8064 meshes in subdirectories.
-'''
-numQuadsPerRing0 = 40
+# '''
+numQuadsPerRing0 = 64
 meshSet0 = [
 "quadMeshFullc8064.vtp",
 "quadMeshFullECc8064.vtp",
 "quadMeshFullSMCc8064.vtp"
 ]
-''' and None
+# ''' and None
 
 # VTK files to write.
 taskVTKFiles = [
@@ -85,39 +84,39 @@ smcVTKFiles = [
 
 # TXT files to write.
 taskTXTFiles = [
-"txt/parent_points.txt",
-"txt/parent_cells.txt",
-"txt/left_daughter_points.txt",
-"txt/left_daughter_cells.txt",
-"txt/right_daughter_points.txt",
-"txt/right_daughter_cells.txt"
+"files/parent_points.txt",
+"files/parent_cells.txt",
+"files/left_daughter_points.txt",
+"files/left_daughter_cells.txt",
+"files/right_daughter_points.txt",
+"files/right_daughter_cells.txt"
 ]
 
 ecCentroidTXTFiles = [
-"txt/parent_ec_centeroid_points.txt",
-"txt/parent_ec_centeroid_cells.txt",
-"txt/left_daughter_ec_centeroid_points.txt",
-"txt/left_daughter_ec_centeroid_cells.txt",
-"txt/right_daughter_ec_centeroid_points.txt",
-"txt/right_daughter_ec_centeroid_cells.txt"
+"files/parent_ec_centeroid_points.txt",
+"files/parent_ec_centeroid_cells.txt",
+"files/left_daughter_ec_centeroid_points.txt",
+"files/left_daughter_ec_centeroid_cells.txt",
+"files/right_daughter_ec_centeroid_points.txt",
+"files/right_daughter_ec_centeroid_cells.txt"
 ]
 
 ecTXTFiles = [
-"txt/parent_ec_mesh_points.txt",
-"txt/parent_ec_mesh_cells.txt",
-"txt/left_daughter_ec_mesh_points.txt",
-"txt/left_daughter_ec_mesh_cells.txt",
-"txt/right_daughter_ec_mesh_points.txt",
-"txt/right_daughter_ec_mesh_cells.txt"
+"files/parent_ec_mesh_points.txt",
+"files/parent_ec_mesh_cells.txt",
+"files/left_daughter_ec_mesh_points.txt",
+"files/left_daughter_ec_mesh_cells.txt",
+"files/right_daughter_ec_mesh_points.txt",
+"files/right_daughter_ec_mesh_cells.txt"
 ]
 
 smcTXTFiles = [
-"txt/parent_smc_mesh_points.txt",
-"txt/parent_smc_mesh_cells.txt",
-"txt/left_daughter_smc_mesh_points.txt",
-"txt/left_daughter_smc_mesh_cells.txt",
-"txt/right_daughter_smc_mesh_points.txt",
-"txt/right_daughter_smc_mesh_cells.txt"
+"files/parent_smc_mesh_points.txt",
+"files/parent_smc_mesh_cells.txt",
+"files/left_daughter_smc_mesh_points.txt",
+"files/left_daughter_smc_mesh_cells.txt",
+"files/right_daughter_smc_mesh_points.txt",
+"files/right_daughter_smc_mesh_cells.txt"
 ]
 
 def main():
@@ -869,7 +868,7 @@ def main():
     print "All done ..."
     print "... Except the last configuration_info.txt file ..."
 
-    configFile = open("txt/configuration_info.txt", 'w')
+    configFile = open("files/configuration_info.txt", 'w')
     configFile.write("Processors information\n")
     configFile.write("Total number of points per branch (vtk points) = %d\t\tm = %d n = %d\n" \
     % ((numQuadsPerRing0 + 1) * (numRingsPerLabel[0] + 1), (numQuadsPerRing0 + 1), (numRingsPerLabel[0] + 1)))

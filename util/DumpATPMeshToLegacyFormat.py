@@ -21,12 +21,12 @@ numSMCsPerCol = numECsPerCol * 13
 numECsPerQuad = numECsPerRow * numECsPerCol
 numSMCsPerQuad = numSMCsPerCol * numSMCsPerRow
 
-# '''
+'''
 numQuadsPerRing0 = 12
 taskMeshIn = "quadMeshFullc216.vtp"
 ecMeshIn = "quadMeshFullECc216.vtp"
 atpMeshIn = "quadMeshFullATPc216.vtp"
-# ''' and None
+''' and None
 
 '''
 numQuadsPerRing0 = 48
@@ -42,12 +42,12 @@ ecMeshIn = "quadMeshFullECc4080.vtp"
 atpMeshIn = "quadMeshFullATPc4080.vtp"
 ''' and None
 
-'''
-numQuadsPerRing0 = 40
+# '''
+numQuadsPerRing0 = 64
 taskMeshIn = "quadMeshFullc8064.vtp"
 ecMeshIn = "quadMeshFullECc8064.vtp"
 atpMeshIn = "quadMeshFullATPc8064.vtp"
-''' and None
+# ''' and None
 
 
 # VTK files to write.
@@ -58,9 +58,9 @@ atpVTKFiles = [
 ]
 
 atpTXTFiles = [
-"txt/parent_atp.txt",
-"txt/left_daughter_atp.txt",
-"txt/right_daughter_atp.txt",
+"files/parent_atp.txt",
+"files/left_daughter_atp.txt",
+"files/right_daughter_atp.txt",
 ]
 
 def main():
@@ -73,12 +73,14 @@ def main():
     taskMeshReader.Update()
 
     taskMesh = taskMeshReader.GetOutput()
+    print taskMesh.GetNumberOfPoints()
     
     ecMeshReader = vtk.vtkXMLPolyDataReader()
     ecMeshReader.SetFileName(ecMeshIn)
     ecMeshReader.Update()
     
     ecMesh = ecMeshReader.GetOutput()
+    print ecMesh.GetNumberOfPoints()
     
     # Get the range of branch labels.
     labelRange = [0, 0]
