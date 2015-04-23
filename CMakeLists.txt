@@ -435,9 +435,9 @@ target_link_libraries(meshGen8064
 	vtkCentrelineResampler
 	${testLibs})
 
-add_executable(meshGen16368
-	src/meshGen16368.cxx)
-target_link_libraries(meshGen16368
+add_executable(meshGen16128
+	src/meshGen16128.cxx)
+target_link_libraries(meshGen16128
 	vtkDbiharStatic
 	vtkScalarRadiiToVectorsFilter
 	vtkFiltersGeometry

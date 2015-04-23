@@ -31,12 +31,12 @@ int main(int argc, char* argv[]) {
 
 	std::cout << "Starting " << __FILE__ << std::endl;
 
-	int numRadialQuads = 44;
+	int numRadialQuads = 32;
 
-	std::string prefix = (std::string(TEST_DATA_DIR) + "/exp/c16368/");
+	std::string prefix = (std::string(TEST_DATA_DIR) + "/exp/c16128/");
 
 	vtkSmartPointer<vtkGenericDataObjectReader> vesselCentrelineReader = vtkSmartPointer<vtkGenericDataObjectReader>::New();
-	vesselCentrelineReader->SetFileName((prefix + "c16368Centreline.vtk").c_str());
+	vesselCentrelineReader->SetFileName((prefix + "c16128Centreline.vtk").c_str());
 	vesselCentrelineReader->Update();
 
 	vtkPolyData *vesselCentreline = vtkPolyData::SafeDownCast(vesselCentrelineReader->GetOutput());
@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
 	centrelinePartitioner->Update();
 
 	vtkDbiharStatic::ShowPolyData(centrelinePartitioner->GetOutput());
-	// vtkDbiharStatic::WritePolyData(centrelinePartitioner->GetOutput(), "c16368CentrelinePartitioned.vtp");
+	// vtkDbiharStatic::WritePolyData(centrelinePartitioner->GetOutput(), "c16128CentrelinePartitioned.vtp");
 
 	vtkPolyData *partitionedCentreline = centrelinePartitioner->GetOutput();
 
@@ -190,7 +190,7 @@ int main(int argc, char* argv[]) {
 	fullMeshJoiner->Update();
 
 	vtkDbiharStatic::ShowPolyData(fullMeshJoiner->GetOutput());
-	vtkDbiharStatic::WritePolyData(fullMeshJoiner->GetOutput(), (prefix + "quadMeshFullc16368.vtp").c_str());
+	vtkDbiharStatic::WritePolyData(fullMeshJoiner->GetOutput(), (prefix + "quadMeshFullc16128.vtp").c_str());
 
 	int numECs = 4;
 	int numSMCs = 4;
@@ -200,7 +200,7 @@ int main(int argc, char* argv[]) {
 	subdivideECMesh->SetColumns((vtkDbiharStatic::SMC_CIRC / vtkDbiharStatic::EC_CIRC) * numSMCs);
 	subdivideECMesh->Update();
 
-	vtkDbiharStatic::WritePolyData(subdivideECMesh->GetOutput(), (prefix + "quadMeshFullECc16368.vtp").c_str());
+	vtkDbiharStatic::WritePolyData(subdivideECMesh->GetOutput(), (prefix + "quadMeshFullECc16128.vtp").c_str());
 
 	vtkSmartPointer<vtkSubdivideMesh> subdivideSMCMesh = vtkSmartPointer<vtkSubdivideMesh>::New();
 	subdivideSMCMesh->SetInputData(fullMeshJoiner->GetOutput());
@@ -208,7 +208,7 @@ int main(int argc, char* argv[]) {
 	subdivideSMCMesh->SetColumns(numSMCs);
 	subdivideSMCMesh->Update();
 
-	vtkDbiharStatic::WritePolyData(subdivideSMCMesh->GetOutput(), (prefix + "quadMeshFullSMCc16368.vtp").c_str());
+	vtkDbiharStatic::WritePolyData(subdivideSMCMesh->GetOutput(), (prefix + "quadMeshFullSMCc16128.vtp").c_str());
 
 	int skipLength = 16;
 	for (int i = 0; i < endPointIds->GetNumberOfIds(); i++)
@@ -236,7 +236,7 @@ int main(int argc, char* argv[]) {
 		triangleCapFilter->SetInputData(endCapFilter->GetOutput());
 		triangleCapFilter->Update();
 
-		vtkDbiharStatic::WriteStlData(triangleCapFilter->GetOutput(), (prefix + SSTR("triCap_" << i << "_c16368.stl")).c_str());
+		vtkDbiharStatic::WriteStlData(triangleCapFilter->GetOutput(), (prefix + SSTR("triCap_" << i << "_c16128.stl")).c_str());
 	}
 
 	fullMeshJoiner->Update();
@@ -245,7 +245,7 @@ int main(int argc, char* argv[]) {
 	triangleFullMeshFilter->AddInputData(fullMeshJoiner->GetOutput());
 
 	triangleFullMeshFilter->Update();
-	vtkDbiharStatic::WriteStlData(triangleFullMeshFilter->GetOutput(), (prefix + "triMeshFullc16368.stl").c_str());
+	vtkDbiharStatic::WriteStlData(triangleFullMeshFilter->GetOutput(), (prefix + "triMeshFullc16128.stl").c_str());
 
 	std::cout << "Exiting " << __FILE__ << std::endl;
 
