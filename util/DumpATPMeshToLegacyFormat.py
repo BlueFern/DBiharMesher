@@ -49,7 +49,6 @@ ecMeshIn = "quadMeshFullECc8064.vtp"
 atpMeshIn = "quadMeshFullATPc8064.vtp"
 # ''' and None
 
-
 # VTK files to write.
 atpVTKFiles = [
 "vtk/atp_parent.vtp",

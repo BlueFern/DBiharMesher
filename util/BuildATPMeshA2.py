@@ -12,14 +12,16 @@ import numpy
 import matplotlib.pyplot as pyplot
 
 # This is for the c216 mesh.
-# '''
+'''
 meshFile = "quadMeshFullECc216.vtp"
 atpFile = "quadMeshFullATPc216.vtp"
 numBranches = 3
 numQuads = 216
 numECsPerCol = 4
-atpGradient = 0.15
-# ''' and None
+atpGradient0 = 0.15
+atpGradient1 = 0.05
+atpGradient2 = 0.15
+''' and None
 
 # This is for the c4032 mesh.
 '''
@@ -38,26 +40,30 @@ atpFile = "quadMeshFullATPc4080.vtp"
 numBranches = 3
 numQuads = 4080
 numECsPerCol = 4
-atpGradient = 0.02
+atpGradient0 = 0.02
+atpGradient1 = 0.006666666666666666
+atpGradient2 = 0.02
 ''' and None
 
 # This is for the c8064 mesh.
-'''
+# '''
 meshFile = "quadMeshFullECc8064.vtp"
 atpFile = "quadMeshFullATPc8064.vtp"
 numBranches = 3
 numQuads = 8064
 numECsPerCol = 4
 atpGradient = 0.02
-''' and None
+atpGradient = 0.0066666666666666666
+atpGradient = 0.02
+# ''' and None
 
 atpMin = 0.1
 atpMax = 1.0
 
 # Sigmoid function for providing ATP values. The atpGradient variable
 # controls the "spread" of the values across the given domain.
-def sigmoidATP(x):
-    return atpMin + (atpMax / (1.0 + numpy.exp(-atpGradient * x)))
+def sigmoidATP(x, grd):
+    return atpMin + (atpMax / (1.0 + numpy.exp(-grd * x)))
 
 def main():
     # Report our CWD just for testing purposes.
@@ -123,11 +129,15 @@ def main():
         # for previously calculated values.
         if branchId == 0:
             distVal = axialDist.GetValue(cellId) - axialDistRange[1] - 1
-            atpVal = sigmoidATP(distVal)
+            atpVal = sigmoidATP(distVal, atpGradient0)
             atpArray.InsertNextValue(atpVal)
-        else:
+        elif branchId == 1:
             distVal = axialDist.GetValue(cellId)
-            atpVal = sigmoidATP(distVal)
+            atpVal = sigmoidATP(distVal, atpGradient1)
+            atpArray.InsertNextValue(atpVal)
+        elif branchId == 2:
+            distVal = axialDist.GetValue(cellId)
+            atpVal = sigmoidATP(distVal, atpGradient2)
             atpArray.InsertNextValue(atpVal)
 
     # Assert the number of cells is equal to the number of items in the cell arrays.
@@ -141,14 +151,30 @@ def main():
     atpMapWriter.SetFileName(atpFile)
     atpMapWriter.SetInput(atpDataset)
     atpMapWriter.Update()
+
+    f, (ax1, ax2, ax3) = pyplot.subplots(3, sharex=True, sharey=True)
     
-    # Provide a quick visualisation of the ATP profile for validation.
-    pointsX = range(-int(axialDistRange[1] - 1), int(axialDistRange[1]))
-    pointsY = []
-    for pt in pointsX:
-        pointsY.append(sigmoidATP(pt))
-    
-    pyplot.plot(pointsX, pointsY, 'b')
+    for branchId in range(0, 3):
+        # Provide a quick visualisation of the ATP profile for validation.
+        pointsX = range(-int(axialDistRange[1] - 1), int(axialDistRange[1]))
+        pointsY = []
+        
+        for pt in pointsX:
+            if branchId == 0:
+                pointsY.append(sigmoidATP(pt, atpGradient0))
+            elif branchId == 1:
+                pointsY.append(sigmoidATP(pt, atpGradient1))
+            elif branchId == 2:
+                pointsY.append(sigmoidATP(pt, atpGradient2))
+            
+        if branchId == 0:
+            ax1.plot(pointsX, pointsY, 'b')
+        elif branchId == 1:
+            ax2.plot(pointsX, pointsY, 'b')
+        elif branchId == 2:
+            ax3.plot(pointsX, pointsY, 'b')
+
+    f.subplots_adjust(hspace=0)
     pyplot.show()
 
 if __name__ == '__main__':
