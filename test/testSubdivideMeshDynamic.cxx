@@ -17,7 +17,7 @@ int main(int argc, char* argv[]) {
 	std::cout << "Starting " << __FILE__ << std::endl;
 
 	vtkSmartPointer<vtkXMLPolyDataReader> pointsReader = vtkSmartPointer<vtkXMLPolyDataReader>::New();
-	pointsReader->SetFileName((std::string(TEST_DATA_DIR) + "/mesh0.vtp").c_str());
+	pointsReader->SetFileName((std::string(TEST_DATA_DIR) + "/test/testSubdivideMeshDynamic0.vtp").c_str());
 
 	pointsReader->Update();
 

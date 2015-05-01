@@ -13,9 +13,9 @@ int main(int argc, char* argv[]) {
 	std::cout << "Starting " << __FILE__ << std::endl;
 
 	vtkSmartPointer<vtkXMLPolyDataReader> pointsReader = vtkSmartPointer<vtkXMLPolyDataReader>::New();
-	pointsReader->SetFileName((std::string(TEST_DATA_DIR) + "/dbhPatchPoints0.vtp").c_str());
-	//pointsReader->SetFileName((std::string(TEST_DATA_DIR) + "/dbhPatchPoints1.vtp").c_str());
-	//pointsReader->SetFileName((std::string(TEST_DATA_DIR) + "/dbhPatchPoints2.vtp").c_str());
+	pointsReader->SetFileName((std::string(TEST_DATA_DIR) + "/test/testPointsToMesh0.vtp").c_str());
+	//pointsReader->SetFileName((std::string(TEST_DATA_DIR) + "/test/testPointsToMesh1.vtp").c_str());
+	//pointsReader->SetFileName((std::string(TEST_DATA_DIR) + "/test/testPointsToMesh2.vtp").c_str());
 
 	vtkSmartPointer<vtkUnsignedIntArray> dimensions = vtkSmartPointer<vtkUnsignedIntArray>::New();
 

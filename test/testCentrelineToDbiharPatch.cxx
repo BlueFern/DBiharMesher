@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
 	std::cout << "Starting " << __FILE__ << std::endl;
 
 	vtkSmartPointer<vtkGenericDataObjectReader> vesselCentrelineReader = vtkSmartPointer<vtkGenericDataObjectReader>::New();
-	vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/227A_CentrelineResampled_4ECs.vtk").c_str());
+	vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/test/testCentrelineToDbiharPatch0.vtk").c_str());
 	vesselCentrelineReader->Update();
 
 	vtkPolyData *vesselCentreline = vtkPolyData::SafeDownCast(vesselCentrelineReader->GetOutput());

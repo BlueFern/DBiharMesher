@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
 	std::cout << "Starting " << __FILE__ << std::endl;
 
 	vtkSmartPointer<vtkGenericDataObjectReader> centrelineReader = vtkSmartPointer<vtkGenericDataObjectReader>::New();
-	centrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/centreline.vtk").c_str());
+	centrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/test/fullSynthetic1.vtk").c_str());
 	centrelineReader->Update();
 
 	vtkPolyData *centreline = vtkPolyData::SafeDownCast(centrelineReader->GetOutput());

@@ -13,7 +13,7 @@ int main(int argc, char* argv[]) {
 	std::cout << "Starting " << __FILE__ << std::endl;
 
 	vtkSmartPointer<vtkXMLPolyDataReader> reader = vtkSmartPointer<vtkXMLPolyDataReader>::New();
-	reader->SetFileName((std::string(TEST_DATA_DIR) + "/endCapInputData_1.vtp").c_str());
+	reader->SetFileName((std::string(TEST_DATA_DIR) + "/test/testEndCapFilter1_0.vtp").c_str());
 	reader->Update();
 
 	vtkSmartPointer<vtkEndCapFilter> endCapFilter = vtkSmartPointer<vtkEndCapFilter>::New();

@@ -40,7 +40,7 @@ branchAngle = math.pi / 4.0
 
 scaling = 1.0
 step = 0.1
-radiusDecreasing = False
+radiusDecreasing = True
 
 segmentList0 = [20,  
                [(20,60),[(30,35),None,None],[(20,105),None,None]],   
@@ -77,7 +77,7 @@ segmentList8 = [10.92,[(10.92,60),None,None], [(10.92,120),None,None]]
 
 # A centreline for a mesh with 16128 cores.
 segmentList9 = [21.84,[(21.84,60),None,None], [(21.84,120),None,None]]
-radiusBase = 2.0371832715762603
+radiusBase = 2.5#2.0371832715762603
 
 # If sphereRadius is set to None, the centreline is generated in the XY plane.
 # Otherwise the centreline is wrapped on a sphere of the specified radius.
@@ -156,6 +156,10 @@ def buildCentreline(segmentList, firstId = 0, firstPt = (0.0,0.0,0.0), direction
     if isinstance(rightBranch, list):
         buildCentreline(rightBranch, nextId, nextPt, -1.0)
         
+        
+        
+        
+        
 def treeTraversal(startingCell):
     
     branchesToExplore = vtk.vtkPriorityQueue()
@@ -206,6 +210,53 @@ def treeTraversal(startingCell):
     
     return traversal
  
+ 
+def murraysLaw(decreaseLength = 3):
+    
+    radii.SetNumberOfValues(points.GetNumberOfPoints())
+
+    ids = vtk.vtkIdList()
+    lines.InitTraversal()
+    lines.GetNextCell(ids)
+    
+    decreaseLength /= step
+    
+    #assign trunk scalars indentically as radiusBase
+    for pointId in range(ids.GetId(0), ids.GetNumberOfIds()):
+        radii.SetValue(pointId, radiusBase)
+        
+        
+        
+    numLines = int(lines.GetNumberOfCells())
+    # For each line (cell) in the tree
+    for line in range (1, numLines):
+        ids = vtk.vtkIdList()
+        lines.GetNextCell(ids)
+        
+        start = ids.GetId(1)
+        end = ids.GetNumberOfIds() + start - 1
+        
+        i = 1
+        # With the DFS the previous value will always exist...?
+        parentValue = radii.GetValue(ids.GetId(0)) # Can i assume this?
+        childValue = ((parentValue ** 3) / 2) ** (1 / 3.0)
+        
+        distance = parentValue * decreaseLength
+        if distance > ids.GetNumberOfIds():
+            distance = ids.GetNumberOfIds()
+       
+        
+        for pointId in range(start, end):  
+            if i < distance:
+                k = (math.log(childValue)-math.log(parentValue)) / distance
+                x0 = math.exp(math.log(childValue) - k * distance)
+                x = x0 * math.exp(k*i)   
+                                
+                radii.SetValue(pointId, x)
+                i += 1
+            else:
+                radii.SetValue(pointId, childValue)
+                
 
 def buildRadiiScalars():
     radii.SetNumberOfValues(points.GetNumberOfPoints())
@@ -265,15 +316,17 @@ def main():
     
     global centreline
     
-    buildCentreline(segmentList9)
+    buildCentreline(segmentList1)
+
     
     print "Number of points in the centreline:", points.GetNumberOfPoints()
     centreline.SetPoints(points)    
     centreline.SetLines(lines)
     
     if radiusDecreasing:
-        # Build decreasing radii.
-        buildRadiiScalars()
+        # Build decreasing radii. Use either buildRadiiScalars or murraysLaw
+        #buildRadiiScalars()
+        murraysLaw(3)
     else:
         # Constant radii for all points.
         rIdx = 0
@@ -296,7 +349,7 @@ def main():
     
     writer = vtk.vtkPolyDataWriter()
     writer.SetInput(centreline)
-    writer.SetFileName("centreline.vtk")
+    writer.SetFileName("centreline233.vtk")
     writer.SetFileTypeToASCII()
     writer.Write()
     

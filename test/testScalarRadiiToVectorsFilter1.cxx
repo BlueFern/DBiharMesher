@@ -1,4 +1,3 @@
-
 #include <map>
 
 #include <vtkSmartPointer.h>
@@ -26,8 +25,8 @@ int main(int argc, char* argv[]) {
 	std::cout << "Starting " << __FILE__ << std::endl;
 
 	vtkSmartPointer<vtkGenericDataObjectReader> vesselCentrelineReader = vtkSmartPointer<vtkGenericDataObjectReader>::New();
-	vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/227A_Centreline.vtk").c_str());
-	//vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/721A_Centreline.vtk").c_str());
+	vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/test/testScalarRadiiToVectorsFilter1_0.vtk").c_str());
+	//vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/test/testScalarRadiiToVectorsFilter1_1.vtk").c_str());
 	vesselCentrelineReader->Update();
 
 	vtkPolyData *vesselCentreline = vtkPolyData::SafeDownCast(vesselCentrelineReader->GetOutput());

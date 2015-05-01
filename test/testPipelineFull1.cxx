@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
 	std::cout << "Starting " << __FILE__ << std::endl;
 
 	vtkSmartPointer<vtkGenericDataObjectReader> vesselCentrelineReader = vtkSmartPointer<vtkGenericDataObjectReader>::New();
-	vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/centreline.vtk").c_str());
+	vesselCentrelineReader->SetFileName((std::string(TEST_DATA_DIR) + "/test/fullSynthetic2.vtk").c_str());
 	vesselCentrelineReader->Update();
 
 	vtkPolyData *vesselCentreline = vtkPolyData::SafeDownCast(vesselCentrelineReader->GetOutput());
@@ -195,7 +195,7 @@ int main(int argc, char* argv[]) {
 
 	vtkDbiharStatic::WritePolyData(fullMeshJoiner->GetOutput(), "quadMeshFull.vtp");
 
-#if 1 // Very Expensive to run.
+#if 0 // Very Expensive to run.
 
 	vtkSmartPointer<vtkSubdivideMeshDynamic> subdivideMeshDynamic = vtkSmartPointer<vtkSubdivideMeshDynamic>::New();
 	subdivideMeshDynamic->SetInputData(fullMeshJoiner->GetOutput());
