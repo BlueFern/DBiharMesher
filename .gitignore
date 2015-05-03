@@ -1,2 +1,6 @@
 *.pyc
+data/exp/*.vtp
+data/exp/*.stl
+tmpData/*.vtp
+tmpData/*.stl
 

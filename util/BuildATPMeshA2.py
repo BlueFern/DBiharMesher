@@ -11,61 +11,23 @@ import vtk
 import numpy
 import matplotlib.pyplot as pyplot
 
-# This is for the c216 mesh.
-'''
-meshFile = "quadMeshFullECc216.vtp"
-atpFile = "quadMeshFullATPc216.vtp"
-numBranches = 3
-numQuads = 216
-numECsPerCol = 4
-atpGradient0 = 0.15
-atpGradient1 = 0.05
-atpGradient2 = 0.15
-''' and None
-
-# This is for the c4032 mesh.
-'''
-meshFile = "quadMeshFullECc4032.vtp"
-atpFile = "quadMeshFullATPc4032.vtp"
-numBranches = 3
-numQuads = 4032
-numECsPerCol = 4
-atpGradient = 0.05
-''' and None
-
-# This is for the c4080 mesh.
-'''
-meshFile = "quadMeshFullECc4080.vtp"
-atpFile = "quadMeshFullATPc4080.vtp"
-numBranches = 3
-numQuads = 4080
-numECsPerCol = 4
-atpGradient0 = 0.02
-atpGradient1 = 0.006666666666666666
-atpGradient2 = 0.02
-''' and None
-
-# This is for the c8064 mesh.
-# '''
-meshFile = "quadMeshFullECc8064.vtp"
-atpFile = "quadMeshFullATPc8064.vtp"
-numBranches = 3
-numQuads = 8064
-numECsPerCol = 4
-atpGradient = 0.02
-atpGradient = 0.0066666666666666666
-atpGradient = 0.02
-# ''' and None
-
-atpMin = 0.1
-atpMax = 1.0
+meshFile = ''
+atpFile = ''
+numBranches = ''
+numQuads = 0
+numECsPerCol = 0
+atpGradient0 = 0
+atpGradient1 = 0
+atpGradient2 = 0
+atpMin = 0
+atpMax = 0
 
 # Sigmoid function for providing ATP values. The atpGradient variable
 # controls the "spread" of the values across the given domain.
 def sigmoidATP(x, grd):
     return atpMin + (atpMax / (1.0 + numpy.exp(-grd * x)))
 
-def main():
+def buildATPMeshAsymGrad():
     # Report our CWD just for testing purposes.
     print "CWD:", os.getcwd()
 
@@ -176,6 +138,9 @@ def main():
 
     f.subplots_adjust(hspace=0)
     pyplot.show()
+
+def main():
+    print "This script is to be run with global parameters (input, output files, etc.) set in the calling script."
 
 if __name__ == '__main__':
     print "Starting", os.path.basename(__file__)

@@ -11,48 +11,15 @@ import vtk
 import numpy
 import matplotlib.pyplot as pyplot
 
-# This is for the c216 mesh.
-'''
-meshFile = "quadMeshFullECc216.vtp"
-atpFile = "quadMeshFullATPc216.vtp"
-numBranches = 3
-numQuads = 216
-numECsPerCol = 4
-atpGradient = 0.15
-''' and None
-
-# This is for the c4032 mesh.
-'''
-meshFile = "quadMeshFullECc4032.vtp"
-atpFile = "quadMeshFullATPc4032.vtp"
-numBranches = 3
-numQuads = 4032
-numECsPerCol = 4
-atpGradient = 0.05
-''' and None
-
-# This is for the c4080 mesh.
-# '''
-meshFile = "quadMeshFullECc4080.vtp"
-atpFile = "quadMeshFullATPc4080.vtp"
-numBranches = 3
-numQuads = 4080
-numECsPerCol = 4
-atpGradient = 0.02
-# ''' and None
-
-# This is for the c8064 mesh.
-'''
-meshFile = "quadMeshFullECc8064.vtp"
-atpFile = "quadMeshFullATPc8064.vtp"
-numBranches = 3
-numQuads = 8064
-numECsPerCol = 4
-atpGradient = 0.02
-''' and None
-
-atpMin = 0.1
-atpMax = 1.0
+# These parameters are to be initialised by the calling script.
+meshFile = ''
+atpFile = ''
+numBranches = 0
+numQuads = 0
+numECsPerCol = 0
+atpGradient = 0
+atpMin = 0
+atpMax = 0
 
 # Sigmoid function for providing ATP values. The atpGradient variable
 # controls the "spread" of the values across the given domain.
@@ -129,20 +96,6 @@ def buildATPMesh():
             distVal = axialDist.GetValue(cellId)
             atpVal = sigmoidATP(distVal)
 
-            # This is to produce atp gradient only in the parent.
-            # atpArray.InsertNextValue(0.01)
-
-            # This is to produce atp gradient in the parent and the right daugter.
-            # if atpDataset.GetCell(cellId).GetPoints().GetPoint(0)[1] > 0:
-                # atpArray.InsertNextValue(0.01)
-            # else:
-                # distVal = axialDist.GetValue(cellId)
-                # atpVal = sigmoidATP(distVal)
-                # atpArray.InsertNextValue(atpVal)
-
-        # This is to generate 'normal' atp gradient only on the right side of the mesh.
-        if atpDataset.GetCell(cellId).GetPoints().GetPoint(0)[1] > 0:
-            atpVal = 0.1
         atpArray.InsertNextValue(atpVal)
 
     # Assert the number of cells is equal to the number of items in the cell arrays.
@@ -167,7 +120,7 @@ def buildATPMesh():
     pyplot.show()
 
 def main():
-    print "This script is to be run with global parameters set in the calling script"
+    print "This script is to be run with global parameters (input, output files, etc.) set in the calling script."
 
 if __name__ == '__main__':
     print "Starting", os.path.basename(__file__)
