@@ -12,14 +12,14 @@ import numpy
 import matplotlib.pyplot as pyplot
 
 # This is for the c216 mesh.
-# '''
+'''
 meshFile = "quadMeshFullECc216.vtp"
 atpFile = "quadMeshFullATPc216.vtp"
 numBranches = 3
 numQuads = 216
 numECsPerCol = 4
 atpGradient = 0.15
-# ''' and None
+''' and None
 
 # This is for the c4032 mesh.
 '''
@@ -32,14 +32,14 @@ atpGradient = 0.05
 ''' and None
 
 # This is for the c4080 mesh.
-'''
+# '''
 meshFile = "quadMeshFullECc4080.vtp"
 atpFile = "quadMeshFullATPc4080.vtp"
 numBranches = 3
 numQuads = 4080
 numECsPerCol = 4
 atpGradient = 0.02
-''' and None
+# ''' and None
 
 # This is for the c8064 mesh.
 '''
@@ -59,7 +59,7 @@ atpMax = 1.0
 def sigmoidATP(x):
     return atpMin + (atpMax / (1.0 + numpy.exp(-atpGradient * x)))
 
-def main():
+def buildATPMesh():
     # Report our CWD just for testing purposes.
     print "CWD:", os.getcwd()
 
@@ -98,7 +98,7 @@ def main():
     # of the "gridCoords" cell data array. Here we assuming the mesh contains
     # only quad cells.
     # If the branches were labelled properly here, it would be much simpler
-    # to set the neganive axiial distance values by examining the range first.
+    # to set the neganive axial distance values by examining the range first.
     for cellId in range(0, mesh.GetNumberOfCells()):
         axialDist.InsertNextValue(gridCoords.GetTuple(cellId)[0])
 
@@ -124,11 +124,26 @@ def main():
         if branchId == 0:
             distVal = axialDist.GetValue(cellId) - axialDistRange[1] - 1
             atpVal = sigmoidATP(distVal)
-            atpArray.InsertNextValue(atpVal)
         else:
+            # This is for the 'normal' atp map.
             distVal = axialDist.GetValue(cellId)
             atpVal = sigmoidATP(distVal)
-            atpArray.InsertNextValue(atpVal)
+
+            # This is to produce atp gradient only in the parent.
+            # atpArray.InsertNextValue(0.01)
+
+            # This is to produce atp gradient in the parent and the right daugter.
+            # if atpDataset.GetCell(cellId).GetPoints().GetPoint(0)[1] > 0:
+                # atpArray.InsertNextValue(0.01)
+            # else:
+                # distVal = axialDist.GetValue(cellId)
+                # atpVal = sigmoidATP(distVal)
+                # atpArray.InsertNextValue(atpVal)
+
+        # This is to generate 'normal' atp gradient only on the right side of the mesh.
+        if atpDataset.GetCell(cellId).GetPoints().GetPoint(0)[1] > 0:
+            atpVal = 0.1
+        atpArray.InsertNextValue(atpVal)
 
     # Assert the number of cells is equal to the number of items in the cell arrays.
     assert axialDist.GetNumberOfTuples() == atpDataset.GetNumberOfCells(), "Number of cells (%d) and cell data values (%d) mismatch." % (axialDist.GetNumberOfTuples(), atpDataset.GetNumberOfCells)
@@ -150,6 +165,9 @@ def main():
     
     pyplot.plot(pointsX, pointsY, 'b')
     pyplot.show()
+
+def main():
+    print "This script is to be run with global parameters set in the calling script"
 
 if __name__ == '__main__':
     print "Starting", os.path.basename(__file__)
