@@ -53,7 +53,7 @@ radii = vtk.vtkDoubleArray()
 radii.SetName("radiiScalars")
 centreline = vtk.vtkPolyData()
 
-def buildCentreline(segmentList, firstId = 0, firstPt = (0.0,0.0,0.0), direction = 0.0):
+def BuildCentreline(segmentList, firstId = 0, firstPt = (0.0,0.0,0.0), direction = 0.0):
     print 'Processing centreline:', segmentList
     
     domain = None
@@ -116,13 +116,13 @@ def buildCentreline(segmentList, firstId = 0, firstPt = (0.0,0.0,0.0), direction
     lines.InsertNextCell(line)
     
     if isinstance(leftBranch, list):
-        buildCentreline(leftBranch, nextId, nextPt, 1.0)
+        BuildCentreline(leftBranch, nextId, nextPt, 1.0)
 
     if isinstance(rightBranch, list):
-        buildCentreline(rightBranch, nextId, nextPt, -1.0)
+        BuildCentreline(rightBranch, nextId, nextPt, -1.0)
 
 # TODO: What does this function return?
-def treeTraversal(startingCell):
+def TreeTraversal(startingCell):
     
     branchesToExplore = vtk.vtkPriorityQueue()
     points1 = vtk.vtkGenericCell()
@@ -181,7 +181,7 @@ def BuildDecreasingRadiiScalars():
     alreadyBuilt = []
     bifurcationValues = dict()
     distanceCovered = 0
-    traversal = treeTraversal(0)
+    traversal = TreeTraversal(0)
     
     # For every path, starting from longest route.
     for path, length in traversal:
@@ -261,8 +261,7 @@ def BuildMurraysLawRadii(decreaseLength = 3):
         distance = parentValue * decreaseLength
         if distance > ids.GetNumberOfIds():
             distance = ids.GetNumberOfIds()
-       
-        
+
         for pointId in range(start, end):  
             if i < distance:
                 k = (math.log(childValue)-math.log(parentValue)) / distance
@@ -277,7 +276,7 @@ def BuildMurraysLawRadii(decreaseLength = 3):
 def GenerateCentreline(radiiBuilderFunction = None):
     global centreline
     
-    buildCentreline(segmentList)
+    BuildCentreline(segmentList)
     
     print "Number of points in the centreline:", points.GetNumberOfPoints()
     centreline.SetPoints(points)    
