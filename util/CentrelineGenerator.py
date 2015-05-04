@@ -1,14 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# SynthCentrelineGenerator.py by Constantine Zakkaroff
-#
 # This scipt builds a centreline tree from a nested list representing the tree topology.
-# The fist item in each list is the domain, followed by the left
+# The fist item in each list is the current domain, followed by the left
 # and right branches if any.
-#
-# Output centrelines are saved in VTK legacy format in the current working directory
-# in a file "centreline.vtk".
 #
 # Parameters to control the generated tree points are to be set in this file.
 # VTK visualisation of the tree is shown at the end.
@@ -21,67 +16,37 @@
 #
 # All angles are measured clockwise from the positive y-axis, and are specified
 # in degrees.
-# Modified by: Stewart Dowding 15/12/14
+#
+# Output centrelines are saved in VTK legacy format.
 
-# TODO:
-# Name and location of the outputfile should be specified from keyboard input at runtime.
-
+import os
 import sys
 import vtk
 import math
 
-# Lists to be used as input. A specific list is passed as the argument to
-# buildCentreline in main.
+# Stewart, which one of these lists do we want to put in the calling scripts in the data/mesh/whatever directories?
 
-# Paremeters specifying the properties of the generated centrelines.
+radiusBase = 2.5
+segmentList = [20,
+               [(20,60),[(30,35),None,None],[(20,105),None,None]],
+               [(20,150),[(40,105),None,None],[(30,150),[(30,105),None,None],[(40,150),None,None]]]]
 
-# Default branch angle if the angle por branch is not specified.
+radiusBase = 2.5
+segmentList = [20,
+               [(20,60),[(20,15),[(30,350),None,None],[(30,60),None,None]],[(40,105),None,None]],
+               [(20,150),[(50,105),None,None],[(30,150),[(40,105),None,None],[(60,150),None,None]]]]
+
+outputFileName = ''
+
+# Default branch angle if the angle per branch is not specified.
 branchAngle = math.pi / 4.0
-
 scaling = 1.0
 step = 0.1
-radiusDecreasing = True
-
-segmentList0 = [20,  
-               [(20,60),[(30,35),None,None],[(20,105),None,None]],   
-               [(20,150),[(40,105),None,None],[(30,150),[(30,105),None,None],[(40,150),None,None]]]]
-# radiusBase = 2.5
-
-segmentList1 = [20,  
-               [(20,60),[(20,15),       [(30,350),None,None],[(30,60),None,None]]          ,[(40,105),None,None]],   
-               [(20,150),[(50,105),None,None],[(30,150),[(40,105),None,None],[(60,150),None,None]]]]
-# radiusBase = 2.5
-
-segmentList2 = [16,[8,[4,[2,None,None],[2,None,None]],None],[8,[4,None,None],None]]
-segmentList3 = [20,[(20,60),[(20,80),None,None],[20,None,None]],[(20,135),None,None]]
-
-# A centreline for a mesh with 216 cores.
-segmentList4 = [1.7,[(1.7,60),None,None], [(1.7,120),None,None]]
-# radiusBase = 0.382
-
-# A centreline for a mesh with 4080 cores.
-segmentList5 = [8.84,[(8.84,60),None,None], [(8.84,120),None,None]]
-# radiusBase = 1.2732395447351628
-
-# A centreline for a mesh with 4032 cores.
-segmentList6 = [7.2,[(7.2,60),None,None], [(7.2,120),None,None]]
-# radiusBase = 1.5278874536821951
-
-# A centreline for a mesh with 8064 cores, 56x48
-segmentList7 = [14.56,[(14.56,60),None,None], [(14.56,120),None,None]]
-# radiusBase = 1.5278874536821951
-
-# A centreline for a mesh with 8064 cores. 42x64
-segmentList8 = [10.92,[(10.92,60),None,None], [(10.92,120),None,None]]
-# radiusBase = 2.0371832715762603
-
-# A centreline for a mesh with 16128 cores.
-segmentList9 = [21.84,[(21.84,60),None,None], [(21.84,120),None,None]]
-radiusBase = 2.5#2.0371832715762603
-
+radiusBase = 1.0
 # If sphereRadius is set to None, the centreline is generated in the XY plane.
 # Otherwise the centreline is wrapped on a sphere of the specified radius.
 sphereRadius = None
+
 points = vtk.vtkPoints()
 lines = vtk.vtkCellArray()
 radii = vtk.vtkDoubleArray()
@@ -155,11 +120,8 @@ def buildCentreline(segmentList, firstId = 0, firstPt = (0.0,0.0,0.0), direction
 
     if isinstance(rightBranch, list):
         buildCentreline(rightBranch, nextId, nextPt, -1.0)
-        
-        
-        
-        
-        
+
+# TODO: What does this function return?
 def treeTraversal(startingCell):
     
     branchesToExplore = vtk.vtkPriorityQueue()
@@ -209,56 +171,11 @@ def treeTraversal(startingCell):
     traversal.sort(key = lambda x: x[1], reverse = True)
     
     return traversal
- 
- 
-def murraysLaw(decreaseLength = 3):
-    
-    radii.SetNumberOfValues(points.GetNumberOfPoints())
-
-    ids = vtk.vtkIdList()
-    lines.InitTraversal()
-    lines.GetNextCell(ids)
-    
-    decreaseLength /= step
-    
-    #assign trunk scalars indentically as radiusBase
-    for pointId in range(ids.GetId(0), ids.GetNumberOfIds()):
-        radii.SetValue(pointId, radiusBase)
-        
-        
-        
-    numLines = int(lines.GetNumberOfCells())
-    # For each line (cell) in the tree
-    for line in range (1, numLines):
-        ids = vtk.vtkIdList()
-        lines.GetNextCell(ids)
-        
-        start = ids.GetId(1)
-        end = ids.GetNumberOfIds() + start - 1
-        
-        i = 1
-        # With the DFS the previous value will always exist...?
-        parentValue = radii.GetValue(ids.GetId(0)) # Can i assume this?
-        childValue = ((parentValue ** 3) / 2) ** (1 / 3.0)
-        
-        distance = parentValue * decreaseLength
-        if distance > ids.GetNumberOfIds():
-            distance = ids.GetNumberOfIds()
-       
-        
-        for pointId in range(start, end):  
-            if i < distance:
-                k = (math.log(childValue)-math.log(parentValue)) / distance
-                x0 = math.exp(math.log(childValue) - k * distance)
-                x = x0 * math.exp(k*i)   
-                                
-                radii.SetValue(pointId, x)
-                i += 1
-            else:
-                radii.SetValue(pointId, childValue)
                 
+def BuildDecreasingRadiiScalars():
 
-def buildRadiiScalars():
+    print 'Generating decreasing vessel radii...'    
+    
     radii.SetNumberOfValues(points.GetNumberOfPoints())
     radii.InsertValue(0, radiusBase)
     alreadyBuilt = []
@@ -312,23 +229,64 @@ def buildRadiiScalars():
                 
             distanceCovered += int(ids.GetNumberOfPoints() - 1)
 
-def main():
+def BuildMurraysLawRadii(decreaseLength = 3):
+    print 'Generating vessel radii as per Murry\'s Law...'
     
+    radii.SetNumberOfValues(points.GetNumberOfPoints())
+
+    ids = vtk.vtkIdList()
+    lines.InitTraversal()
+    lines.GetNextCell(ids)
+    
+    decreaseLength /= step
+    
+    # Assign trunk scalars indentically as radiusBase.
+    for pointId in range(ids.GetId(0), ids.GetNumberOfIds()):
+        radii.SetValue(pointId, radiusBase)
+        
+    numLines = int(lines.GetNumberOfCells())
+    # For each line (cell) in the tree.
+    for line in range (1, numLines):
+        ids = vtk.vtkIdList()
+        lines.GetNextCell(ids)
+        
+        start = ids.GetId(1)
+        end = ids.GetNumberOfIds() + start - 1
+        
+        i = 1
+        # With the DFS the previous value will always exist...?
+        parentValue = radii.GetValue(ids.GetId(0)) # Can we assume this?
+        childValue = ((parentValue ** 3) / 2) ** (1 / 3.0)
+        
+        distance = parentValue * decreaseLength
+        if distance > ids.GetNumberOfIds():
+            distance = ids.GetNumberOfIds()
+       
+        
+        for pointId in range(start, end):  
+            if i < distance:
+                k = (math.log(childValue)-math.log(parentValue)) / distance
+                x0 = math.exp(math.log(childValue) - k * distance)
+                x = x0 * math.exp(k*i)   
+                                
+                radii.SetValue(pointId, x)
+                i += 1
+            else:
+                radii.SetValue(pointId, childValue)
+
+def GenerateCentreline(radiiBuilderFunction = None):
     global centreline
     
-    buildCentreline(segmentList1)
-
+    buildCentreline(segmentList)
     
     print "Number of points in the centreline:", points.GetNumberOfPoints()
     centreline.SetPoints(points)    
     centreline.SetLines(lines)
     
-    if radiusDecreasing:
-        # Build decreasing radii. Use either buildRadiiScalars or murraysLaw
-        #buildRadiiScalars()
-        murraysLaw(3)
+    if radiiBuilderFunction != None:
+        radiiBuilderFunction()
     else:
-        # Constant radii for all points.
+        print 'Generating constant radii for all points...'
         rIdx = 0
         while rIdx < points.GetNumberOfPoints():
             radii.InsertNextValue(radiusBase)
@@ -346,10 +304,11 @@ def main():
         
         transformFilter.Update()
         centreline = transformFilter.GetOutput()
-    
+
+    print 'Writing output as', os.path.abspath(outputFileName)    
     writer = vtk.vtkPolyDataWriter()
     writer.SetInput(centreline)
-    writer.SetFileName("centreline233.vtk")
+    writer.SetFileName(outputFileName)
     writer.SetFileTypeToASCII()
     writer.Write()
     
@@ -377,5 +336,10 @@ def main():
     rendererWindow.Finalize()
     interactor.TerminateApp()
 
+def Usage():
+    print "This script is to be run with global parameters (segment list, output file name, etc.) set in the calling script."
+
 if __name__ == '__main__':
-    main()
+    print "Starting", os.path.basename(__file__)
+    Usage()
+    print "Exiting", os.path.basename(__file__)
