@@ -24,19 +24,6 @@ import sys
 import vtk
 import math
 
-# Stewart, which one of these lists do we want to put in the calling scripts in the data/mesh/whatever directories?
-
-radiusBase = 2.5
-segmentList = [20,
-               [(20,60),[(30,35),None,None],[(20,105),None,None]],
-               [(20,150),[(40,105),None,None],[(30,150),[(30,105),None,None],[(40,150),None,None]]]]
-
-radiusBase = 2.5
-segmentList = [20,
-               [(20,60),[(20,15),[(30,350),None,None],[(30,60),None,None]],[(40,105),None,None]],
-               [(20,150),[(50,105),None,None],[(30,150),[(40,105),None,None],[(60,150),None,None]]]]
-
-outputFileName = ''
 
 # Default branch angle if the angle per branch is not specified.
 branchAngle = math.pi / 4.0

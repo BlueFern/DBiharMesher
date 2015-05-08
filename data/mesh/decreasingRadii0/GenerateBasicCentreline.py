@@ -18,8 +18,11 @@ del importPath
 import CentrelineGenerator
 
 # Large centreline.
-CentrelineGenerator.segmentList = [] # Segment list?
-CentrelineGenerator.radiusBase = [] # Base radius?
+CentrelineGenerator.radiusBase = 2.5
+CentrelineGenerator.segmentList = [20,
+               [(20,60),[(20,15),[(30,350),None,None],[(30,60),None,None]],[(40,105),None,None]],
+               [(20,150),[(50,105),None,None],[(30,150),[(40,105),None,None],[(60,150),None,None]]]]
+               
 CentrelineGenerator.outputFileName = "decreasingRadiiCentreline.vtk"
 CentrelineGenerator.sphereRadius = None
 
