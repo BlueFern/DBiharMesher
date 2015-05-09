@@ -25,6 +25,9 @@ def sortNicely(l):
     """
     l.sort(key=alphaNumKey)
 
+suffix = ''
+yLine = None
+
 def plotColumn2D(fileList, splitPoint = 0, startPoint = 0, endPoint = -1):
     # Report our CWD just for testing purposes.
     print "CWD:", os.getcwd()    
@@ -37,6 +40,8 @@ def plotColumn2D(fileList, splitPoint = 0, startPoint = 0, endPoint = -1):
         print 'Reading', file
 
         figName = os.path.split(os.getcwd())[1]
+        if suffix != '':
+            figName = figName + '.' + suffix
 
         file_name = os.path.abspath(file)
         reader = vtk.vtkXMLUnstructuredGridReader()
@@ -71,7 +76,14 @@ def plotColumn2D(fileList, splitPoint = 0, startPoint = 0, endPoint = -1):
     array2D = numpy.transpose(array2D)
 
     plt.pcolormesh(array2D)
+
+    if yLine != None:
+        plt.axhline(yLine, color='r')
+    
     plt.title(figName)
+    plt.xlabel('Time (sec.)')
+    plt.ylabel('Cell (ord.)')
+    plt.colorbar()
     plt.axis([0, array2D.shape[1], 0, array2D.shape[0]])
     plt.tight_layout()
 
