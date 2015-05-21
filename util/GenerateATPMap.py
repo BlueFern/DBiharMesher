@@ -10,7 +10,7 @@ import numpy
 import matplotlib.pyplot as pyplot
 
 # This is for the c216 mesh.
-# '''
+'''
 centrelineFile = "c216Centreline.vtk"
 meshFile = "quadMeshFullECc216.vtp"
 atpFile = "quadMeshFullATPV2c216.vtp"
@@ -19,10 +19,10 @@ numQuads = 216
 numAxialQuads = 6
 numECsPerCol = 4
 atpGradient = 0.15
-# ''' and None
+''' and None
 
 # This is for the c4080 mesh.
-'''
+# '''
 centrelineFile = "c4080Centreline.vtk"
 meshFile = "quadMeshFullECc4080.vtp"
 atpFile = "quadMeshFullATPV2c4080.vtp"
@@ -31,7 +31,7 @@ numQuads = 4080
 numAxialQuads = 34
 numECsPerCol = 4
 atpGradient = 0.03
-''' and None
+# ''' and None
 
 atpMin = 0.1
 atpMax = 1.0
@@ -67,34 +67,24 @@ def getParametricDistance(resampledCentreline, point):
 
             t = vtk.mutable(0)
             closestPoint = [0,0,0]
+
             # Current distance.
             tmpDistance = vtk.vtkLine.DistanceToLine(point, \
                                        resampledCentreline.GetPoint(line.GetId(ptId)), \
                                        resampledCentreline.GetPoint(line.GetId(ptId + 1)), \
                                        t, closestPoint)
 
-            # tmpDistance = vtk.vtkLine.DistanceToLine(point, \
-            #                            resampledCentreline.GetPoint(line.GetId(ptId)), \
-            #                            resampledCentreline.GetPoint(line.GetId(ptId + 1)))
-
-            # print tmpDistance, resampledCentreline.GetPoint(line.GetId(ptId)), resampledCentreline.GetPoint(line.GetId(ptId + 1)), t.get(), closestPoint
-
             if tmpDistance <= distance:
                 pos = ptId
                 distance = tmpDistance
                 lineId = tmpLineId
-                # print pos, distance, lineId
 
         line.Reset()
         tmpLineId = tmpLineId + 1
 
     # Change the sign of the segment number if it belongs to the parent branch.
     if lineId == 0:
-        print pos,
         pos = pos - (lineLengths[lineId] - 1)
-        print pos
-
-    print 'Returning', lineId, pos, distance
 
     return lineId, pos, t.get(), math.sqrt(distance)
 
@@ -145,8 +135,8 @@ def main():
         tmpPoints = splinePointSource.GetOutput()
         newPolyLine = vtk.vtkPolyLine()
 
-        # Insert the points from the resampled segment one-by-one into the new points container,
-        # while updating the new line with the ids of each newly inserted point.
+        # Insert the points from the resampled segment one-by-one into the new points
+        # container, while updating the new line with the ids of each newly inserted point.
         for ptId in range(tmpPoints.GetNumberOfPoints()):
             newPolyLine.GetPointIds().InsertNextId(newCentrelinePoints.InsertNextPoint(tmpPoints.GetPoint(ptId)))
 
@@ -157,6 +147,7 @@ def main():
     resampledCentreline.SetPoints(newCentrelinePoints)
     resampledCentreline.SetLines(newCentrelineLines)
 
+    # Transform to the nm scale space.
     transform = vtk.vtkTransform()
     transform.Scale((1000,1000,1000))
 
@@ -174,12 +165,7 @@ def main():
 
     centroids = centroidFilter.GetOutput()
 
-    tmpWriter = vtk.vtkXMLPolyDataWriter()
-    tmpWriter.SetInput(centroids)
-    tmpWriter.SetFileName('bar.vtp')
-    tmpWriter.Update()
-
-     # Iterate over each centroid and find the closest segment
+    # Iterate over each centroid and find the closest segment
     centroidPoints = centroids.GetPoints()
 
     atpArray = vtk.vtkDoubleArray()
@@ -197,22 +183,25 @@ def main():
     posArray = vtk.vtkDoubleArray()
     posArray.SetName("Pos")
 
-    for ptId in range(centroidPoints.GetNumberOfPoints()):
+    totalPoints = centroidPoints.GetNumberOfPoints()
+    complete = 0
+    for ptId in range(totalPoints):
+
+        tmp = (ptId * 100) / float(totalPoints)
+
+        if tmp - complete >= 1:
+            complete = int(tmp)
+            print complete, '% complete, processing point', ptId, 'out of', totalPoints, '...'
         branchId, pos, t, distance = getParametricDistance(resampledCentreline, centroidPoints.GetPoint(ptId))
-        # print branchId, pos, t, distance
 
         tArray.InsertNextValue(t)
         distArray.InsertNextValue(distance)
         branchArray.InsertNextValue(branchId)
+        posArray.InsertNextValue(pos)
 
-        if branchId == 0:
-            atpVal = sigmoidATP(pos)
-            posArray.InsertNextValue(pos)
-            atpArray.InsertNextValue(atpVal)
-        else:
-            atpVal = sigmoidATP(pos)
-            posArray.InsertNextValue(pos)
-            atpArray.InsertNextValue(atpVal)
+        atpArray.InsertNextValue(sigmoidATP(pos))
+
+    print '100 % complete.'
 
     atpDataset = ecMesh
 
@@ -225,8 +214,6 @@ def main():
     atpDataset.GetCellData().AddArray(branchArray)
     atpDataset.GetCellData().AddArray(posArray)
 
-    # print posArray
-    
     atpMapWriter = vtk.vtkXMLPolyDataWriter()
     atpMapWriter.SetFileName(atpFile)
     atpMapWriter.SetInput(atpDataset)
