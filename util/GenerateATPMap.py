@@ -55,12 +55,15 @@ def getParametricDistance(resampledCentreline, point):
     lineArray.InitTraversal()
     line = vtk.vtkIdList()
     tmpLineId = 0
+
+    lineLengths = {}
+
     while lineArray.GetNextCell(line):
 
-        # print 'Searching in line', lineId, 'with', line.GetNumberOfIds(), 'points'
+        lineLengths[tmpLineId] = line.GetNumberOfIds() - 1
 
         # Iterate over each pair of adjacent points and find the distance to from the point to the current.
-        for ptId in range(line.GetNumberOfIds()):
+        for ptId in range(line.GetNumberOfIds() - 1):
 
             t = vtk.mutable(0)
             closestPoint = [0,0,0]
@@ -76,18 +79,22 @@ def getParametricDistance(resampledCentreline, point):
 
             # print tmpDistance, resampledCentreline.GetPoint(line.GetId(ptId)), resampledCentreline.GetPoint(line.GetId(ptId + 1)), t.get(), closestPoint
 
-            if tmpDistance < distance:
+            if tmpDistance <= distance:
                 pos = ptId
                 distance = tmpDistance
                 lineId = tmpLineId
+                # print pos, distance, lineId
 
+        line.Reset()
         tmpLineId = tmpLineId + 1
 
     # Change the sign of the segment number if it belongs to the parent branch.
     if lineId == 0:
-        pos = -pos
+        print pos,
+        pos = pos - (lineLengths[lineId] - 1)
+        print pos
 
-    # print lineId, pos, distance
+    print 'Returning', lineId, pos, distance
 
     return lineId, pos, t.get(), math.sqrt(distance)
 
@@ -187,24 +194,24 @@ def main():
     branchArray = vtk.vtkDoubleArray()
     branchArray.SetName("Branch")
 
-    #posArray = vtk.vtkDoubleArray()
-    #posArray.SetName("Pos")
+    posArray = vtk.vtkDoubleArray()
+    posArray.SetName("Pos")
 
     for ptId in range(centroidPoints.GetNumberOfPoints()):
         branchId, pos, t, distance = getParametricDistance(resampledCentreline, centroidPoints.GetPoint(ptId))
-        print branchId, pos, t, distance
+        # print branchId, pos, t, distance
 
         tArray.InsertNextValue(t)
         distArray.InsertNextValue(distance)
         branchArray.InsertNextValue(branchId)
 
         if branchId == 0:
-            atpVal = sigmoidATP(-pos)
-            #posArray.InsertNextValue(-pos)
+            atpVal = sigmoidATP(pos)
+            posArray.InsertNextValue(pos)
             atpArray.InsertNextValue(atpVal)
         else:
             atpVal = sigmoidATP(pos)
-            #posArray.InsertNextValue(pos)
+            posArray.InsertNextValue(pos)
             atpArray.InsertNextValue(atpVal)
 
     atpDataset = ecMesh
@@ -216,7 +223,7 @@ def main():
     atpDataset.GetCellData().AddArray(tArray)
     atpDataset.GetCellData().AddArray(distArray)
     atpDataset.GetCellData().AddArray(branchArray)
-    # atpDataset.GetCellData().AddArray(posArray)
+    atpDataset.GetCellData().AddArray(posArray)
 
     # print posArray
     
