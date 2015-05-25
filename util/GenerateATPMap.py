@@ -9,34 +9,17 @@ import vtk
 import numpy
 import matplotlib.pyplot as pyplot
 
-# This is for the c216 mesh.
-'''
-centrelineFile = "c216Centreline.vtk"
-meshFile = "quadMeshFullECc216.vtp"
-atpFile = "quadMeshFullATPV2c216.vtp"
+centrelineFile = None
+meshFile = None
+debugAtpFile = None
+atpFile = None
 numBranches = 3
-numQuads = 216
-numAxialQuads = 6
-numECsPerCol = 4
-atpGradient = 0.15
-''' and None
-
-# This is for the c4080 mesh.
-# '''
-centrelineFile = "c4080Centreline.vtk"
-meshFile = "quadMeshFullECc4080.vtp"
-atpFile = "quadMeshFullATPV2c4080.vtp"
-numBranches = 3
-numQuads = 4080
-numAxialQuads = 34
-numECsPerCol = 4
-atpGradient = 0.03
-# ''' and None
-
+numQuads = 0
+numAxialQuads = 0
+numECsPerCol = 0
+atpGradient = 0
 atpMin = 0.1
 atpMax = 1.0
-
-ecResolution = numAxialQuads * numECsPerCol
 
 # Sigmoid function for providing ATP values. The atpGradient variable
 # controls the "spread" of the values across the given domain.
@@ -57,6 +40,8 @@ def getParametricDistance(resampledCentreline, point):
     tmpLineId = 0
 
     lineLengths = {}
+    t = None
+    closestPoint = None
 
     while lineArray.GetNextCell(line):
 
@@ -67,7 +52,6 @@ def getParametricDistance(resampledCentreline, point):
 
             t = vtk.mutable(0)
             closestPoint = [0,0,0]
-
             # Current distance.
             tmpDistance = vtk.vtkLine.DistanceToLine(point, \
                                        resampledCentreline.GetPoint(line.GetId(ptId)), \
@@ -88,22 +72,26 @@ def getParametricDistance(resampledCentreline, point):
 
     return lineId, pos, t.get(), math.sqrt(distance)
 
-def main():
+def buildATPMesh():
     # Report our CWD just for testing purposes.
     print "CWD:", os.getcwd()
 
     # Read in the mesh.
+    print 'Reading', meshFile
     meshReader = vtk.vtkXMLPolyDataReader()
     meshReader.SetFileName(meshFile)
     meshReader.Update()
 
     ecMesh = meshReader.GetOutput()
 
+    # Read in the centreline.
+    print 'Reading', centrelineFile
     centrelineReader = vtk.vtkPolyDataReader()
     centrelineReader.SetFileName(centrelineFile)
     centrelineReader.Update()
 
     centreline = centrelineReader.GetOutput()
+    print centreline.GetNumberOfPoints(), 'points in the centreline...'
 
     # Resample the centreline to EC resolution.
     lineArray = centreline.GetLines()
@@ -112,6 +100,8 @@ def main():
 
     newCentrelinePoints = vtk.vtkPoints()
     newCentrelineLines = vtk.vtkCellArray()
+
+    ecResolution = numAxialQuads * numECsPerCol
 
     # Iterate over all lines in the centreline.
     lineArray.InitTraversal()
@@ -158,6 +148,8 @@ def main():
 
     resampledCentreline = transformFilter.GetOutput()
 
+    print resampledCentreline.GetNumberOfPoints(), 'points in the resampled centreline...'
+
     # Put the ecMesh through centroids filter.
     centroidFilter = vtk.vtkCellCenters()
     centroidFilter.SetInput(ecMesh)
@@ -171,15 +163,19 @@ def main():
     atpArray = vtk.vtkDoubleArray()
     atpArray.SetName("initialATP")
 
+    # Only for DEBUG output.
     tArray = vtk.vtkDoubleArray()
     tArray.SetName("T")
 
+    # Only for DEBUG output.
     distArray = vtk.vtkDoubleArray()
     distArray.SetName("Dist")
 
+    # Only for DEBUG output.
     branchArray = vtk.vtkDoubleArray()
     branchArray.SetName("Branch")
 
+    # Only for DEBUG output.
     posArray = vtk.vtkDoubleArray()
     posArray.SetName("Pos")
 
@@ -187,8 +183,8 @@ def main():
     complete = 0
     for ptId in range(totalPoints):
 
+        # Progress reporting.
         tmp = (ptId * 100) / float(totalPoints)
-
         if tmp - complete >= 1:
             complete = int(tmp)
             print complete, '% complete, processing point', ptId, 'out of', totalPoints, '...'
@@ -203,16 +199,28 @@ def main():
 
     print '100 % complete.'
 
-    atpDataset = ecMesh
+    debugAtpDataset = ecMesh
 
     # Assert the number of cells is equal to the number of items in the cell arrays.
-    assert atpArray.GetNumberOfTuples() == atpDataset.GetNumberOfCells(), "Number of cells (%d) and cell data values (%d) mismatch." % (atpArray.GetNumberOfTuples(), atpDataset.GetNumberOfCells())
+    assert atpArray.GetNumberOfTuples() == debugAtpDataset.GetNumberOfCells(), "Number of cells (%d) and cell data values (%d) mismatch." % (atpArray.GetNumberOfTuples(), debugAtpDataset.GetNumberOfCells())
 
+    debugAtpDataset.GetCellData().AddArray(atpArray)
+    debugAtpDataset.GetCellData().AddArray(tArray)
+    debugAtpDataset.GetCellData().AddArray(distArray)
+    debugAtpDataset.GetCellData().AddArray(branchArray)
+    debugAtpDataset.GetCellData().AddArray(posArray)
+
+    debugAtpMapWriter = vtk.vtkXMLPolyDataWriter()
+    debugAtpMapWriter.SetFileName(debugAtpFile)
+    debugAtpMapWriter.SetInput(debugAtpDataset)
+    debugAtpMapWriter.Update()
+
+    pointsToVerticesFilter = vtk.vtkVertexGlyphFilter()
+    pointsToVerticesFilter.SetInput(centroids)
+    pointsToVerticesFilter.Update()
+
+    atpDataset = pointsToVerticesFilter.GetOutput()
     atpDataset.GetCellData().AddArray(atpArray)
-    atpDataset.GetCellData().AddArray(tArray)
-    atpDataset.GetCellData().AddArray(distArray)
-    atpDataset.GetCellData().AddArray(branchArray)
-    atpDataset.GetCellData().AddArray(posArray)
 
     atpMapWriter = vtk.vtkXMLPolyDataWriter()
     atpMapWriter.SetFileName(atpFile)
@@ -228,7 +236,10 @@ def main():
     pyplot.plot(pointsX, pointsY, 'b')
     pyplot.show()
 
+def usage():
+    print 'This script is to be run with global parameters (input centrelin, EC mesh, etc.) set in the calling script.'
+
 if __name__ == '__main__':
-    print "Starting", os.path.basename(__file__)
-    main()
-    print "Exiting", os.path.basename(__file__)
+    print 'Starting', os.path.basename(__file__)
+    usage()
+    print 'Exiting', os.path.basename(__file__)
