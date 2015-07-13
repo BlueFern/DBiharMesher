@@ -237,7 +237,7 @@ def buildATPMesh():
     pyplot.show()
 
 def usage():
-    print 'This script is to be run with global parameters (input centrelin, EC mesh, etc.) set in the calling script.'
+    print 'This script is to be run with global parameters (input centreline, EC mesh, etc.) set in the calling script.'
 
 if __name__ == '__main__':
     print 'Starting', os.path.basename(__file__)

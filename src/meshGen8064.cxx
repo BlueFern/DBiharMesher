@@ -27,16 +27,19 @@
 #include <sstream>
 #define SSTR( x ) dynamic_cast< std::ostringstream & >( ( std::ostringstream() << std::dec << x ) ).str()
 
+// Run this code in the directory containing the centreline input file.
+
 int main(int argc, char* argv[]) {
 
 	std::cout << "Starting " << __FILE__ << std::endl;
 
 	int numRadialQuads = 32;
 
-	std::string prefix = (std::string(TEST_DATA_DIR) + "/exp/c8064/");
+	// std::string prefix = (std::string(TEST_DATA_DIR) + "/exp/c8064ATPv2/");
 
 	vtkSmartPointer<vtkGenericDataObjectReader> vesselCentrelineReader = vtkSmartPointer<vtkGenericDataObjectReader>::New();
-	vesselCentrelineReader->SetFileName((prefix + "c8064Centreline.vtk").c_str());
+	// vesselCentrelineReader->SetFileName((prefix + "c8064Centreline.vtk").c_str());
+	vesselCentrelineReader->SetFileName("c8064Centreline.vtk");
 	vesselCentrelineReader->Update();
 
 	vtkPolyData *vesselCentreline = vtkPolyData::SafeDownCast(vesselCentrelineReader->GetOutput());
@@ -190,7 +193,8 @@ int main(int argc, char* argv[]) {
 	fullMeshJoiner->Update();
 
 	vtkDbiharStatic::ShowPolyData(fullMeshJoiner->GetOutput());
-	vtkDbiharStatic::WritePolyData(fullMeshJoiner->GetOutput(), (prefix + "quadMeshFullc8064.vtp").c_str());
+	// vtkDbiharStatic::WritePolyData(fullMeshJoiner->GetOutput(), (prefix + "quadMeshFullc8064.vtp").c_str());
+	vtkDbiharStatic::WritePolyData(fullMeshJoiner->GetOutput(), "quadMeshFullc8064.vtp");
 
 	int numECs = 4;
 	int numSMCs = 4;
@@ -200,7 +204,8 @@ int main(int argc, char* argv[]) {
 	subdivideECMesh->SetColumns((vtkDbiharStatic::SMC_CIRC / vtkDbiharStatic::EC_CIRC) * numSMCs);
 	subdivideECMesh->Update();
 
-	vtkDbiharStatic::WritePolyData(subdivideECMesh->GetOutput(), (prefix + "quadMeshFullECc8064.vtp").c_str());
+	// vtkDbiharStatic::WritePolyData(subdivideECMesh->GetOutput(), (prefix + "quadMeshFullECc8064.vtp").c_str());
+	vtkDbiharStatic::WritePolyData(subdivideECMesh->GetOutput(), "quadMeshFullECc8064.vtp");
 
 	vtkSmartPointer<vtkSubdivideMesh> subdivideSMCMesh = vtkSmartPointer<vtkSubdivideMesh>::New();
 	subdivideSMCMesh->SetInputData(fullMeshJoiner->GetOutput());
@@ -208,7 +213,8 @@ int main(int argc, char* argv[]) {
 	subdivideSMCMesh->SetColumns(numSMCs);
 	subdivideSMCMesh->Update();
 
-	vtkDbiharStatic::WritePolyData(subdivideSMCMesh->GetOutput(), (prefix + "quadMeshFullSMCc8064.vtp").c_str());
+	// vtkDbiharStatic::WritePolyData(subdivideSMCMesh->GetOutput(), (prefix + "quadMeshFullSMCc8064.vtp").c_str());
+	vtkDbiharStatic::WritePolyData(subdivideSMCMesh->GetOutput(), "quadMeshFullSMCc8064.vtp");
 
 	int skipLength = 16;
 	for (int i = 0; i < endPointIds->GetNumberOfIds(); i++)
@@ -236,7 +242,8 @@ int main(int argc, char* argv[]) {
 		triangleCapFilter->SetInputData(endCapFilter->GetOutput());
 		triangleCapFilter->Update();
 
-		vtkDbiharStatic::WriteStlData(triangleCapFilter->GetOutput(), (prefix + SSTR("triCap_" << i << "_c8064.stl")).c_str());
+		// vtkDbiharStatic::WriteStlData(triangleCapFilter->GetOutput(), (prefix + SSTR("triCap_" << i << "_c8064.stl")).c_str());
+		vtkDbiharStatic::WriteStlData(triangleCapFilter->GetOutput(), (SSTR("triCap_" << i << "_c8064.stl")).c_str());
 	}
 
 	fullMeshJoiner->Update();
@@ -245,7 +252,8 @@ int main(int argc, char* argv[]) {
 	triangleFullMeshFilter->AddInputData(fullMeshJoiner->GetOutput());
 
 	triangleFullMeshFilter->Update();
-	vtkDbiharStatic::WriteStlData(triangleFullMeshFilter->GetOutput(), (prefix + "triMeshFullc8064.stl").c_str());
+	// vtkDbiharStatic::WriteStlData(triangleFullMeshFilter->GetOutput(), (prefix + "triMeshFullc8064.stl").c_str());
+	vtkDbiharStatic::WriteStlData(triangleFullMeshFilter->GetOutput(), "triMeshFullc8064.stl");
 
 	std::cout << "Exiting " << __FILE__ << std::endl;
 

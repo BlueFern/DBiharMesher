@@ -1,23 +1,21 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri May  1 12:09:31 2015
+Created ATP profile input data based on rescaling CDF output.
 
-@author: constantine
 """
 
 import os
 import vtk
 
-inputFile = 'quadMeshFullJPLCc4080.vtp'
-outputFile = 'quadMeshFullATPc4080.vtp'
-
-outMin = 0.1
-outMax = 1.1
+inputFile = ''
+outputFile = ''
+outMin = 0.0
+outMax = 1.0
 
 def rescale(val, inMin, inMax):
     return (val - inMin) * (outMax - outMin) / (inMax - inMin) + outMin
 
-def main():
+def rescaleATPToRange():
     # This is where the data is for testing purposes.
     print "Current working directory:", os.getcwd()
 
@@ -48,7 +46,10 @@ def main():
     atpWriter.SetFileName(outputFile)
     atpWriter.Update()
 
+def usage():
+    print 'This script is to be run with global parameters (input ATP, desired value range, etc.) set in the calling script.'
+
 if __name__ == '__main__':
     print "Starting", os.path.basename(__file__)
-    main()
+    usage()
     print "Exiting", os.path.basename(__file__)
