@@ -453,10 +453,10 @@ target_link_libraries(meshGen16128
 	vtkCentrelineResampler
 	${testLibs})
 
-add_executable(DumpMeshToLegacyFormat
-	util/DumpMeshToLegacyFormat.cxx)
-target_link_libraries(DumpMeshToLegacyFormat
-	vtkIOXML vtkIOLegacy)
+#add_executable(DumpMeshToLegacyFormat
+#	util/DumpMeshToLegacyFormat.cxx)
+#target_link_libraries(DumpMeshToLegacyFormat
+#	vtkIOXML vtkIOLegacy)
 
 #add_executable(scratch
 #	test/showPolyData.cxx

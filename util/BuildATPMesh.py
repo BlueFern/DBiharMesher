@@ -56,8 +56,8 @@ def buildATPMesh():
 
     # Create a new cell data array "parametricDistance" in the centroids
     # dataset with the values from the previous step. This array is really not
-    # needed for any computations is good to have for verification. Also,
-    # remember the max value for each branch.
+    # needed for any computations but is good to have for verification. Also,
+    # it is useful to know the max value for each branch.
     axialDist = vtk.vtkIntArray()
     axialDist.SetName("parametriDistance")
     
