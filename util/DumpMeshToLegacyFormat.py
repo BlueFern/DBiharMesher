@@ -21,14 +21,14 @@ numSMCsPerCol = numECsPerCol * 13
 numECsPerQuad = numECsPerRow * numECsPerCol
 numSMCsPerQuad = numSMCsPerCol * numSMCsPerRow
 
-'''
+#'''
 numQuadsPerRing0 = 12
 meshSet0 = [
 "quadMeshFullc216.vtp",
 "quadMeshFullECc216.vtp",
 "quadMeshFullSMCc216.vtp"
 ]
-''' and None
+#''' and None
 
 '''
 numQuadsPerRing0 = 48
@@ -48,14 +48,14 @@ meshSet0 = [
 ]
 ''' and None
 
-# '''
+'''
 numQuadsPerRing0 = 64
 meshSet0 = [
 "quadMeshFullc8064.vtp",
 "quadMeshFullECc8064.vtp",
 "quadMeshFullSMCc8064.vtp"
 ]
-# ''' and None
+''' and None
 
 # VTK files to write.
 taskVTKFiles = [

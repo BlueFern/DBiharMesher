@@ -33,7 +33,8 @@ int main(int argc, char* argv[]) {
 
 	std::cout << "Starting " << __FILE__ << std::endl;
 
-	int numRadialQuads = 12;
+	// Half a ring.
+	int numRadialQuads = 6;
 
 	// std::string prefix = (std::string(TEST_DATA_DIR) + "/exp/c216ATPv2/");
 
