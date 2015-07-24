@@ -399,6 +399,24 @@ target_link_libraries(testPipelineFullc8064
 	vtkCentrelineResampler
 	${testLibs})
 
+add_executable(meshGen216
+	src/meshGen216.cxx)
+target_link_libraries(meshGen216
+	vtkDbiharStatic
+	vtkScalarRadiiToVectorsFilter
+	vtkFiltersGeometry
+	vtkSubdivideMesh
+	vtkSubdivideQuadFilter
+	vtkCentrelineToDbiharPatch
+	vtkDbiharPatchFilter
+	vtkCentrelinePartitioner
+	vtkPointsToMeshFilter
+	vtkSkipSegmentFilter
+	vtkEndCapFilter
+	vtkRescaleUnits
+	vtkCentrelineResampler
+	${testLibs})
+
 add_executable(meshGen4080
 	src/meshGen4080.cxx)
 target_link_libraries(meshGen4080
