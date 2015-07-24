@@ -17,14 +17,14 @@ del importPath
 
 import GenerateATPMapV2
 
-# This is for the c4080 mesh.
-GenerateATPMapV2.centrelineFile = "c4080Centreline.vtk"
-GenerateATPMapV2.meshFile = "quadMeshFullECc4080.vtp"
-GenerateATPMapV2.debugAtpFile = "quadMeshFullATPV2c4080.vtp"
-GenerateATPMapV2.atpFile = "quadMeshFullATPc4080.vtp"
+# This is for the c8064 mesh.
+GenerateATPMapV2.centrelineFile = "c8064Centreline.vtk"
+GenerateATPMapV2.meshFile = "quadMeshFullECc8064.vtp"
+GenerateATPMapV2.debugAtpFile = "quadMeshFullATPV2c8064.vtp"
+GenerateATPMapV2.atpFile = "quadMeshFullATPc8064.vtp"
 GenerateATPMapV2.numBranches = 3
-GenerateATPMapV2.numQuads = 4080
-GenerateATPMapV2.numAxialQuads = 34
+GenerateATPMapV2.numQuads = 8064
+GenerateATPMapV2.numAxialQuads = 64
 GenerateATPMapV2.numECsPerCol = 4
 GenerateATPMapV2.atpGradient = 3.3
 GenerateATPMapV2.atpMin = 0.1

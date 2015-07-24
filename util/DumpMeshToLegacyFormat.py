@@ -21,36 +21,13 @@ numSMCsPerCol = numECsPerCol * 13
 numECsPerQuad = numECsPerRow * numECsPerCol
 numSMCsPerQuad = numSMCsPerCol * numSMCsPerRow
 
-#'''
-numQuadsPerRing0 = 12
-meshSet0 = [
-"quadMeshFullc216.vtp",
-"quadMeshFullECc216.vtp",
-"quadMeshFullSMCc216.vtp"
-]
-#''' and None
+numQuadsPerRing = 0
+meshSet = []
+
 
 '''
-numQuadsPerRing0 = 48
-meshSet0 = [
-"quadMeshFullc4032.vtp",
-"quadMeshFullECc4032.vtp",
-"quadMeshFullSMCc4032.vtp"
-]
-''' and None
-
-'''
-numQuadsPerRing0 = 40
-meshSet0 = [
-"quadMeshFullc4080.vtp",
-"quadMeshFullECc4080.vtp",
-"quadMeshFullSMCc4080.vtp"
-]
-''' and None
-
-'''
-numQuadsPerRing0 = 64
-meshSet0 = [
+numQuadsPerRing = 64
+meshSet = [
 "quadMeshFullc8064.vtp",
 "quadMeshFullECc8064.vtp",
 "quadMeshFullSMCc8064.vtp"
@@ -119,7 +96,7 @@ smcTXTFiles = [
 "files/right_daughter_smc_mesh_cells.txt"
 ]
 
-def main():
+def writeLegacyVTK():
     # This is where the data is for testing purposes.
     print "Current working directory:", os.getcwd()
 
@@ -127,7 +104,7 @@ def main():
     # Working with the task mesh.
     # Working with the task mesh.
     taskMeshReader = vtk.vtkXMLPolyDataReader()
-    taskMeshReader.SetFileName(meshSet0[0])
+    taskMeshReader.SetFileName(meshSet[0])
     taskMeshReader.Update()
 
     taskMesh = taskMeshReader.GetOutput()
@@ -168,7 +145,7 @@ def main():
 
         # New vtkCellArray for storing reordeced cells.
         reorderedCellArray = vtk.vtkCellArray()
-        numQuadRowsPerBranch = taskMeshBranch.GetNumberOfCells() / numQuadsPerRing0;
+        numQuadRowsPerBranch = taskMeshBranch.GetNumberOfCells() / numQuadsPerRing;
         numRingsPerLabel[label] = numQuadRowsPerBranch
         ringIds = range(0, numQuadRowsPerBranch);
         ringIds.reverse()
@@ -194,9 +171,9 @@ def main():
         # Iterate over the rings in reverse order.
         for ringNum in ringIds:
             # Iterate over the cells in normal order.
-            for cellNum in range(0, numQuadsPerRing0):
+            for cellNum in range(0, numQuadsPerRing):
                 # Calculate the 'real' cell id and get the corresponding cell.
-                cellId = ringNum * numQuadsPerRing0 + cellNum
+                cellId = ringNum * numQuadsPerRing + cellNum
                 cell = taskMeshBranch.GetCell(cellId)
 
                 # The ids to be written to the TXT file.
@@ -327,7 +304,7 @@ def main():
     # Working with EC mesh.
     # Working with EC mesh.
     ecMeshReader = vtk.vtkXMLPolyDataReader()
-    ecMeshReader.SetFileName(meshSet0[1])
+    ecMeshReader.SetFileName(meshSet[1])
     ecMeshReader.Update()
 
     # Original ECs mesh to work with.
@@ -354,7 +331,7 @@ def main():
     for label in labelRange:
 
         # Keep track of how many branches we need to skip.
-        numECsPerLabel = numQuadsPerRing0 * numRingsPerLabel[label] * numECsPerQuad
+        numECsPerLabel = numQuadsPerRing * numRingsPerLabel[label] * numECsPerQuad
         ecCellOffset = label * numECsPerLabel
 
         print "ecCellOffset", ecCellOffset
@@ -397,10 +374,10 @@ def main():
         # Iterate over the rings in reverse order.
         for ringNum in ringIds:
             # Iterate over the 'imaginary' quads of cells in normal order.
-            for quadNum in range(0, numQuadsPerRing0):
+            for quadNum in range(0, numQuadsPerRing):
                 # Iterate over the rows of cells in reverse order.
                 # Calculate the 'real' id for the 'imaginary' quad.
-                quadId = ringNum * numQuadsPerRing0 + quadNum
+                quadId = ringNum * numQuadsPerRing + quadNum
                 # Iterate over rows of cells in reverse order.
                 for rowNum in rowIds:
                     # Iterate over the rows of cells in normal order.
@@ -455,7 +432,7 @@ def main():
 
         rowBase = 0
         # Iterate over quads in normal order because they have been reordered.
-        for quadNum in range(0, numRingsPerLabel[label] * numQuadsPerRing0):
+        for quadNum in range(0, numRingsPerLabel[label] * numQuadsPerRing):
             # Iterate over rows in normal order because they have been reordered.
             for rowNum in range(0, numECsPerCol):
                 # Iterate over the ECs in the row in normal order.
@@ -626,7 +603,7 @@ def main():
     # Working with SMC mesh.
     # Working with SMC mesh.
     smcMeshReader = vtk.vtkXMLPolyDataReader()
-    smcMeshReader.SetFileName(meshSet0[2])
+    smcMeshReader.SetFileName(meshSet[2])
     smcMeshReader.Update()
 
     # Original SMCs mesh to work with.
@@ -647,7 +624,7 @@ def main():
     for label in labelRange:
 
         # Keep track of how many branches we need to skip.
-        numSMCsPerLabel = numQuadsPerRing0 * numRingsPerLabel[label] * numSMCsPerQuad
+        numSMCsPerLabel = numQuadsPerRing * numRingsPerLabel[label] * numSMCsPerQuad
         smcCellOffset = label * numSMCsPerLabel
 
         print "smcCellOffset", smcCellOffset
@@ -690,10 +667,10 @@ def main():
         # Iterate over the rings in reverse order.
         for ringNum in ringIds:
             # Iterate over the 'imaginary' quads of cells in normal order.
-            for quadNum in range(0, numQuadsPerRing0):
+            for quadNum in range(0, numQuadsPerRing):
                 # Iterate over the rows of cells in reverse order.
                 # Calculate the 'real' id for the 'imaginary' quad.
-                quadId = ringNum * numQuadsPerRing0 + quadNum
+                quadId = ringNum * numQuadsPerRing + quadNum
                 # Iterate over rows of cells in reverse order.
                 for rowNum in rowIds:
                     # Iterate over the rows of cells in normal order.
@@ -740,7 +717,7 @@ def main():
 
         rowBase = 0
         # Iterate over quads in normal order because they have been reordered.
-        for quadNum in range(0, numRingsPerLabel[label] * numQuadsPerRing0):
+        for quadNum in range(0, numRingsPerLabel[label] * numQuadsPerRing):
             # Iterate over rows in normal order because they have been reordered.
             for rowNum in range(0, numSMCsPerCol):
                 # Iterate over the SMCs in the row in normal order.
@@ -871,9 +848,9 @@ def main():
     configFile = open("files/configuration_info.txt", 'w')
     configFile.write("Processors information\n")
     configFile.write("Total number of points per branch (vtk points) = %d\t\tm = %d n = %d\n" \
-    % ((numQuadsPerRing0 + 1) * (numRingsPerLabel[0] + 1), (numQuadsPerRing0 + 1), (numRingsPerLabel[0] + 1)))
+    % ((numQuadsPerRing + 1) * (numRingsPerLabel[0] + 1), (numQuadsPerRing + 1), (numRingsPerLabel[0] + 1)))
     configFile.write("Total number of cells per branch (vtk cells) = %d\t\tm = %d n = %d\n" \
-    % (numQuadsPerRing0 * numRingsPerLabel[0], numQuadsPerRing0, numRingsPerLabel[0]))
+    % (numQuadsPerRing * numRingsPerLabel[0], numQuadsPerRing, numRingsPerLabel[0]))
     configFile.write("Total number of SMC mesh points per processor mesh (vtk points) = %d\t\tm = %d n = %d\n" \
     % ((numSMCsPerCol + 1) * (numSMCsPerRow + 1), (numSMCsPerCol + 1), (numSMCsPerRow + 1)))
     configFile.write("Total number of SMC mesh cells per processor mesh (vtk cells) = %d\t\tm = %d n = %d\n" \
@@ -891,7 +868,11 @@ def main():
     
     print "Now it is all done for real ..."
 
+def main():
+    print "This script is to be run with global parameters (input, output files, etc.) set in the calling script."
+
 if __name__ == '__main__':
     print "Starting", os.path.basename(__file__)
     main()
     print "Exiting", os.path.basename(__file__)
+

@@ -38,7 +38,7 @@ yMax = -1
 def plotColumn2D(fileList):
     # Report our CWD just for testing purposes.
     print "CWD:", os.getcwd()
-    
+
     global splitPos
     global xMax
     global yMax
@@ -81,13 +81,13 @@ def plotColumn2D(fileList):
     array2D = numpy.array(allRows)
     array2D = numpy.transpose(array2D)
 
-    plt.pcolormesh(array2D)
+    plt.pcolormesh(array2D, vmin=0.0, vmax=1.0)
 
     if yLine != None:
         plt.axhline(yLine, color='r')
-    
+
     figName = os.path.split(os.getcwd())[1]
-    plt.title(figName)
+#    plt.title(figName)
     plt.xlabel('Time (sec.)')
     plt.ylabel('Cell (ord.)')
     plt.colorbar()
@@ -101,11 +101,11 @@ def plotColumn2D(fileList):
     plt.xlim((xMin, xMax))
     plt.ylim((yMin, yMax))
     plt.tight_layout()
-   
+
     if suffix != '':
         figName = figName + '.' + suffix
     figName = figName.replace('.', '-')
-    
+
     plt.savefig(figName + '.png', bbox_inches='tight', dpi=400)
     plt.show()
 
