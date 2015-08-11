@@ -197,8 +197,8 @@ int main(int argc, char* argv[]) {
 	// vtkDbiharStatic::WritePolyData(fullMeshJoiner->GetOutput(), (prefix + "quadMeshFullc216.vtp").c_str());
 	vtkDbiharStatic::WritePolyData(fullMeshJoiner->GetOutput(), "quadMeshFullc216.vtp");
 
-	int numECs = 4;
-	int numSMCs = 4;
+	int numECs = 1;
+	int numSMCs = 1;
 	vtkSmartPointer<vtkSubdivideMesh> subdivideECMesh = vtkSmartPointer<vtkSubdivideMesh>::New();
 	subdivideECMesh->SetInputData(fullMeshJoiner->GetOutput());
 	subdivideECMesh->SetRows(numECs);
