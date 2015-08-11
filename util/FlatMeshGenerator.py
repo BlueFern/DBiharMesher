@@ -26,8 +26,8 @@ def buildATPMesh(polydata, filename):
     ATPValues = vtk.vtkDoubleArray()
     ATPValues.SetName("initialATP")
     
-    _, _, y0, y1, _, _ = polydata.GetBounds()
-    yRange = yTop - yBottom
+    _, _, yMin, yMax, _, _ = polydata.GetBounds()
+    yRange = yMax - yMin
     
     for pointId in range(0, newPolydata.GetNumberOfPoints()):
         _, y, _ = newPolydata.GetPoint(pointId)
