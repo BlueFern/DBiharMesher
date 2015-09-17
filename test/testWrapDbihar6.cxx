@@ -1,3 +1,7 @@
+/**
+ * 1/3rd of a Dbihar Patch: Half the Trunk + the Underside of the Saddle.
+ */
+
 #include <stdlib.h>
 
 #include <vtkSmartPointer.h>
@@ -20,8 +24,7 @@
 #include <vtkMath.h>
 
 #include "vtkDbiharPatchFilter.h"
-#include "showPolyData.h"
-
+#include "vtkDbiharStatic.h"
 #include "wrapDbiharConfig.h"
 
 double returnPoint[3] = {0.0};
@@ -43,6 +46,11 @@ double AngleBetweenVectors(const double v1[3], const double v2[3])
   double cross[3];
   vtkMath::Cross(v1, v2, cross);
   return atan2(vtkMath::Norm(cross), vtkMath::Dot(v1, v2));
+}
+
+void PrintPoint(double *point)
+{
+	std::cout << "["<< point[0] << "," << point[1] << "," << point[2] << "]";
 }
 
 // A, B and C calculator from three points: http://www.softschools.com/math/algebra/quadratic_functions/quadratic_function_with_three_points/
@@ -459,7 +467,7 @@ int main(int argc, char* argv[]) {
 	structuredGrid->SetDimensions(cQuads + 1, yQuads + 1, 1);
 	structuredGrid->SetPoints(outputPatch->GetPoints());
 
-	showPolyData(inputPatch, structuredGrid);
+	vtkDbiharStatic::ShowPolyDataWithGrid(inputPatch, structuredGrid);
 
 	delete [] radiiValues;
 

@@ -8,10 +8,8 @@
 #include <vtkXMLPolyDataWriter.h>
 #include <vtkAppendPoints.h>
 
-#include "showPolyData.h"
-
+#include "vtkDbiharStatic.h"
 #include "vtkDbiharPatchFilter.h"
-
 #include "wrapDbiharConfig.h"
 
 #define SSTR( x ) dynamic_cast< std::ostringstream & >( ( std::ostringstream() << std::dec << x ) ).str()
@@ -68,7 +66,7 @@ int main(int argc, char* argv[]) {
 	outputWriter->Update();
 #endif
 
-	showPolyData1(outputPoints);
+	vtkDbiharStatic::ShowPolyData(outputPoints);
 
 	std::cout << "Exiting " << __FILE__ << std::endl;
 

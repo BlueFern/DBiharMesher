@@ -29,6 +29,7 @@ public:
 
 	static vtkDbiharPatchFilter *New();
 
+	vtkSetMacro(ShowProgress,bool);
 	vtkSetMacro(A,double);
 	vtkSetMacro(B,double);
 	vtkSetMacro(C,double);
@@ -56,6 +57,7 @@ private:
 
 	vtkSmartPointer<vtkPoints> OutputPoints;
 
+	bool ShowProgress;
 	double A, B, C, D;
 	int MDim, NDim;
 	int MQuads, NQuads;

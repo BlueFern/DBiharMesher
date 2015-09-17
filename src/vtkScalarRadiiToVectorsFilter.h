@@ -1,7 +1,3 @@
-/**
- * Program: vtkScalarRadiiToVectorsFilter.
- */
-
 #ifndef __vtkScalarRadiiToVectorsFilter_h
 #define __vtkScalarRadiiToVectorsFilter_h
 
@@ -13,14 +9,22 @@
 
 class vtkIdList;
 
+/**
+ * From the radiiScalars point data this filter creates radiiVectors that are vectors from each point
+ * in the centreline out to the surface of the vessel.
+ *
+ * \param vtkPolyData A centreline.
+ *
+ * \param angleTolerance An optional parameter that specifies the tolerance between angles.
+ *
+ * \return vtkPolyData with an extra array of point data, radiiVectors.
+ */
 class vtkScalarRadiiToVectorsFilter: public vtkPolyDataAlgorithm {
 public:
 	vtkTypeMacro(vtkScalarRadiiToVectorsFilter,vtkPolyDataAlgorithm);
 	void PrintSelf(ostream& os, vtkIndent indent);
 
 	static vtkScalarRadiiToVectorsFilter *New();
-
-	static const char *RADII_ARR_NAME;
 
 protected:
 	vtkScalarRadiiToVectorsFilter();
@@ -36,7 +40,7 @@ private:
 
 	double angleTolerance;
 
-	vtkPolyData* input;
+	vtkPolyData* inputPointerCopy;
 
 	std::map<vtkIdType, std::vector<vtkIdType> > treeInfo;
 	std::map<vtkIdType, vtkVector3d> avrgVectors;

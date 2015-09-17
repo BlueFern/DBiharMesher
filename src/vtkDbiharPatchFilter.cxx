@@ -31,7 +31,7 @@ vtkDbiharPatchFilter::vtkDbiharPatchFilter()
 	this->SetNumberOfInputPorts(1);
 	this->SetNumberOfOutputPorts(1);
 
-	OutputPoints = vtkSmartPointer<vtkPoints>::New();
+	this->OutputPoints = vtkSmartPointer<vtkPoints>::New();
 
 	this->A = 0.0;
 	this->B = 0.0;
@@ -101,16 +101,13 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 
 	// Allocate f.
 	double *f = new double[(this->NDim + 2) * (this->MDim + 2)];
-	// Dbihar require this.
+	// Dbihar requires this.
 	int idf = this->MDim + 2;
 
 	// From the description of Dbihar source code in Fortran.
 	int lw;
 	if(this->IFlag == 2)
 	{
-		// This is the lower bound (?) estimate.
-		// lw = (int)(std::max(7 * this->NDim, 3 * this->MDim) + 2 * (this->NDim + this->MDim) + 19);
-		// This is the upper bound (?) estimate.
 		lw = (int)(std::max(7 * this->NDim, 3 * this->MDim) + 2 * (this->NDim + this->MDim) + 19 + 20 * (this->NDim + 3));
 	}
 	else if(this->IFlag == 4)
@@ -122,6 +119,12 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 		// Other values for IFlag not supported.
 		vtkErrorMacro("Unsupported value for IFlag: " << this->IFlag << ".");
 		exit(EXIT_FAILURE);
+	}
+
+	// For some reason memory deallocation fails if we use less than a KB here.
+	if(lw < 1024)
+	{
+		lw = 1024;
 	}
 
 	// Allocate workspace.
@@ -348,7 +351,10 @@ void vtkDbiharPatchFilter::PrintSelf(ostream &os, vtkIndent indent)
 void vtkDbiharPatchFilter::ProgressFunction(vtkObject* caller, long unsigned int eventId, void* clientData, void* callData)
 {
 	vtkDbiharPatchFilter* filter = static_cast<vtkDbiharPatchFilter *>(caller);
-	cout << filter->GetClassName() << " progress: " << std::fixed << std::setprecision(3) << filter->GetProgress() << endl;
+	if(filter->ShowProgress)
+	{
+		cout << filter->GetClassName() << " progress: " << std::fixed << std::setprecision(3) << filter->GetProgress() << endl;
+	}
 }
 
 void vtkDbiharPatchFilter::CheckError()
@@ -360,7 +366,7 @@ void vtkDbiharPatchFilter::CheckError()
 			exit(EXIT_FAILURE);
 			//return;
 		case -1:
-			vtkErrorMacro("Dbihar: n and/or m is even or less than 3.");
+			vtkErrorMacro("Dbihar: n (" << this->NDim << ") and/or m (" << this->MDim << ") is even or less than 3.");
 			exit(EXIT_FAILURE);
 			//return;
 		case -2:
