@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 """
+
+ATTENTION:
+This module is superceeded by the module GenerateATPMapV2.py.
+
 Create an initial ATP Profile for an ECs Mesh and write it out as .vtp.
 """
 

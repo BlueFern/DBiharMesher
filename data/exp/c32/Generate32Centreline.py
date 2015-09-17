@@ -17,10 +17,10 @@ del importPath
 
 import CentrelineGenerator
 
-# A centreline for a mesh with 216 cores.
-CentrelineGenerator.segmentList = [1.7,[(1.7,60),None,None],[(1.7,120),None,None]]
-CentrelineGenerator.radiusBase = 0.382
-CentrelineGenerator.outputFileName = "c216CentrelineTest.vtk"
+# A centreline for a mesh with 32 cores; 8(c)*4(l).
+CentrelineGenerator.segmentList = [1.132, None, None]
+CentrelineGenerator.radiusBase = 0.255
+CentrelineGenerator.outputFileName = "c32Centreline.vtk"
 CentrelineGenerator.sphereRadius = None
 
 def main():

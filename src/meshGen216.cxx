@@ -28,6 +28,8 @@
 #define SSTR( x ) dynamic_cast< std::ostringstream & >( ( std::ostringstream() << std::dec << x ) ).str()
 
 // Run this code in the directory containing the centreline input file.
+// Run this code in the directory containing the centreline input file.
+// Run this code in the directory containing the centreline input file.
 
 int main(int argc, char* argv[]) {
 
@@ -197,8 +199,8 @@ int main(int argc, char* argv[]) {
 	// vtkDbiharStatic::WritePolyData(fullMeshJoiner->GetOutput(), (prefix + "quadMeshFullc216.vtp").c_str());
 	vtkDbiharStatic::WritePolyData(fullMeshJoiner->GetOutput(), "quadMeshFullc216.vtp");
 
-	int numECs = 1;
-	int numSMCs = 1;
+	int numECs = 4;
+	int numSMCs = 4;
 	vtkSmartPointer<vtkSubdivideMesh> subdivideECMesh = vtkSmartPointer<vtkSubdivideMesh>::New();
 	subdivideECMesh->SetInputData(fullMeshJoiner->GetOutput());
 	subdivideECMesh->SetRows(numECs);

@@ -51,9 +51,7 @@ public:
 
 	static void DoubleCross(const double v0[3], const double c0[3], const double v1[3], double c1[3]);
 
-	// TODO: Remove this.
-	static vtkIdType GetPosition(vtkSmartPointer<vtkIdList> IdList,vtkIdType id);
-
+	static void PrintDataArray(vtkDataArray *dataArray);
 
 };
 

@@ -180,7 +180,8 @@ void vtkDbiharStatic::ShowPolyDataWithGrid(vtkPolyData *input, vtkStructuredGrid
 	}
 
 	vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
-	renderer->SetBackground(0.3, 0.6, 0.3); // Green background.
+	// renderer->SetBackground(0.3, 0.6, 0.3); // Green background.
+	renderer->SetBackground(0.317, 0.341, 0.431); // ParaView background.
 
 	vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
 	renderWindow->SetSize(600, 600);
@@ -269,7 +270,8 @@ void vtkDbiharStatic::ShowPolyData(vtkPolyData *input, double vectorScaling)
 	}
 
 	vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
-	renderer->SetBackground(0.3, 0.6, 0.3); // Green background.
+	// renderer->SetBackground(0.3, 0.6, 0.3); // Green background.
+	renderer->SetBackground(0.317, 0.341, 0.431); // ParaView background.
 
 	vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
 	renderWindow->SetSize(600, 600);
@@ -310,4 +312,17 @@ void vtkDbiharStatic::DoubleCross(const double v0[3], const double c0[3], const 
 {
 	vtkMath::Cross(c0, v0, c1);
 	vtkMath::Cross(v1, c1, c1);
+}
+
+void vtkDbiharStatic::PrintDataArray(vtkDataArray *dataArray)
+{
+	dataArray->Print(std::cout);
+	for(int tupleNum = 0; tupleNum < dataArray->GetNumberOfTuples(); tupleNum++)
+	{
+		for(int componentNum = 0; componentNum < dataArray->GetNumberOfComponents(); componentNum++)
+		{
+			std::cout << dataArray->GetVariantValue(tupleNum * dataArray->GetNumberOfComponents() + componentNum).ToString() << " ";
+		}
+		std::cout << std::endl;
+	}
 }

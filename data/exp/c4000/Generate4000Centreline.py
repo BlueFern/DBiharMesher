@@ -10,17 +10,17 @@ import sys
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Import path for the CentrelineGenerator script.
-importPath = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../util'))
+importPath = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../util'))
 if not importPath in sys.path:
     sys.path.insert(1, importPath)
 del importPath
 
 import CentrelineGenerator
 
-# A centreline for a mesh with 216 cores.
-CentrelineGenerator.segmentList = [1.7,[(1.7,60),None,None],[(1.7,120),None,None]]
-CentrelineGenerator.radiusBase = 0.382
-CentrelineGenerator.outputFileName = "c216CentrelineTest.vtk"
+# A centreline for a mesh with 4000 cores.
+CentrelineGenerator.segmentList = [26.0, None, None]
+CentrelineGenerator.radiusBase = 1.2732395447351628
+CentrelineGenerator.outputFileName = "c4000Centreline.vtk"
 CentrelineGenerator.sphereRadius = None
 
 def main():

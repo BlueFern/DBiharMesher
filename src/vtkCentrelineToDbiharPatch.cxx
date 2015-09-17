@@ -347,12 +347,12 @@ int vtkCentrelineToDbiharPatch::RequestData(vtkInformation *vtkNotUsed(request),
 	inputPatch->SetLines(boundaries);
 	inputPatch->GetPointData()->SetVectors(derivatives);
 
-	// vtkDbiharStatic::ShowPolyData(inputPatch);
+	//vtkDbiharStatic::ShowPolyData(inputPatch);
+	//vtkDbiharStatic::WritePolyData(inputPatch, "tmpInputPatch" + SSTR(SpineId) + ".vtp");
 
 	// Adjust the angles of derivatives for bifurcation segments.
 	if(bifurcation)
 	{
-
 		// TODO: Perhaps this constant needs to be a parameter?
 		const double rotationCoeff = 0.1;
 

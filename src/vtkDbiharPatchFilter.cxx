@@ -112,7 +112,7 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 
 	// Allocate f.
 	double *f = new double[(this->NDim + 2) * (this->MDim + 2)];
-	// Dbihar require this.
+	// Dbihar requires this.
 	int idf = this->MDim + 2;
 
 	// From the description of Dbihar source code in Fortran.
@@ -130,6 +130,12 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 		// Other values for IFlag not supported.
 		vtkErrorMacro("Unsupported value for IFlag: " << this->IFlag << ".");
 		exit(EXIT_FAILURE);
+	}
+
+	// For some reason memory deallocation fails if we use less than a KB here.
+	if(lw < 1024)
+	{
+		lw = 1024;
 	}
 
 	// Allocate workspace.

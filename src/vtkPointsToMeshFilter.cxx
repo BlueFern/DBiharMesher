@@ -46,7 +46,7 @@ int vtkPointsToMeshFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 	int numPoints = 0;
 
 	// TODO: This code needs to be straighten out a bit in terms
-	// of reducing the number of variable and choosing better varibale names.
+	// of reducing the number of variables and choosing better variable names.
 
 	for (int i = 1; i < Dimensions->GetNumberOfTuples(); i++)
 	{
@@ -93,6 +93,13 @@ int vtkPointsToMeshFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 		total += this->Dimensions->GetValue(i);
 	}
 	total /= 10; // Every 10% for progress function.
+
+	// Otherwise progress reporting won't know what to do with it.
+	if(total < 1)
+	{
+		total = 1;
+	}
+
 	int k = 0; // For the progress function.
 
 	int reversedStart = numPoints - 1;
@@ -184,6 +191,7 @@ int vtkPointsToMeshFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 			}
 			reversedStart -= halfLoop;
 
+			// std::cout << k << ", " << total << std::endl;
 			if (k % total == 0)
 			{
 				this->UpdateProgress(static_cast<double>(stage++) / static_cast<double>(11));

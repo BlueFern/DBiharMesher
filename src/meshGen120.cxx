@@ -27,17 +27,19 @@
 #include <sstream>
 #define SSTR( x ) dynamic_cast< std::ostringstream & >( ( std::ostringstream() << std::dec << x ) ).str()
 
+// Run this code in the directory containing the centreline input file.
+// Run this code in the directory containing the centreline input file.
+// Run this code in the directory containing the centreline input file.
+
 int main(int argc, char* argv[]) {
 
 	std::cout << "Starting " << __FILE__ << std::endl;
 
 	// Half a ring.
-	int numRadialQuads = 20;
-
-	std::string prefix = (std::string(TEST_DATA_DIR) + "/exp/c4080/");
+	int numRadialQuads = 6;
 
 	vtkSmartPointer<vtkGenericDataObjectReader> vesselCentrelineReader = vtkSmartPointer<vtkGenericDataObjectReader>::New();
-	vesselCentrelineReader->SetFileName((prefix + "c4080Centreline.vtk").c_str());
+	vesselCentrelineReader->SetFileName("c120Centreline.vtk");
 	vesselCentrelineReader->Update();
 
 	vtkPolyData *vesselCentreline = vtkPolyData::SafeDownCast(vesselCentrelineReader->GetOutput());
@@ -62,11 +64,10 @@ int main(int argc, char* argv[]) {
 
 	vtkSmartPointer<vtkCentrelinePartitioner> centrelinePartitioner = vtkSmartPointer<vtkCentrelinePartitioner>::New();
 	centrelinePartitioner->SetInputData(scalarRadiiToVectorsFilter->GetOutput());
-	centrelinePartitioner->SetPartitionLength(100);
+	centrelinePartitioner->SetPartitionLength(300);
 	centrelinePartitioner->Update();
 
-	vtkDbiharStatic::ShowPolyData(centrelinePartitioner->GetOutput());
-	// vtkDbiharStatic::WritePolyData(centrelinePartitioner->GetOutput(), "c4080_part.vtp");
+	// vtkDbiharStatic::ShowPolyData(centrelinePartitioner->GetOutput());
 
 	vtkPolyData *partitionedCentreline = centrelinePartitioner->GetOutput();
 
@@ -81,12 +82,11 @@ int main(int argc, char* argv[]) {
 	verts->InitTraversal();
 
 	// Get end points for later.
-	// WARNING: The assumption here is that end point ids always come first.
+	// WARNING: the assumption here is that end points always come first.
 	vtkSmartPointer<vtkIdList> endPointIds = vtkSmartPointer<vtkIdList>::New();
 	verts->GetNextCell(endPointIds);
 
 	// Get bifurcation points.
-	// WARNING: The assumption here is that bifurcation point ids always come first.
 	vtkSmartPointer<vtkIdList> bifurcationIds = vtkSmartPointer<vtkIdList>::New();
 	verts->GetNextCell(bifurcationIds);
 
@@ -104,6 +104,7 @@ int main(int argc, char* argv[]) {
 	while(true)
 	{
 		// Find the spine indicated by the spineId.
+		// TODO: Surely there's an easier way for this traversal.
 		allSpines->InitTraversal();
 		vtkSmartPointer<vtkIdList> spineIds = vtkSmartPointer<vtkIdList>::New();
 		vtkIdType searchId = 0;
@@ -121,28 +122,13 @@ int main(int argc, char* argv[]) {
 		}
 		const int spineSize = spineIds->GetNumberOfIds();
 
-		// Determine if this is a bifurcation.
-		// Remember the position if this is the case.
-		// TODO: Check the spine contains only one bifurcation.
-		bool bifurcation = false;
-		vtkIdType bifurcationPos = -1;
-		for(vtkIdType bifPos = 0; bifPos < bifurcationIds->GetNumberOfIds(); bifPos++)
-		{
-			bifurcationPos = spineIds->IsId(bifurcationIds->GetId(bifPos));
-			if(bifurcationPos != -1)
-			{
-				bifurcation = true;
-				maxInputId = 2;
-				break;
-			}
-		}
-
 		// Prepare to append points.
 		if(inputId == 0)
 		{
 			appendPoints = vtkSmartPointer<vtkAppendPoints>::New();
 			pointsToMeshDimensions = vtkSmartPointer<vtkUnsignedIntArray>::New();
 			pointsToMeshDimensions->InsertNextValue(numRadialQuads);
+			pointsToMeshDimensions->InsertNextValue(spineSize - 1);
 		}
 
 		vtkSmartPointer<vtkCentrelineToDbiharPatch> dbiharPatchFilter = vtkSmartPointer<vtkCentrelineToDbiharPatch>::New();
@@ -152,12 +138,6 @@ int main(int argc, char* argv[]) {
 		dbiharPatchFilter->SetArchDerivScale(3.2);
 		dbiharPatchFilter->SetEdgeDerivScale(4.0);
 		dbiharPatchFilter->Update();
-
-		// Set dimensions for a bifurcation.
-		if(bifurcation)
-		{
-			pointsToMeshDimensions->InsertNextValue(bifurcationPos);
-		}
 
 		// Send output to appendPoints.
 		appendPoints->AddInputData(dbiharPatchFilter->GetOutput());
@@ -169,11 +149,7 @@ int main(int argc, char* argv[]) {
 		{
 			appendPoints->Update();
 
-			// Set dimensions for a straight segment.
-			if(!bifurcation)
-			{
-				pointsToMeshDimensions->InsertNextValue(spineSize - 1);
-			}
+			vtkDbiharStatic::PrintDataArray(pointsToMeshDimensions);
 
 			// Run pointsToMesh filter.
 			vtkSmartPointer<vtkPointsToMeshFilter> pointsToMeshFilter = vtkSmartPointer<vtkPointsToMeshFilter>::New();
@@ -192,7 +168,8 @@ int main(int argc, char* argv[]) {
 	fullMeshJoiner->Update();
 
 	vtkDbiharStatic::ShowPolyData(fullMeshJoiner->GetOutput());
-	vtkDbiharStatic::WritePolyData(fullMeshJoiner->GetOutput(), (prefix + "quadMeshFullc4080.vtp").c_str());
+	// vtkDbiharStatic::WritePolyData(fullMeshJoiner->GetOutput(), (prefix + "quadMeshFullc120.vtp").c_str());
+	vtkDbiharStatic::WritePolyData(fullMeshJoiner->GetOutput(), "quadMeshFullc120.vtp");
 
 	int numECs = 4;
 	int numSMCs = 4;
@@ -202,7 +179,8 @@ int main(int argc, char* argv[]) {
 	subdivideECMesh->SetColumns((vtkDbiharStatic::SMC_CIRC / vtkDbiharStatic::EC_CIRC) * numSMCs);
 	subdivideECMesh->Update();
 
-	vtkDbiharStatic::WritePolyData(subdivideECMesh->GetOutput(), (prefix + "quadMeshFullECc4080.vtp").c_str());
+	// vtkDbiharStatic::WritePolyData(subdivideECMesh->GetOutput(), (prefix + "quadMeshFullECc120.vtp").c_str());
+	vtkDbiharStatic::WritePolyData(subdivideECMesh->GetOutput(), "quadMeshFullECc120.vtp");
 
 	vtkSmartPointer<vtkSubdivideMesh> subdivideSMCMesh = vtkSmartPointer<vtkSubdivideMesh>::New();
 	subdivideSMCMesh->SetInputData(fullMeshJoiner->GetOutput());
@@ -210,9 +188,11 @@ int main(int argc, char* argv[]) {
 	subdivideSMCMesh->SetColumns(numSMCs);
 	subdivideSMCMesh->Update();
 
-	vtkDbiharStatic::WritePolyData(subdivideSMCMesh->GetOutput(), (prefix + "quadMeshFullSMCc4080.vtp").c_str());
+	// vtkDbiharStatic::WritePolyData(subdivideSMCMesh->GetOutput(), (prefix + "quadMeshFullSMCc120.vtp").c_str());
+	vtkDbiharStatic::WritePolyData(subdivideSMCMesh->GetOutput(), "quadMeshFullSMCc120.vtp");
 
-	int skipLength = 16;
+#if 0
+	int skipLength = 10;
 	for (int i = 0; i < endPointIds->GetNumberOfIds(); i++)
 	{
 		vtkSmartPointer<vtkSkipSegmentFilter> skipSegmentFilter = vtkSmartPointer<vtkSkipSegmentFilter>::New();
@@ -238,7 +218,8 @@ int main(int argc, char* argv[]) {
 		triangleCapFilter->SetInputData(endCapFilter->GetOutput());
 		triangleCapFilter->Update();
 
-		vtkDbiharStatic::WriteStlData(triangleCapFilter->GetOutput(), (prefix + SSTR("triCap_" << i << "_c4080.stl")).c_str());
+		// vtkDbiharStatic::WriteStlData(triangleCapFilter->GetOutput(), (prefix + SSTR("triCap_" << i << "_c120.stl")).c_str());
+		vtkDbiharStatic::WriteStlData(triangleCapFilter->GetOutput(), (SSTR("triCap_" << i << "_c120.stl")).c_str());
 	}
 
 	fullMeshJoiner->Update();
@@ -247,10 +228,12 @@ int main(int argc, char* argv[]) {
 	triangleFullMeshFilter->AddInputData(fullMeshJoiner->GetOutput());
 
 	triangleFullMeshFilter->Update();
-
-	vtkDbiharStatic::WriteStlData(triangleFullMeshFilter->GetOutput(), (prefix + "triMeshFullc4080.stl").c_str());
+	// vtkDbiharStatic::WriteStlData(triangleFullMeshFilter->GetOutput(), (prefix + "triMeshFullc120.stl").c_str());
+	vtkDbiharStatic::WriteStlData(triangleFullMeshFilter->GetOutput(), "triMeshFullc120.stl");
+#endif
 
 	std::cout << "Exiting " << __FILE__ << std::endl;
 
 	return EXIT_SUCCESS;
 }
+

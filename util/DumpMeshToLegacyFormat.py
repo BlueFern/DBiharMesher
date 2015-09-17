@@ -7,6 +7,9 @@ legacy Coupled Cells code.
 
 The code reorders cells and produces the required files in TXT format.
 VTK files are written out for visual verification.
+
+This code assumes there are three branches (parent and two daughters) in the data.
+
 """
 
 import os
@@ -23,16 +26,6 @@ numSMCsPerQuad = numSMCsPerCol * numSMCsPerRow
 
 numQuadsPerRing = 0
 meshSet = []
-
-
-'''
-numQuadsPerRing = 64
-meshSet = [
-"quadMeshFullc8064.vtp",
-"quadMeshFullECc8064.vtp",
-"quadMeshFullSMCc8064.vtp"
-]
-''' and None
 
 # VTK files to write.
 taskVTKFiles = [
@@ -108,7 +101,7 @@ def writeLegacyVTK():
     taskMeshReader.Update()
 
     taskMesh = taskMeshReader.GetOutput()
-    
+
     # Get the range of branch labels.
     labelRange = [0, 0]
     taskMesh.GetCellData().GetScalars().GetRange(labelRange, 0)
@@ -128,7 +121,7 @@ def writeLegacyVTK():
     rightCellsFile = open(taskTXTFiles[5], 'w')
 
     # Store the number of rings for each label. 
-    numRingsPerLabel = {}   
+    numRingsPerLabel = {}
 
     # For every label in the range of labels we want to extract all cells/quads.
     for label in labelRange:
@@ -202,11 +195,11 @@ def writeLegacyVTK():
                         # ... with a new id.
                         newId = reorderedPoints.InsertNextPoint(point)
                         pointIdList.append(newId)
-                        
+
                         # Write out the point.
                         pointStr = ' '.join(format(i , '.6f') for i in point)
                         pointsOf.write(pointStr + '\n')
-                        
+
                         # To make it easier for remembering the number of points instered in a row.
                         if cellNum == 0 and pPos == 0:
                             rowBasePrev = newId
@@ -255,7 +248,7 @@ def writeLegacyVTK():
                                     pointIdList.append(long(rowBase + cellNum))
 
                 # print pointIdList, rowBase
-                
+
                 # Insert the ids into the cell array.
                 newCell = vtk.vtkQuad()
                 newCell.GetPointIds().Reset()
@@ -296,7 +289,7 @@ def writeLegacyVTK():
 
     print "Rings per label:", numRingsPerLabel, "..."
     ringsPerLabelVals = numRingsPerLabel.values()
-    
+
     # Check all rings per label values are the same.
     assert ringsPerLabelVals[1:] == ringsPerLabelVals[:-1], "All values of rings per label must be identical. Generated output is invalid ..."
 
@@ -423,7 +416,7 @@ def writeLegacyVTK():
         print cellsOf
         print centPointsOf
         print centCellsOf
-        
+
         # New vtkPoints for storing reordered points.
         reorderedPoints = vtk.vtkPoints()
 
@@ -471,7 +464,7 @@ def writeLegacyVTK():
                             # Write out the point.
                             pointStr = ' '.join(format(i , '.6f') for i in point)
                             pointsOf.write(pointStr + '\n')
-                            
+
                             if ecNum == 0 and pPos == 0:
                                 rowBasePrev = newId
                         else:
@@ -519,7 +512,7 @@ def writeLegacyVTK():
                                         pointIdList.append(long(rowBase + ecNum))
 
                     # print pointIdList, rowBase
-                    
+
                     # Insert the ids into the cell array.
                     newCell = vtk.vtkQuad()
                     newCell.GetPointIds().Reset()
@@ -595,7 +588,7 @@ def writeLegacyVTK():
     leftCentroidCellsFile.close()
 
     rightPointsFile.close()
-    rightCellsFile.close()    
+    rightCellsFile.close()
     rightCentroidPointsFile.close()
     rightCentroidCellsFile.close()
 
@@ -610,7 +603,7 @@ def writeLegacyVTK():
     smcMesh = smcMeshReader.GetOutput()
     print "There are", smcMesh.GetNumberOfCells(), "SMCs in total ..."
 
-    # Prepare the stupid TXT files for output.    
+    # Prepare the stupid TXT files for output.
     parentPointsFile = open(smcTXTFiles[0], 'w')
     parentCellsFile = open(smcTXTFiles[1], 'w')
 
@@ -649,7 +642,7 @@ def writeLegacyVTK():
         selectionExtractor.SetInput(0, smcMesh)
         selectionExtractor.SetInput(1, selection)
         selectionExtractor.Update()
-        
+
         extractedSMCs = selectionExtractor.GetOutput()
 
         # Ring ids list for traversal.
@@ -682,7 +675,7 @@ def writeLegacyVTK():
 
         # Create new vtkPolyData object for the new reordered mesh.
         reorderedSMCMeshBranch = vtk.vtkPolyData()
-        
+
         # Insert our new points.
         reorderedSMCMeshBranch.SetPoints(extractedSMCs.GetPoints())
 
@@ -728,7 +721,7 @@ def writeLegacyVTK():
 
                     # The ids to be written to the TXT file.
                     pointIdList = [smcCell.GetNumberOfPoints()]
-                    
+
                     # Write the appropriate points to the TXT file.
                     for pPos in range(0, smcCell.GetNumberOfPoints()):
                         newPoint = False
@@ -803,14 +796,14 @@ def writeLegacyVTK():
                                         pointIdList.append(long(rowBase + smcNum))
 
                     # print pointIdList, rowBase
-    
+
                     # Insert the ids into the cell array.
                     newCell = vtk.vtkQuad()
                     newCell.GetPointIds().Reset()
                     for id in pointIdList[1:]:
                         newCell.GetPointIds().InsertNextId(id)
                     reorderedCellArray.InsertNextCell(newCell)
-                    
+
                     # Write the ids to the TXT file.
                     pointIdListStr = ' '.join(str(i) for i in pointIdList)
                     cellsOf.write(pointIdListStr + '\n')
@@ -822,7 +815,7 @@ def writeLegacyVTK():
 
         # Create new vtkPolyData object for the new reordered mesh.
         reorderedSMCs = vtk.vtkPolyData()
-        
+
         # Put the reordered points and cells in to the mesh.
         reorderedSMCs.SetPoints(reorderedPoints)
         reorderedSMCs.SetPolys(reorderedCellArray)
@@ -865,7 +858,7 @@ def writeLegacyVTK():
     % (numECsPerCol *numECsPerRow, numECsPerCol, numECsPerRow))
 
     configFile.close()
-    
+
     print "Now it is all done for real ..."
 
 def main():
