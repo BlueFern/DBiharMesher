@@ -136,7 +136,7 @@ target_link_libraries(vtkRescaleUnits
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/test)
 
-set(testLibs vtkIOXML vtkIOLegacy vtkIOImage vtkRenderingAnnotation vtkRenderingFreeTypeOpenGL vtkInteractionStyle vtkFiltersSources vtkFiltersGeometry)
+set(testLibs vtkIOXML vtkIOLegacy vtkIOImage vtkRenderingAnnotation vtkRenderingOpenGL vtkInteractionStyle vtkFiltersSources vtkFiltersGeometry)
 
 add_executable(testWrapDbihar0
 	test/testWrapDbihar0.cxx)
@@ -341,6 +341,24 @@ target_link_libraries(testPipelineFull1
 	vtkScalarRadiiToVectorsFilter
 	vtkFiltersGeometry
 	vtkSubdivideMeshDynamic
+	vtkSubdivideQuadFilter
+	vtkCentrelineToDbiharPatch
+	vtkDbiharPatchFilter
+	vtkCentrelinePartitioner
+	vtkPointsToMeshFilter
+	vtkSkipSegmentFilter
+	vtkEndCapFilter
+	vtkRescaleUnits
+	vtkCentrelineResampler
+	${testLibs})
+
+add_executable(meshGen4080
+	src/meshGen4080.cxx)
+target_link_libraries(meshGen4080
+	vtkDbiharStatic
+	vtkScalarRadiiToVectorsFilter
+	vtkFiltersGeometry
+	vtkSubdivideMesh
 	vtkSubdivideQuadFilter
 	vtkCentrelineToDbiharPatch
 	vtkDbiharPatchFilter
