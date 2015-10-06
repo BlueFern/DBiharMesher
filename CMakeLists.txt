@@ -496,6 +496,24 @@ target_link_libraries(meshGen4080
 	vtkCentrelineResampler
 	${testLibs})
 
+add_executable(meshGen8000
+	src/meshGen8000.cxx)
+target_link_libraries(meshGen8000
+	vtkDbiharStatic
+	vtkScalarRadiiToVectorsFilter
+	vtkFiltersGeometry
+	vtkSubdivideMesh
+	vtkSubdivideQuadFilter
+	vtkCentrelineToDbiharPatch
+	vtkDbiharPatchFilter
+	vtkCentrelinePartitioner
+	vtkPointsToMeshFilter
+	vtkSkipSegmentFilter
+	vtkEndCapFilter
+	vtkRescaleUnits
+	vtkCentrelineResampler
+	${testLibs})
+
 add_executable(meshGen8064
 	src/meshGen8064.cxx)
 target_link_libraries(meshGen8064

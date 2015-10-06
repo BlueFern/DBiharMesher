@@ -92,6 +92,15 @@ smcTXTFiles = [
 def writeLegacyVTK():
     # This is where the data is for testing purposes.
     print "Current working directory:", os.getcwd()
+    
+    if os.path.isdir("vtk") == False:
+        os.makedirs("vtk")
+        print "Cretated vtk output directory..."
+    
+    if os.path.isdir("files") == False:
+        os.makedirs("files")
+        print "Created files ouptut directory..."
+        
 
     # Working with the task mesh.
     # Working with the task mesh.
