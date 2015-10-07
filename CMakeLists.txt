@@ -494,6 +494,7 @@ target_link_libraries(meshGen4080
 	vtkEndCapFilter
 	vtkRescaleUnits
 	vtkCentrelineResampler
+	vtksys
 	${testLibs})
 
 add_executable(meshGen8000

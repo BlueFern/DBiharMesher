@@ -18,7 +18,7 @@ del importPath
 import DumpMeshToLegacyFormat
 
 # This is for the c4080 mesh.
-DumpMeshToLegacyFormat.numQuadsPerRing0 = 40
+DumpMeshToLegacyFormat.numQuadsPerRing = 40
 DumpMeshToLegacyFormat.meshSet = [
 "quadMeshFullc4080.vtp",
 "quadMeshFullECc4080.vtp",

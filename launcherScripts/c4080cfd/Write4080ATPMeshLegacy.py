@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Write EC and SMC Meshes in legacy VTK format as .vtk.
+Write initial ATP Profile for an ECs Mesh in legacy VTK format as .vtk.
 """
 
 import os
@@ -9,24 +9,22 @@ import sys
 # Run in current directory.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-# Relative import path for the DumpMeshToLegacyFormat script.
+# Relative import path for the DumpATPMeshToLegacyFormat script.
 importPath = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../util'))
 if not importPath in sys.path:
     sys.path.insert(1, importPath)
 del importPath
 
-import DumpMeshToLegacyFormat
+import DumpATPMeshToLegacyFormat
 
-# This is for the c8064 mesh.
-DumpMeshToLegacyFormat.numQuadsPerRing0 = 64
-DumpMeshToLegacyFormat.meshSet = [
-"quadMeshFullc8064.vtp",
-"quadMeshFullECc8064.vtp",
-"quadMeshFullSMCc8064.vtp"
-]
+# This is for the c4080 mesh.
+DumpATPMeshToLegacyFormat.numQuadsPerRing0 = 40
+DumpATPMeshToLegacyFormat.taskMeshIn = "quadMeshFullc4080.vtp"
+DumpATPMeshToLegacyFormat.ecMeshIn = "quadMeshFullECc4080.vtp"
+DumpATPMeshToLegacyFormat.atpMeshIn = "quadMeshFullATPc4080.vtp"
 
 def main():
-    DumpMeshToLegacyFormat.writeLegacyVTK()
+    DumpATPMeshToLegacyFormat.writeATPLegacyVTK()
 
 if __name__ == '__main__':
     print "Starting", os.path.basename(__file__)

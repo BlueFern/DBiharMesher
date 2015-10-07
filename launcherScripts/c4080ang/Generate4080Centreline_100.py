@@ -18,9 +18,9 @@ del importPath
 import CentrelineGenerator
 
 # A centreline for a mesh with 4080 cores.
-CentrelineGenerator.segmentList = [8.84,[(8.84,60),None,None],[(8.84,120),None,None]]
+CentrelineGenerator.segmentList = [8.84,[(8.84,70),None,None],[(8.84,170),None,None]]
 CentrelineGenerator.radiusBase = 1.2732395447351628
-CentrelineGenerator.outputFileName = "c4080Centreline.vtk"
+CentrelineGenerator.outputFileName = "c4080Centreline_100.vtk"
 CentrelineGenerator.sphereRadius = None
 
 def main():
