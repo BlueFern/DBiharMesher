@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
 
 	std::cout << "Starting " << __FILE__ << std::endl;
 
-	// Bulid a circular patch.
+	// Build a circular patch.
 
 	int xQuads = 20; // m = 19. Num quads should be even, to make sure m is odd.
 	int yQuads = 20; // n = 19. Num quads should be even, to make sure n is odd.
@@ -71,9 +71,12 @@ int main(int argc, char* argv[]) {
 
 	for(vtkIdType pId = 0; pId < boundary->GetPointIds()->GetNumberOfIds(); pId++)
 	{
+
 		std::cout << boundary->GetPointIds()->GetId(pId) << " ";
 	}
 	std::cout << std::endl;
+
+
 
 	vtkSmartPointer<vtkCellArray> boundaries = vtkSmartPointer<vtkCellArray>::New();
 	boundaries->InsertNextCell(boundary);
@@ -127,6 +130,19 @@ int main(int argc, char* argv[]) {
 	vtkSmartPointer<vtkTriangleFilter> triangulatorFilter = vtkSmartPointer<vtkTriangleFilter>::New();
 	triangulatorFilter->SetInputData(gridGeometryFilter->GetOutput());
 	triangulatorFilter->Update();
+
+//	for(vtkIdType pId = 0; pId < boundary->GetPointIds()->GetNumberOfIds(); pId++)
+//	{
+//
+//		double *p = points->GetPoint(pId);
+//		for (int i = 0; i < 3; i++)
+//		{
+//			std::cout << p[i] << " ";
+//		}
+//		std::cout << std::endl;
+//	}
+
+
 
 	vtkDbiharStatic::ShowPolyDataWithGrid(triangulatorFilter->GetOutput(), NULL);
 

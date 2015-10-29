@@ -194,6 +194,20 @@ target_link_libraries(testWrapDbihar7
     vtkDbiharStatic
 	vtkDbiharPatchFilter
 	${testLibs})
+	
+add_executable(testWrapDbihar8
+	test/testWrapDbihar8.cxx)
+target_link_libraries(testWrapDbihar8
+    vtkDbiharStatic
+	vtkDbiharPatchFilter
+	${testLibs})
+	
+add_executable(testWrapDbihar9
+	test/testWrapDbihar9.cxx)
+target_link_libraries(testWrapDbihar9
+    vtkDbiharStatic
+	vtkDbiharPatchFilter
+	${testLibs})
 
 add_executable(testCentrelineResampler
 	src/vtkCentrelineResampler.cxx

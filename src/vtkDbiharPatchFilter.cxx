@@ -47,8 +47,8 @@ vtkDbiharPatchFilter::vtkDbiharPatchFilter()
 
 	this->Alpha = 0.0;
 	this->Beta = 0.0;
-	this->Tol = 1e-3;
-	this->ITCG = 10;
+	this->Tol = 1e-6;
+	this->ITCG = 20;
 
 	vtkSmartPointer<vtkCallbackCommand> progressCallback = vtkSmartPointer<vtkCallbackCommand>::New();
 	progressCallback->SetCallback(this->ProgressFunction);
@@ -110,7 +110,7 @@ int vtkDbiharPatchFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 	{
 		lw = (int)(std::max(7 * this->NDim, 3 * this->MDim) + 2 * (this->NDim + this->MDim) + 19 + 20 * (this->NDim + 3));
 	}
-	else if(this->IFlag == 4)
+	else if(this->IFlag == 3 || this->IFlag == 4)
 	{
 		lw = (int)(std::max(3 * this->MDim, 4 * this->NDim) + 4 * this->NDim + 2 * this->MDim +0.5 * pow(this->NDim + 1, 2) + 19);
 	}

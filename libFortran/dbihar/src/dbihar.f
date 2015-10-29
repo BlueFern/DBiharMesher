@@ -134,7 +134,7 @@ c                     scales his problem.
 c                     tol is a dummy variable if iflag is 3 or 4.
 c
 c     iflag
-c              =1     this option is not available in version 2.0 .
+c              =1     this option is not available in version 2.0.
 c
 c              =2     if this is the first solution on this grid
 c                     using conjugate gradients with fourier trans-

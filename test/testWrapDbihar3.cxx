@@ -13,7 +13,6 @@
 #include <vtkDoubleArray.h>
 #include <vtkPointData.h>
 #include <vtkMath.h>
-
 #include "vtkDbiharPatchFilter.h"
 #include "vtkDbiharStatic.h"
 #include "wrapDbiharConfig.h"
@@ -58,7 +57,7 @@ int main(int argc, char* argv[]) {
 		double point[3] = {0.0};
 
 		// Bifurcation arc.
-		// Inserting points along the y = y1 boundary segment.
+		// Inserting points along the x = 0 boundary segment.
 		// Scaling in the Y dimension around this edge is done for smoothing the surface when two patches are joined together.
 		if(pId < cQuads)
 		{
@@ -77,8 +76,8 @@ int main(int argc, char* argv[]) {
 			}
 			point[0] = x;
 		}
-		// Line parallel to the centreline.
-		// Inserting points along the x = x2 boundary segment.
+		// Line parallel to the centerline.
+		// Inserting points along z = z2 boundary segment .
 		else if(pId < cQuads + yQuads)
 		{
 			double l = (pId - cQuads) * (Len / (double)yQuads);
@@ -86,8 +85,7 @@ int main(int argc, char* argv[]) {
 			point[1] = y + l * sin(alpha);
 			point[2] = z2;
 		}
-		// Terminal arc.
-		// Inserting points along the y = y2 boundary segment.
+		// Inserting points along the upper-arch-segment.
 		else if(pId < cQuads * 2 + yQuads)
 		{
 			// First, rotate radius vector around (0,0,0).
@@ -110,8 +108,8 @@ int main(int argc, char* argv[]) {
 			point[1] = sin(alpha) * Len + sin(alpha) * tmpPoint[1];
 			point[2] = tmpPoint[2];
 		}
-		// Line parallel to the centreline.
-		// Inserting points along the x = x1 boundary segment.
+		// Line parallel to the centerline.
+		// Inserting points along the z = z1 boundary segment.
 		else
 		{
 			double l = (pId - cQuads - yQuads - cQuads) * (Len / (double)yQuads);
@@ -139,6 +137,7 @@ int main(int argc, char* argv[]) {
 	derivatives->SetName(vtkDbiharPatchFilter::DERIV_ARR_NAME);
 	derivatives->SetNumberOfComponents(3);
 
+
 	// Base magnitude of derivatives on straight edges.
 	double mag = 60.0; // Should be calculated from radius.
 	// Additional scaling for derivatives on straight edges.
@@ -153,7 +152,7 @@ int main(int argc, char* argv[]) {
 		deriv[1] = 0.0;
 		deriv[2] = 0.0;
 
-		// Inserting derivatives along the y = y1 boundary segment, skipping the corner case.
+		// Inserting derivatives along the x = 0 boundary segment, skipping the corner case.
 		if(pId < cQuads)
 		{
 			if(pId != 0)
@@ -163,7 +162,7 @@ int main(int argc, char* argv[]) {
 				deriv[2] = 0.0;
 			}
 		}
-		// Inserting derivatives along the x = x2 boundary segment, skipping the corner case.
+		// Inserting derivatives along the z = z2 boundary segment, skipping the corner case.
 		else if(pId < cQuads + yQuads)
 		{
 			// Parametric position along this edge: (0, 1).
@@ -176,8 +175,9 @@ int main(int argc, char* argv[]) {
 				deriv[1] = (-cos(derivAlpha) * mag) * (1 + (-dMag * dL + dMag)) * quadraticFunction(dL);
 				deriv[2] = 0.0;
 			}
+
 		}
-		// Inserting derivatives along the y = y2 boundary segment, skipping the corner case.
+		// Inserting derivatives along the upper arch, skipping the corner case.
 		else if(pId < cQuads * 2 + yQuads)
 		{
 			if(pId != cQuads + yQuads)
@@ -187,7 +187,7 @@ int main(int argc, char* argv[]) {
 				deriv[2] = 0.0;
 			}
 		}
-		// Inserting derivatives along the x = x1 boundary segment, skipping the corner case.
+		// Inserting derivatives along the z = z1 boundary segment, skipping the corner case.
 		else
 		{
 			// Parametric position along this edge: (0, 1).
@@ -206,9 +206,14 @@ int main(int argc, char* argv[]) {
 
 	inputPatch->GetPointData()->SetVectors(derivatives);
 
+
+
+
+
 	// showPolyData(inputPatch, NULL);
 
 	vtkSmartPointer<vtkDbiharPatchFilter> patchFilter = vtkSmartPointer<vtkDbiharPatchFilter>::New();
+
 
 	// Set the bounds of the UV space.
 	patchFilter->SetA(0.0);
@@ -236,6 +241,9 @@ int main(int argc, char* argv[]) {
 	structuredGrid->SetPoints(outputPatch->GetPoints());
 
 	vtkDbiharStatic::ShowPolyDataWithGrid(inputPatch, structuredGrid);
+
+	vtkDbiharStatic::WritePolyData(inputPatch, "inputPatch.vtp");
+
 
 	std::cout << "Exiting " << __FILE__ << std::endl;
 

@@ -52,6 +52,7 @@ int main(int argc, char* argv[]) {
 
 	vtkPolyData *vesselCentreline = vtkPolyData::SafeDownCast(vesselCentrelineReader->GetOutput());
 
+
 	vtkSmartPointer<vtkRescaleUnits> rescaleUnits = vtkSmartPointer<vtkRescaleUnits>::New();
 	rescaleUnits->SetInputData(vesselCentreline);
 	rescaleUnits->SetScale(1000); // Convert mm to µm.
@@ -69,6 +70,7 @@ int main(int argc, char* argv[]) {
 	scalarRadiiToVectorsFilter->Update();
 
 	// vtkDbiharStatic::ShowPolyData(scalarRadiiToVectorsFilter->GetOutput());
+	vtkDbiharStatic::WritePolyData(scalarRadiiToVectorsFilter->GetOutput(), "c4080_RadiiToVectors.vtp");
 
 	vtkSmartPointer<vtkCentrelinePartitioner> centrelinePartitioner = vtkSmartPointer<vtkCentrelinePartitioner>::New();
 	centrelinePartitioner->SetInputData(scalarRadiiToVectorsFilter->GetOutput());
