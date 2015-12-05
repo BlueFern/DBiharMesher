@@ -8,10 +8,12 @@ A horrible quick and dirty script to build a mesh in our desired format.
 """
 import vtk
 
+bifurcation = True
 xQuads = 4
 yQuads = 2
 quadLength = 200
-quadHeight = 300
+quadHeight = 260
+
 
 def buildATPMesh(polydata, filename):
     
@@ -60,8 +62,13 @@ def buildMesh(xNumCells, yNumCells, filename):
     branchId.SetName("branchId")
 
     
-    # Three rectangles in space.
-    for k in range(0, 3):
+    # Three rectangles in space for a bifurcation.
+    if bifurcation == True:
+        stopAt = 3
+    else:
+        stopAt = 1
+
+    for k in range(0, stopAt):
         if k == 1:
             xBase = - quadLength * (xQuads / 2)
             yBase = quadHeight * yQuads

@@ -20,7 +20,6 @@ numECsPerCol = 0
 atpGradient = 0
 atpMin = 0.1
 atpMax = 1.0
-
 outMin = -1.0
 outMax = 1.0
 
@@ -52,7 +51,7 @@ def buildATPMesh():
 
     centreline = centrelineReader.GetOutput()
     origin = centreline.GetPoint(0)
-    print origin
+    print 'origin:', origin
 
     # Put the ecMesh through centroids filter.
     centroidFilter = vtk.vtkCellCenters()

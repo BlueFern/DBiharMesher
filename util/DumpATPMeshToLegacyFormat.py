@@ -43,6 +43,7 @@ atpTXTFiles = [
 def writeATPLegacyVTK():
     # This is where the data is for testing purposes.
     print "Current working directory:", os.getcwd()
+    print taskMeshIn
 
     # Working with the task mesh junt to figure out the quads and rows numbers.
     taskMeshReader = vtk.vtkXMLPolyDataReader()

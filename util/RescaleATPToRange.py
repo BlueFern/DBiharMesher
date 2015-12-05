@@ -8,7 +8,9 @@ import os
 import vtk
 
 inputFile = ''
+inputSurfaceFile = ''
 outputFile = ''
+outputSurfaceFile = ''
 outMin = 0.0
 outMax = 1.0
 
@@ -19,6 +21,7 @@ def rescaleATPToRange():
     # This is where the data is for testing purposes.
     print "Current working directory:", os.getcwd()
 
+    print 'Reading', inputFile
     atpReader = vtk.vtkXMLPolyDataReader()
     atpReader.SetFileName(inputFile)
     atpReader.Update()
@@ -40,11 +43,26 @@ def rescaleATPToRange():
     atpDataset.GetPointData().RemoveArray('ATP')
     atpDataset.GetPointData().RemoveArray('tau_w')
     atpDataset.GetCellData().RemoveArray('initialJPLC')
-        
+
+    print 'Writing', outputFile
     atpWriter = vtk.vtkXMLPolyDataWriter()
     atpWriter.SetInput(atpDataset)
     atpWriter.SetFileName(outputFile)
     atpWriter.Update()
+
+    print 'Reading', inputSurfaceFile
+    surfaceReader = vtk.vtkXMLPolyDataReader()
+    surfaceReader.SetFileName(inputSurfaceFile)
+    surfaceReader.Update()
+
+    surface = surfaceReader.GetOutput()
+    surface.GetCellData().AddArray(atpR)
+
+    print 'Writing', outputSurfaceFile
+    surfaceWriter = vtk.vtkXMLPolyDataWriter()
+    surfaceWriter.SetInput(surface)
+    surfaceWriter.SetFileName(outputSurfaceFile)
+    surfaceWriter.Update()
 
 def usage():
     print 'This script is to be run with global parameters (input ATP, desired value range, etc.) set in the calling script.'
