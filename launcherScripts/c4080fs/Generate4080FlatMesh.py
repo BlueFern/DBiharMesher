@@ -14,16 +14,15 @@ import FlatMeshGenerator
 
 def main():
 
-    FlatMeshGenerator.bifurcation = False
-    FlatMeshGenerator.xQuads = 50
-    FlatMeshGenerator.yQuads = 40
+    FlatMeshGenerator.xQuads = 40
+    FlatMeshGenerator.yQuads = 34
         
-    taskMesh = FlatMeshGenerator.buildMesh(1, 1, "quadMeshFullc2000.vtp")
+    taskMesh = FlatMeshGenerator.buildMesh(1, 1, "quadMeshFullc4080.vtp")
     
-    ecMesh = FlatMeshGenerator.buildMesh(20, 4, "quadMeshFullECc2000.vtp")
-    smcMesh = FlatMeshGenerator.buildMesh(4, 52, "quadMeshFullSMCc2000.vtp")
+    ecMesh = FlatMeshGenerator.buildMesh(20, 4, "quadMeshFullECc4080.vtp")
+    smcMesh = FlatMeshGenerator.buildMesh(4, 52, "quadMeshFullSMCc4080.vtp")
 
-    atpMesh = FlatMeshGenerator.buildATPMesh(ecMesh, "quadMeshFullATPc2000.vtp")
+    atpMesh = FlatMeshGenerator.buildATPMesh(ecMesh, "quadMeshFullATPc4080.vtp")
     
 if __name__ == "__main__":
     main()

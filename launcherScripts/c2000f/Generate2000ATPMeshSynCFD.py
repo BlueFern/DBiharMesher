@@ -39,7 +39,7 @@ centresFilter.Update()
 centres = centresFilter.GetOutput()
 
 sphere_rad = 1500
-centre = (5000, 7000, 0)
+centre = (5000, 6500, 0)
 max_atp = 0.68
 
 # Do HI ATP by running over all cell centres in polydata and processing only the ones that fall in the specified radius.

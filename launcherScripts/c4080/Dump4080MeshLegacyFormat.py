@@ -10,7 +10,7 @@ import sys
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Relative import path for the DumpMeshToLegacyFormat script.
-importPath = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../util'))
+importPath = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../util'))
 if not importPath in sys.path:
     sys.path.insert(1, importPath)
 del importPath
@@ -18,7 +18,7 @@ del importPath
 import DumpMeshToLegacyFormat
 
 # This is for the c4080 mesh.
-DumpMeshToLegacyFormat.numQuadsPerRing0 = 40
+DumpMeshToLegacyFormat.numQuadsPerRing = 40
 DumpMeshToLegacyFormat.meshSet = [
 "quadMeshFullc4080.vtp",
 "quadMeshFullECc4080.vtp",

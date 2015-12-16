@@ -150,6 +150,8 @@ def writeLegacyVTK():
         numQuadRowsPerBranch = taskMeshBranch.GetNumberOfCells() / numQuadsPerRing;
         numRingsPerLabel[label] = numQuadRowsPerBranch
         ringIds = range(0, numQuadRowsPerBranch);
+
+        # Working with rows in reverse order: UPSTREAM.
         ringIds.reverse()
 
         # Decide which TXT files to write to.
@@ -198,7 +200,7 @@ def writeLegacyVTK():
                                 newPoint = True
 
                     if newPoint == True:
-                        # print pPos,
+
                         # Inserting a new point...
                         point = taskMeshBranch.GetPoint(cell.GetPointId(pPos))
                         # ... with a new id.
@@ -463,7 +465,7 @@ def writeLegacyVTK():
                                     newPoint = True
 
                         if newPoint == True:
-                            # print pPos,
+
                             # Inserting a new point...
                             point = reorderedECMeshBranch.GetPoint(ecCell.GetPointId(pPos))
                             # ... with a new id.
@@ -747,7 +749,7 @@ def writeLegacyVTK():
                                 if pPos == 1:
                                     newPoint = True
                         if newPoint == True:
-                            # print pPos,
+
                             # Inserting a new point...
                             point = reorderedSMCMeshBranch.GetPoint(smcCell.GetPointId(pPos))
                             # with a new id.
