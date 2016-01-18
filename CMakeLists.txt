@@ -121,12 +121,28 @@ add_library(vtkSubdivideQuadFilter src/vtkSubdivideQuadFilter.cxx)
 target_link_libraries(vtkSubdivideQuadFilter
 	vtkFiltersHybrid)
 	
+add_library(vtkSubdivideQuadBrick src/vtkSubdivideQuadBrick.cxx)
+target_link_libraries(vtkSubdivideQuadBrick
+	vtkFiltersHybrid)
+	
 add_library(vtkSubdivideMeshDynamic src/vtkSubdivideMeshDynamic.cxx)
 target_link_libraries(vtkSubdivideMeshDynamic
 	vtkFiltersHybrid)
 	
 add_library(vtkSubdivideMesh src/vtkSubdivideMesh.cxx)
 target_link_libraries(vtkSubdivideMesh
+	vtkFiltersHybrid)
+	
+add_library(vtkSubdivideMeshBrick src/vtkSubdivideMeshBrick.cxx)
+target_link_libraries(vtkSubdivideMeshBrick
+	vtkFiltersHybrid)
+	
+add_library(vtkJoinSmcBrickMesh src/vtkJoinSmcBrickMesh.cxx)
+target_link_libraries(vtkJoinSmcBrickMesh
+	vtkFiltersHybrid)
+	
+add_library(vtkJoinEcBrickMesh src/vtkJoinEcBrickMesh.cxx)
+target_link_libraries(vtkJoinEcBrickMesh
 	vtkFiltersHybrid)
 	
 add_library(vtkRescaleUnits src/vtkRescaleUnits.cxx)
@@ -136,7 +152,7 @@ target_link_libraries(vtkRescaleUnits
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/test)
 
-set(testLibs vtkIOXML vtkIOLegacy vtkIOImage vtkRenderingAnnotation vtkRenderingOpenGL vtkInteractionStyle vtkFiltersSources vtkFiltersGeometry)
+set(testLibs vtkIOXML vtkIOLegacy vtkIOImage vtkRenderingAnnotation vtkRenderingFreeTypeOpenGL vtkInteractionStyle vtkFiltersSources vtkFiltersGeometry)
 
 add_executable(testWrapDbihar0
 	test/testWrapDbihar0.cxx)
@@ -281,6 +297,16 @@ target_link_libraries(testSubdivideQuadFilter
 	vtkSubdivideQuadFilter
 	${testLibs})
 	
+add_executable(testSubdivideQuadBrick
+	src/vtkSubdivideQuadBrick.cxx
+	test/testSubdivideQuadBrick.cxx)
+target_link_libraries(testSubdivideQuadBrick
+	vtkDbiharStatic
+	vtkScalarRadiiToVectorsFilter
+	vtkFiltersGeometry
+	vtkSubdivideQuadBrick
+	${testLibs})
+	
 add_executable(testSubdivideMeshDynamic
 	src/vtkSubdivideQuadFilter.cxx
 	src/vtkSubdivideMeshDynamic.cxx
@@ -301,6 +327,22 @@ target_link_libraries(testSubdivideMesh
 	vtkDbiharStatic
 	vtkSubdivideQuadFilter
 	vtkSubdivideMesh
+	vtkFiltersGeometry
+	${testLibs})
+	
+add_executable(testSubdivideMeshBrick
+	src/vtkJoinSmcBrickMesh.cxx
+	src/vtkJoinEcBrickMesh.cxx
+	src/vtkSubdivideQuadBrick.cxx
+	src/vtkSubdivideMeshBrick.cxx
+	test/testSubdivideMeshBrick.cxx)
+target_link_libraries(testSubdivideMeshBrick
+	vtkDbiharStatic
+	vtkJoinSmcBrickMesh
+	vtkJoinEcBrickMesh
+	vtkSubdivideMesh
+	vtkSubdivideMeshBrick
+	vtkSubdivideQuadBrick
 	vtkFiltersGeometry
 	${testLibs})
 	
@@ -437,6 +479,25 @@ target_link_libraries(meshGen960
 	vtkRescaleUnits
 	vtkCentrelineResampler
 	${testLibs})
+	
+add_executable(meshGen1008
+	src/meshGen1008.cxx)
+target_link_libraries(meshGen1008
+	vtkDbiharStatic
+	vtkScalarRadiiToVectorsFilter
+	vtkFiltersGeometry
+	vtkSubdivideMesh
+	vtkSubdivideQuadFilter
+	vtkCentrelineToDbiharPatch
+	vtkDbiharPatchFilter
+	vtkCentrelinePartitioner
+	vtkPointsToMeshFilter
+	vtkSkipSegmentFilter
+	vtkEndCapFilter
+	vtkRescaleUnits
+	vtkCentrelineResampler
+	vtksys
+	${testLibs})
 
 add_executable(meshGen2000
 	src/meshGen2000.cxx)
@@ -454,6 +515,25 @@ target_link_libraries(meshGen2000
 	vtkEndCapFilter
 	vtkRescaleUnits
 	vtkCentrelineResampler
+	${testLibs})
+	
+add_executable(meshGen2016
+	src/meshGen2016.cxx)
+target_link_libraries(meshGen2016
+	vtkDbiharStatic
+	vtkScalarRadiiToVectorsFilter
+	vtkFiltersGeometry
+	vtkSubdivideMesh
+	vtkSubdivideQuadFilter
+	vtkCentrelineToDbiharPatch
+	vtkDbiharPatchFilter
+	vtkCentrelinePartitioner
+	vtkPointsToMeshFilter
+	vtkSkipSegmentFilter
+	vtkEndCapFilter
+	vtkRescaleUnits
+	vtkCentrelineResampler
+	vtksys
 	${testLibs})
 
 add_executable(meshGen4000

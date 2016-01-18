@@ -24,6 +24,10 @@ public:
 	static const int EC_CIRC;
 	static const int EC_AXIAL;
 
+	static const int SMC;
+	static const int EC;
+
+
 	/**
 	 * Get formatted date/time stamp as string.
 	 */

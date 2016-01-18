@@ -47,6 +47,9 @@ const int vtkDbiharStatic::SMC_AXIAL = 5;
 const int vtkDbiharStatic::EC_CIRC = 10;
 const int vtkDbiharStatic::EC_AXIAL = 65;
 
+const int vtkDbiharStatic::SMC = 0;
+const int vtkDbiharStatic::EC = 1;
+
 void KeypressCallbackFunction(vtkObject* caller, long unsigned int vtkNotUsed(eventId), void *clientData, void* vtkNotUsed(callData))
 {
 	vtkRenderWindowInteractor *iren = static_cast<vtkRenderWindowInteractor*>(caller);

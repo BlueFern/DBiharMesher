@@ -17,18 +17,18 @@ int main(int argc, char* argv[]) {
 	std::cout << "Starting " << __FILE__ << std::endl;
 
 	vtkSmartPointer<vtkXMLPolyDataReader> pointsReader = vtkSmartPointer<vtkXMLPolyDataReader>::New();
-	pointsReader->SetFileName((std::string(TEST_DATA_DIR) + "/test/testSubdivideMesh.vtp").c_str());
+	pointsReader->SetFileName((std::string(TEST_DATA_DIR) + "/test/output.vtp").c_str());
 
 	pointsReader->Update();
 
-	vtkDbiharStatic::WritePolyData(pointsReader->GetOutput(), "t1.vtp");
+
 
 	vtkSmartPointer<vtkSubdivideMesh> subdivideMesh = vtkSmartPointer<vtkSubdivideMesh>::New();
 	subdivideMesh->SetInputData(pointsReader->GetOutput());
-	subdivideMesh->SetColumns(5);
-	subdivideMesh->SetRows(1);
-	subdivideMesh->Print(std::cout);
+	subdivideMesh->SetRows(52);
+	subdivideMesh->SetColumns(4);
 	subdivideMesh->Update();
+	vtkDbiharStatic::WritePolyData(subdivideMesh->GetOutput(), "quadMeshFullSMCc4080.vtp");
 
 	vtkDbiharStatic::ShowPolyData(subdivideMesh->GetOutput());
 
