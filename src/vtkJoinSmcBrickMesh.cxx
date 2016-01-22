@@ -17,7 +17,7 @@ vtkJoinSmcBrickMesh::vtkJoinSmcBrickMesh()
 
 	this->Columns = 0;
 	this->Rows = 0;
-	this->Flat = true;
+	this->Flat = false;
 	this->AxialQuads = 0;
 	this->CircQuads = 0;
 	this->Branches = -1;
@@ -40,55 +40,173 @@ int vtkJoinSmcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInf
 	vtkIdType cell2;
 	vtkIdType quadId;
 	int fixes;
+	int startPos;
+	int branchOffset;
 
 	for (int branchId = 0; branchId < this->Branches; branchId++)
 	{
 		quadId = 0;
 
-		int branchOffset = branchId * cellsInQuad * quadsInBranch;
+		branchOffset = branchId * cellsInQuad * quadsInBranch;
 		fixes = this->Rows / 2; // Number of corrections required in a single quad.
-		// First cell needed to be corrected in a quad, in each branch.
-		int startPos = this->Columns + branchOffset;
 
-		cell1  = startPos;
+		// First cell needed to be corrected in a quad, in each branch.
+		 startPos = branchOffset;
+
+		cell1  = startPos + cellsInQuad;
 		cell2 = cell1 - cellsInQuad + this->Columns - 1;
 
 		// Do each branch individually, the last iteration is most of the saddle
 		while (quadId < quadsInBranch)
 		{
-			if (quadId % this->CircQuads == 0 && !this->Flat)
-			{
-				cell2 = cell1 + (cellsInQuad * (this->CircQuads - 1)) + this->Columns - 1;
-			}
 
 			vtkIdType newPoint[6];
 			input->GetCellPoints(cell1, cell1Points);
 			input->GetCellPoints(cell2, cell2Points);
 
-			newPoint[0] = cell2Points->GetId(0);
-			newPoint[1] = cell2Points->GetId(1);
+			if (quadId % this->CircQuads < this->CircQuads / 2) // top half
+			{
 
-			newPoint[2] = cell1Points->GetId(0);
-			newPoint[3] = cell1Points->GetId(5);
+				newPoint[0] = cell2Points->GetId(5);
+				newPoint[1] = cell2Points->GetId(0);
 
-			newPoint[4] = cell2Points->GetId(3);
-			newPoint[5] = cell2Points->GetId(5);
+				newPoint[2] = cell2Points->GetId(1);
+				newPoint[3] = cell1Points->GetId(0);
 
-			input->ReplaceCell(cell2, 6, newPoint);
+				newPoint[4] = cell1Points->GetId(5);
+				newPoint[5] = cell2Points->GetId(3);
+				input->ReplaceCell(cell2, 6, newPoint);
+
+
+			}
+			else if (quadId % this->CircQuads >= this->CircQuads / 2) // doc todo: reversed point order from mirror quads
+			{
+				newPoint[0] = cell2Points->GetId(0);
+				newPoint[1] = cell2Points->GetId(5);
+
+				newPoint[2] = cell1Points->GetId(3);
+				newPoint[3] = cell1Points->GetId(5);
+
+				newPoint[4] = cell1Points->GetId(0);
+				newPoint[5] = cell1Points->GetId(1);
+				input->ReplaceCell(cell1, 6, newPoint);
+
+			}
+
 			fixes--;
 			// Finished in this quad, move to next.
 			if (fixes == 0)
 			{
 				quadId++;
-				cell1 = startPos + (cellsInQuad * quadId);
-				cell2 = cell1 - cellsInQuad + this->Columns - 1;
+
+				if  ((quadId + 1) % this->CircQuads == 0 ) //skip last row
+				{
+					quadId++;
+					cell1 += cellsInQuad + this->Columns;
+					cell2 += cellsInQuad + this->Columns;
+				}
+				else
+				{
+					cell1 = startPos + (cellsInQuad * (quadId + 1));
+					cell2 = cell1 - cellsInQuad + this->Columns - 1;
+				}
+
+
 				fixes = this->Rows / 2;
+
+				if ((quadId + 1) % this->CircQuads >= this->CircQuads / 2)
+				{
+					cell1 += this->Columns;
+					cell2 += this->Columns;
+
+				}
+				if ((quadId + 1) % this->CircQuads == this->CircQuads / 2)
+				{
+					quadId++;
+					cell1 += cellsInQuad;
+					cell2 += cellsInQuad;
+				}
+
 			}
 			else
 			{
 				cell1 += this->Columns * 2;
 				cell2 += this->Columns * 2;
 			}
+
+
+		}
+	}
+
+
+	// fix the joining if it's not flat
+	if (!this->Flat)
+	{
+		quadId = 0;
+
+		for (int branchId = 0; branchId < this->Branches; branchId++)
+		{
+			int ringId = 0;
+			branchOffset = branchId * cellsInQuad * quadsInBranch;
+			startPos = branchOffset;
+			cell1 = startPos;
+			cell2 = cell1 + cellsInQuad * (this->CircQuads - 1) + this->Columns - 1;
+			fixes = this->Rows;
+
+
+			while (ringId < this->AxialQuads)
+			{
+				vtkIdType newPoint[6];
+				input->GetCellPoints(cell1, cell1Points);
+				input->GetCellPoints(cell2, cell2Points);
+
+				if (quadId % 2 == 0)
+				{
+
+					newPoint[0] = cell2Points->GetId(0);
+					newPoint[1] = cell2Points->GetId(5);
+
+					newPoint[2] = cell1Points->GetId(0);
+					newPoint[3] = cell1Points->GetId(1);
+
+					newPoint[4] = cell1Points->GetId(3);
+					newPoint[5] = cell1Points->GetId(5);
+					input->ReplaceCell(cell1, 6, newPoint);
+				}
+				else
+				{
+					newPoint[0] = cell2Points->GetId(1);
+					newPoint[1] = cell2Points->GetId(3);
+
+					newPoint[2] = cell2Points->GetId(5);
+					newPoint[3] = cell1Points->GetId(0);
+
+					newPoint[4] = cell1Points->GetId(5);
+					newPoint[5] = cell2Points->GetId(0);
+					input->ReplaceCell(cell2, 6, newPoint);
+
+				}
+
+				quadId++; // every second one is different
+				fixes--;
+
+				if (fixes == 0)
+				{
+					ringId++;
+					quadId = 0;
+					cell1 = startPos + (ringId * cellsInQuad * this->CircQuads);
+					cell2 = cell1 + cellsInQuad * (this->CircQuads - 1) + this->Columns - 1;
+					fixes = this->Rows;
+				}
+				else
+				{
+					cell1 += this->Columns;
+					cell2 += this->Columns;
+				}
+
+			}
+
+
 		}
 	}
 

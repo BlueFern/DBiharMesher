@@ -137,6 +137,10 @@ add_library(vtkSubdivideMeshBrick src/vtkSubdivideMeshBrick.cxx)
 target_link_libraries(vtkSubdivideMeshBrick
 	vtkFiltersHybrid)
 	
+add_library(vtkReorderSubdivideQuad src/vtkReorderSubdivideQuad.cxx)
+target_link_libraries(vtkReorderSubdivideQuad
+	vtkFiltersHybrid)
+	
 add_library(vtkJoinSmcBrickMesh src/vtkJoinSmcBrickMesh.cxx)
 target_link_libraries(vtkJoinSmcBrickMesh
 	vtkFiltersHybrid)
@@ -307,6 +311,18 @@ target_link_libraries(testSubdivideQuadBrick
 	vtkSubdivideQuadBrick
 	${testLibs})
 	
+add_executable(testReorderSubdivideQuad
+	src/vtkSubdivideQuadBrick.cxx
+	src/vtkReorderSubdivideQuad.cxx
+	test/testReorderSubdivideQuad.cxx)
+target_link_libraries(testReorderSubdivideQuad
+	vtkDbiharStatic
+	vtkScalarRadiiToVectorsFilter
+	vtkFiltersGeometry
+	vtkSubdivideQuadBrick
+	vtkReorderSubdivideQuad
+	${testLibs})
+	
 add_executable(testSubdivideMeshDynamic
 	src/vtkSubdivideQuadFilter.cxx
 	src/vtkSubdivideMeshDynamic.cxx
@@ -335,6 +351,7 @@ add_executable(testSubdivideMeshBrick
 	src/vtkJoinEcBrickMesh.cxx
 	src/vtkSubdivideQuadBrick.cxx
 	src/vtkSubdivideMeshBrick.cxx
+	src/vtkReorderSubdivideQuad.cxx
 	test/testSubdivideMeshBrick.cxx)
 target_link_libraries(testSubdivideMeshBrick
 	vtkDbiharStatic
@@ -343,6 +360,7 @@ target_link_libraries(testSubdivideMeshBrick
 	vtkSubdivideMesh
 	vtkSubdivideMeshBrick
 	vtkSubdivideQuadBrick
+	vtkReorderSubdivideQuad
 	vtkFiltersGeometry
 	${testLibs})
 	

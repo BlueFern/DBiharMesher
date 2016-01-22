@@ -35,21 +35,11 @@ vtkSubdivideQuadBrick::vtkSubdivideQuadBrick()
 	this->Rows = 0;
 	this->CellType = -1;
 	this->ShowProgress = false;
+	this->Filled = false;
 
 	vtkSmartPointer<vtkCallbackCommand> progressCallback = vtkSmartPointer<vtkCallbackCommand>::New();
 	progressCallback->SetCallback(this->ProgressFunction);
 	this->AddObserver(vtkCommand::ProgressEvent, progressCallback);
-}
-
-/**
- * Copy the values from array1 into array2.
- */
-void vtkSubdivideQuadBrick::copyPointsArray(double* array1, double* array2)
-{
-	for (int i = 0; i < 3; i++)
-	{
-		array2[i] = array1[i];
-	}
 }
 
 int vtkSubdivideQuadBrick::RequestData(vtkInformation *vtkNotUsed(request),
@@ -65,19 +55,6 @@ int vtkSubdivideQuadBrick::RequestData(vtkInformation *vtkNotUsed(request),
 	{
 		vtkErrorMacro("Must set both Columns and Rows to positive integers.");
 		exit(EXIT_FAILURE);
-	}
-	if (this->CellType == -1)
-	{
-		vtkErrorMacro("Must specify an SMC or an EC.");
-		exit(EXIT_FAILURE);
-	}
-
-	// Not pretty, making SMC's by rotating original points, so need to swap these.
-	if (this->CellType == vtkDbiharStatic::SMC)
-	{
-		int tmp = this->Rows;
-		this->Rows = this->Columns;
-		this->Columns = tmp;
 	}
 
 	vtkSmartPointer<vtkPoints> topEdge = vtkSmartPointer<vtkPoints>::New();
@@ -100,17 +77,8 @@ int vtkSubdivideQuadBrick::RequestData(vtkInformation *vtkNotUsed(request),
 	{
 		this->Rows *= 2; // Extra points for brick tessellation.
 
-
-		if (this->CellType == vtkDbiharStatic::SMC)
-		{
-			splineInputPoints->SetPoint(0, input->GetPoint(0));
-			splineInputPoints->SetPoint(1, input->GetPoint(1));
-		}
-		else
-		{
-			splineInputPoints->SetPoint(0, input->GetPoint(0));
-			splineInputPoints->SetPoint(1, input->GetPoint(3));
-		}
+		splineInputPoints->SetPoint(0, input->GetPoint(0));
+		splineInputPoints->SetPoint(1, input->GetPoint(3));
 
 		vtkSmartPointer<vtkParametricSpline> parametricSpline = vtkSmartPointer<vtkParametricSpline>::New();
 
@@ -126,16 +94,8 @@ int vtkSubdivideQuadBrick::RequestData(vtkInformation *vtkNotUsed(request),
 
 		topEdge = splinePointsSource->GetOutput()->GetPoints();
 
-		if (this->CellType == vtkDbiharStatic::SMC)
-		{
-			splineInputPoints->SetPoint(0,input->GetPoint(3));
-			splineInputPoints->SetPoint(1,input->GetPoint(2));
-		}
-		else
-		{
-			splineInputPoints->SetPoint(0,input->GetPoint(1));
-			splineInputPoints->SetPoint(1,input->GetPoint(2));
-		}
+		splineInputPoints->SetPoint(0,input->GetPoint(1));
+		splineInputPoints->SetPoint(1,input->GetPoint(2));
 
 		vtkSmartPointer<vtkParametricSpline> parametricSpline2 = vtkSmartPointer<vtkParametricSpline>::New();
 		parametricSpline2->SetPoints(splineInputPoints);
@@ -250,27 +210,6 @@ int vtkSubdivideQuadBrick::RequestData(vtkInformation *vtkNotUsed(request),
 	pd->SetPoints(appendPoints->GetOutput()->GetPoints());
 	pd->SetPolys(cells);
 
-	// Reorder cells if an SMC
-	if (this->CellType == vtkDbiharStatic::SMC)
-	{
-		vtkSmartPointer<vtkCellArray> newOrderCells = vtkSmartPointer<vtkCellArray>::New();
-		vtkIdType base = 1;
-		vtkIdType cellId = 0;
-		for (int i = 0; i < cells->GetNumberOfCells(); i++)
-		{
-			newOrderCells->InsertNextCell(pd->GetCell(cellId));
-			if ((i + 1) % (this->Rows / 2) == 0)
-			{
-				cellId = base;
-				base++;
-			}
-			else
-			{
-				cellId += this->Columns;
-			}
-		}
-		pd->SetPolys(newOrderCells);
-	}
 
 	output->ShallowCopy(pd);
 	return 1;

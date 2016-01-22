@@ -19,23 +19,21 @@ int main(int argc, char* argv[]) {
 	std::cout << "Starting " << __FILE__ << std::endl;
 
 	vtkSmartPointer<vtkXMLPolyDataReader> pointsReader = vtkSmartPointer<vtkXMLPolyDataReader>::New();
-	pointsReader->SetFileName((std::string(TEST_DATA_DIR) + "/test/quadMeshFullc216.vtp").c_str());
+	pointsReader->SetFileName((std::string(TEST_DATA_DIR) + "/test/output.vtp").c_str());
 
 	pointsReader->Update();
 
-
-
 	vtkSmartPointer<vtkSubdivideMeshBrick> SubdivideMeshBrick = vtkSmartPointer<vtkSubdivideMeshBrick>::New();
 	SubdivideMeshBrick->SetInputData(pointsReader->GetOutput());
-	SubdivideMeshBrick->SetRows(52);
-	SubdivideMeshBrick->SetColumns(4);
-	SubdivideMeshBrick->SetAxialQuads(6);
-	SubdivideMeshBrick->SetCircQuads(12);
-	SubdivideMeshBrick->SetFlat(false);
+	SubdivideMeshBrick->SetRows(4);
+	SubdivideMeshBrick->SetColumns(2);
+	SubdivideMeshBrick->SetAxialQuads(34);
+	SubdivideMeshBrick->SetCircQuads(40);
+	SubdivideMeshBrick->SetFlat(true);
 	SubdivideMeshBrick->SetBranches(3);
 	SubdivideMeshBrick->SetCellType(vtkDbiharStatic::SMC);
 	SubdivideMeshBrick->Update();
-	vtkDbiharStatic::WritePolyData(SubdivideMeshBrick->GetOutput(), "quadMeshFullc216_out.vtp");
+	vtkDbiharStatic::WritePolyData(SubdivideMeshBrick->GetOutput(), "outputoutput.vtp");
 
 	vtkDbiharStatic::ShowPolyData(SubdivideMeshBrick->GetOutput());
 

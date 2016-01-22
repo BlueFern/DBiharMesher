@@ -40,17 +40,6 @@ vtkSubdivideQuadFilter::vtkSubdivideQuadFilter()
 	this->AddObserver(vtkCommand::ProgressEvent, progressCallback);
 }
 
-/**
- * Copy the values from array1 into array2.
- */
-void vtkSubdivideQuadFilter::copyPointsArray(double* array1, double* array2)
-{
-	for (int i = 0; i < 3; i++)
-	{
-		array2[i] = array1[i];
-	}
-}
-
 int vtkSubdivideQuadFilter::RequestData(vtkInformation *vtkNotUsed(request),
 		vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {

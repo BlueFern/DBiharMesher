@@ -14,7 +14,9 @@
 #include "vtkDbiharStatic.h"
 #include "vtkSubdivideMeshBrick.h"
 #include "vtkJoinSmcBrickMesh.h"
+#include "vtkJoinEcBrickMesh.h"
 #include "vtkSubdivideQuadBrick.h"
+#include "vtkReorderSubdivideQuad.h"
 
 vtkStandardNewMacro(vtkSubdivideMeshBrick);
 
@@ -40,6 +42,7 @@ int vtkSubdivideMeshBrick::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 {
 	// Get the input and output.
 	vtkPolyData* input = vtkPolyData::GetData(inputVector[0], 0);
+
 	vtkPolyData* output = vtkPolyData::GetData(outputVector, 0);
 
 	if (this->Columns <= 0 || this->Rows <= 0)
@@ -106,25 +109,49 @@ int vtkSubdivideMeshBrick::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 	pointsList->SetNumberOfIds(4);
 	points->SetNumberOfPoints(4);
 
+	int quadsInBranch = this->CircQuads * this->AxialQuads;
+
 	double gridCoords[2] = {0, 0};
 	for (int quadId = 0; quadId < numberOfQuads; quadId++)
 	{
 		input->GetCellPoints(quadId, pointsList);
+
+		vtkSmartPointer<vtkReorderSubdivideQuad> reorderSubdivideQuad = vtkSmartPointer<vtkReorderSubdivideQuad>::New();
+
+		if (this->CellType == vtkDbiharStatic::EC && quadId < quadsInBranch)
+		{
+			reorderSubdivideQuad->SetRotations(0);
+		}
+		else
+		{
+			reorderSubdivideQuad->SetRotations(2);
+		}
+
+		if (this->CellType == vtkDbiharStatic::SMC && (quadId % this->CircQuads >= this->CircQuads / 2))
+		{
+			reorderSubdivideQuad->SetRotations(3);
+		}
+		else
+		{
+			reorderSubdivideQuad->SetRotations(1);
+		}
+
 		points->SetPoint(0,input->GetPoint(pointsList->GetId(0)));
 		points->SetPoint(1,input->GetPoint(pointsList->GetId(1)));
 		points->SetPoint(2,input->GetPoint(pointsList->GetId(2)));
 		points->SetPoint(3,input->GetPoint(pointsList->GetId(3)));
+
 		vtkSmartPointer<vtkPolyData> pointsData = vtkSmartPointer<vtkPolyData>::New();
+		vtkSmartPointer<vtkPolyData> subdividedQuad = vtkSmartPointer<vtkPolyData>::New();
+
 		pointsData->SetPoints(points);
 
-		vtkSmartPointer<vtkSubdivideQuadBrick> subdivideQuadBrick = vtkSmartPointer<vtkSubdivideQuadBrick>::New();
-		subdivideQuadBrick->SetInputData(pointsData);
-		subdivideQuadBrick->SetColumns(this->Columns);
-		subdivideQuadBrick->SetRows(this->Rows);
-		subdivideQuadBrick->SetCellType(this->CellType);
-		subdivideQuadBrick->Update();
+		reorderSubdivideQuad->SetInputData(pointsData);
+		reorderSubdivideQuad->SetColumns(this->Columns);
+		reorderSubdivideQuad->SetRows(this->Rows);
+		reorderSubdivideQuad->Update();
+		subdividedQuad = reorderSubdivideQuad->GetOutput();
 
-		vtkSmartPointer<vtkPolyData> subdividedQuad = subdivideQuadBrick->GetOutput();
 
 		// For the processed quad add grid coordinates array.
 		// Iterate over the cells of the subdivided quad and on the basis
@@ -175,7 +202,7 @@ int vtkSubdivideMeshBrick::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 
 	if (this->CellType == vtkDbiharStatic::EC)
 	{
-		vtkSmartPointer<vtkJoinSmcBrickMesh> joinEcBrickMesh = vtkSmartPointer<vtkJoinSmcBrickMesh>::New();
+		vtkSmartPointer<vtkJoinEcBrickMesh> joinEcBrickMesh = vtkSmartPointer<vtkJoinEcBrickMesh>::New();
 		joinEcBrickMesh->SetInputData(polyData);
 		joinEcBrickMesh->SetRows(this->Rows);
 		joinEcBrickMesh->SetColumns(this->Columns);
