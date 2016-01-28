@@ -66,20 +66,29 @@ int vtkReorderSubdivideQuad::RequestData(vtkInformation *vtkNotUsed(request),
 	subdivideQuadBrick->Update();
 
 	vtkSmartPointer<vtkPolyData> subdividedQuad = subdivideQuadBrick->GetOutput();
+	subdividedQuad->BuildCells();
 
 	vtkSmartPointer<vtkCellArray> cells = subdividedQuad->GetPolys();
+	vtkSmartPointer<vtkPoints> oldPoints = subdividedQuad->GetPoints();
 
 	// Now reorder cells in the subdivided quad - again necessary because it was initally rotated.
 	// Note: Columns and Rows also swapped here.
 
 	vtkSmartPointer<vtkCellArray> newOrderCells = vtkSmartPointer<vtkCellArray>::New();
-	vtkIdType base;
+	vtkSmartPointer<vtkPoints> newOrderPoints = vtkSmartPointer<vtkPoints>::New();
+	vtkIdType baseCell;
+	vtkIdType basePoint;
 	vtkIdType cellId;
+	vtkIdType pointId;
+
+
+
 
 	if (this->Rotations == 1) //smc
 	{
-		base = this->Rows - 1;
-		cellId =  base;
+
+		baseCell = this->Rows - 1;
+		cellId =  baseCell;
 		for (int i = 0; i < cells->GetNumberOfCells(); i++)
 		{
 			newOrderCells->InsertNextCell(subdividedQuad->GetCell(cellId));
@@ -87,15 +96,32 @@ int vtkReorderSubdivideQuad::RequestData(vtkInformation *vtkNotUsed(request),
 
 			if ((i + 1) % (this->Columns) == 0)
 			{
-				base--;
-				cellId = base;
+				baseCell--;
+				cellId = baseCell;
 			}
 		}
+
+		basePoint = this->Rows;
+		pointId = basePoint;
+		for (int i = 0; i < oldPoints->GetNumberOfPoints(); i++)
+		{
+			newOrderPoints->InsertNextPoint(oldPoints->GetPoint(pointId));
+			pointId += (this->Rows + 1);
+
+			if ((i + 1) % (this->Columns * 2 + 1) == 0)
+			{
+				basePoint--;
+				pointId = basePoint;
+			}
+
+		}
+
+
 	}
 	else if (this->Rotations == 2)//ec TODO: doc, rows and columns reversed here as they are reversed earlier (only for ec)
 	{
-		base = this->Columns * this->Rows;
-		cellId = base;
+		baseCell = this->Columns * this->Rows;
+		cellId = baseCell;
 		for (int i = 0; i < cells->GetNumberOfCells(); i++)
 		{
 			newOrderCells->InsertNextCell(subdividedQuad->GetCell(cellId - 1));
@@ -105,7 +131,7 @@ int vtkReorderSubdivideQuad::RequestData(vtkInformation *vtkNotUsed(request),
 
 	else if (this->Rotations == 3)//smc
 	{
-		base = this->Rows * (this->Columns - 1);
+		baseCell = this->Rows * (this->Columns - 1);
 		cellId = this->Rows * (this->Columns - 1);
 		for (int i = 0; i < cells->GetNumberOfCells(); i++)
 		{
@@ -113,8 +139,8 @@ int vtkReorderSubdivideQuad::RequestData(vtkInformation *vtkNotUsed(request),
 
 			if ((i + 1) % (this->Columns) == 0)
 			{
-				base++;
-				cellId = base;
+				baseCell++;
+				cellId = baseCell;
 			}
 			else
 			{
@@ -125,7 +151,8 @@ int vtkReorderSubdivideQuad::RequestData(vtkInformation *vtkNotUsed(request),
 
 	if (this->Rotations != 0)
 	{
-		subdividedQuad->SetPolys(newOrderCells);
+		//subdividedQuad->SetPolys(newOrderCells);
+		//subdividedQuad->SetPoints(newOrderPoints);
 	}
 
 	output->ShallowCopy(subdividedQuad);

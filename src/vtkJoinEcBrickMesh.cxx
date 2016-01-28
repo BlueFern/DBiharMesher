@@ -19,7 +19,7 @@ vtkJoinEcBrickMesh::vtkJoinEcBrickMesh()
 	this->Rows = 0;
 	this->AxialQuads = 0;
 	this->CircQuads = 0;
-	this->Branches = 3;
+	this->Branches = 0;
 	vtkSmartPointer<vtkCallbackCommand> progressCallback = vtkSmartPointer<vtkCallbackCommand>::New();
 	progressCallback->SetCallback(this->ProgressFunction);
 	this->AddObserver(vtkCommand::ProgressEvent, progressCallback);
@@ -30,6 +30,23 @@ int vtkJoinEcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInfo
 	// Get the input and output.
 	vtkPolyData* input = vtkPolyData::GetData(inputVector[0], 0);
 	vtkPolyData* output = vtkPolyData::GetData(outputVector, 0);
+
+	// Basic testing of input parameters.
+	if (this->Columns <= 0 || this->Rows <= 0)
+	{
+		vtkErrorMacro("Both Columns and Rows must be positive numbers.");
+		exit(EXIT_FAILURE);
+	}
+	if (this->AxialQuads <= 0 || this->CircQuads <= 0)
+	{
+		vtkErrorMacro("Both the number of circumferential and axial quads must be positive numbers.");
+		exit(EXIT_FAILURE);
+	}
+	if (this->Branches == 0)
+	{
+		vtkErrorMacro("Must specify the number of branches.");
+		exit(EXIT_FAILURE);
+	}
 
 	vtkSmartPointer<vtkIdList> cell1Points = vtkSmartPointer<vtkIdList>::New();
 	vtkSmartPointer<vtkIdList> cell2Points = vtkSmartPointer<vtkIdList>::New();
@@ -46,10 +63,12 @@ int vtkJoinEcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInfo
 	{
 		int branchOffset = branchId * cellsInQuad * quadsInBranch;
 		fixes = this->Columns / 2; // Number of corrections required in a single quad.
-		// First cell needed to be corrected in a quad, in each branch.
 
-		//doc TODO
+
 		startPos = this->Columns * (this->Rows - 1) + branchOffset + 1;
+
+		// The second and third branches (for such a mesh) have a different cell pattern to allow for a
+		// correct tessellation. The start position is then different.
 		if (branchId > 0)
 		{
 			startPos--;
@@ -64,6 +83,7 @@ int vtkJoinEcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInfo
 		while (quadId < quadsInBranch)
 		{
 
+			// Don't do the sadle or the very ends of daughter branches (special cases).
 			if (quadId >= quadsInBranch - this->CircQuads)
 			{
 				break;
@@ -72,27 +92,29 @@ int vtkJoinEcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInfo
 			input->GetCellPoints(cell1, cell1Points);
 			input->GetCellPoints(cell2, cell2Points);
 
-			if (branchId > 0)
+
+
+			if (branchId > 0) // Daughter branches.
 			{
-				newPoint[0] = cell1Points->GetId(5);
-				newPoint[1] = cell2Points->GetId(3);
+				newPoint[0] = cell1Points->GetId(3);
+				newPoint[1] = cell1Points->GetId(2);
 
-				newPoint[2] = cell2Points->GetId(5);
-				newPoint[3] = cell2Points->GetId(0);
+				newPoint[2] = cell2Points->GetId(2);
+				newPoint[3] = cell2Points->GetId(4);
 
-				newPoint[4] = cell2Points->GetId(1);
-				newPoint[5] = cell1Points->GetId(0);
+				newPoint[4] = cell2Points->GetId(5);
+				newPoint[5] = cell2Points->GetId(0);
 				input->ReplaceCell(cell2, 6, newPoint);
 			}
-			else
+			else // Trunk.
 			{
 				newPoint[0] = cell1Points->GetId(0);
 				newPoint[1] = cell1Points->GetId(1);
 
-				newPoint[2] = cell2Points->GetId(0);
-				newPoint[3] = cell2Points->GetId(5);
+				newPoint[2] = cell1Points->GetId(2);
+				newPoint[3] = cell2Points->GetId(1);
 
-				newPoint[4] = cell1Points->GetId(4);
+				newPoint[4] = cell2Points->GetId(0);
 				newPoint[5] = cell1Points->GetId(5);
 				input->ReplaceCell(cell1, 6, newPoint);
 			}

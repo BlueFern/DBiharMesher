@@ -21,28 +21,27 @@
 #include <vtkStructuredGrid.h>
 #include <vtkStructuredGridGeometryFilter.h>
 
-#include "vtkSubdivideQuadBrick.h"
+#include "vtkSubdivideQuadBrickEc.h"
 #include "vtkDbiharStatic.h"
 
-vtkStandardNewMacro(vtkSubdivideQuadBrick);
+vtkStandardNewMacro(vtkSubdivideQuadBrickEc);
 
-vtkSubdivideQuadBrick::vtkSubdivideQuadBrick()
+vtkSubdivideQuadBrickEc::vtkSubdivideQuadBrickEc()
 {
 	this->SetNumberOfInputPorts(1);
 	this->SetNumberOfOutputPorts(1);
 
 	this->Columns = 0;
 	this->Rows = 0;
-	this->CellType = -1;
 	this->ShowProgress = false;
-	this->Filled = false;
+	this->Rotated = false;
 
 	vtkSmartPointer<vtkCallbackCommand> progressCallback = vtkSmartPointer<vtkCallbackCommand>::New();
 	progressCallback->SetCallback(this->ProgressFunction);
 	this->AddObserver(vtkCommand::ProgressEvent, progressCallback);
 }
 
-int vtkSubdivideQuadBrick::RequestData(vtkInformation *vtkNotUsed(request),
+int vtkSubdivideQuadBrickEc::RequestData(vtkInformation *vtkNotUsed(request),
 		vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
 	// Get the input and output.
@@ -155,55 +154,110 @@ int vtkSubdivideQuadBrick::RequestData(vtkInformation *vtkNotUsed(request),
 		vtkSmartPointer<vtkPolyData> pointSet = vtkSmartPointer<vtkPolyData>::New();
 		pointSet->SetPoints(allPoints);
 		appendPoints->AddInputData(pointSet);
-
 	}
 
 	appendPoints->Update();
 
 	vtkSmartPointer<vtkPolyData> pd = vtkSmartPointer<vtkPolyData>::New();
-
 	vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
-	int baseId = this->Columns;
-	int id = this->Columns;
-	for (int i = 0; i < this->Rows / 2; i++)
+	int baseId;
+	int id;
+
+	if (!this->Rotated)
 	{
-		for (int j = 0; j < this->Columns; j++)
-		{
-			vtkSmartPointer<vtkIdList> newCell = vtkSmartPointer<vtkIdList>::New();
-
-			if (j % 2 == 0)
-			{
-				id -= this->Columns;
-			}
-			else
-			{
-				id += (this->Columns + 2);
-			}
-
-			if (i + 1 == this->Rows / 2 && j % 2 != 0) // Last iteration, do not extend cells beyond quad.
-			{
-				// Requires 6 points so that the later call to ReplaceCell is successful.
-				newCell->InsertNextId(id);
-				newCell->InsertNextId(id + (this->Columns + 1));
-				newCell->InsertNextId(id + (this->Columns + 1));
-				newCell->InsertNextId(id + (this->Columns + 2));
-				newCell->InsertNextId(id + (this->Columns + 2));
-				newCell->InsertNextId(id + 1);
-
-			}
-			else
-			{
-				newCell->InsertNextId(id);
-				newCell->InsertNextId(id + (this->Columns + 1) * 2);
-				newCell->InsertNextId(id + (this->Columns + 1) * 2 + 1);
-				newCell->InsertNextId(id + 1);
-
-			}
-
-			cells->InsertNextCell(newCell);
-		}
-		baseId = baseId + (this->Columns + 1) * 2;
+		baseId = this->Columns;
 		id = baseId;
+
+		for (int i = 0; i < this->Rows / 2; i++)
+		{
+			for (int j = 0; j < this->Columns; j++)
+			{
+				vtkSmartPointer<vtkIdList> newCell = vtkSmartPointer<vtkIdList>::New();
+
+				if (j % 2 == 0)
+				{
+					id -= this->Columns;
+				}
+				else
+				{
+					id += (this->Columns + 2);
+				}
+
+
+				if ((i + 1) == this->Rows / 2 && j % 2 != 0) // Last iteration, do not extend cells beyond quad.
+				{
+					// Requires 6 points so that the later call to ReplaceCell is successful.
+					newCell->InsertNextId(id);
+					newCell->InsertNextId(id + 1);
+					newCell->InsertNextId(id + (this->Columns + 2));
+					newCell->InsertNextId(id + (this->Columns + 2));
+					newCell->InsertNextId(id + (this->Columns + 1));
+					newCell->InsertNextId(id + (this->Columns + 1));
+				}
+
+				else
+				{
+					newCell->InsertNextId(id);
+					newCell->InsertNextId(id + 1);
+					newCell->InsertNextId(id + (this->Columns + 1) * 2 + 1);
+					newCell->InsertNextId(id + (this->Columns + 1) * 2);
+
+				}
+
+				cells->InsertNextCell(newCell);
+			}
+			baseId = baseId + (this->Columns + 1) * 2;
+			id = baseId;
+		}
+	}
+	else
+	{
+		baseId = -1;
+		id = baseId;
+
+		for (int i = 0; i < this->Rows / 2; i++)
+		{
+			for (int j = 0; j < this->Columns; j++)
+			{
+				vtkSmartPointer<vtkIdList> newCell = vtkSmartPointer<vtkIdList>::New();
+				if (i == 0)
+				{
+					id++;
+				}
+				else
+				{
+					if (j % 2 == 0)
+					{
+						id -= this->Columns;
+					}
+					else
+					{
+						id += (this->Columns + 2);
+					}
+				}
+
+				if (i == 0 && j % 2 == 0) // first iteration (small cells)
+				{
+					newCell->InsertNextId(id);
+					newCell->InsertNextId(id);
+					newCell->InsertNextId(id + 1);
+					newCell->InsertNextId(id + 1);
+					newCell->InsertNextId(id + (this->Columns + 2));
+					newCell->InsertNextId(id + (this->Columns + 1));
+				}
+				else
+				{
+					newCell->InsertNextId(id);
+					newCell->InsertNextId(id + 1);
+					newCell->InsertNextId(id + (this->Columns + 1) * 2 + 1);
+					newCell->InsertNextId(id + (this->Columns + 1) * 2);
+				}
+
+				cells->InsertNextCell(newCell);
+			}
+			baseId = baseId + (this->Columns + 1) * 2;
+			id = baseId;
+		}
 	}
 
 	pd->SetPoints(appendPoints->GetOutput()->GetPoints());
@@ -214,16 +268,16 @@ int vtkSubdivideQuadBrick::RequestData(vtkInformation *vtkNotUsed(request),
 	return 1;
 }
 
-void vtkSubdivideQuadBrick::ProgressFunction(vtkObject* caller, long unsigned int eventId, void* clientData, void* callData)
+void vtkSubdivideQuadBrickEc::ProgressFunction(vtkObject* caller, long unsigned int eventId, void* clientData, void* callData)
 {
-	vtkSubdivideQuadBrick* filter = static_cast<vtkSubdivideQuadBrick *>(caller);
+	vtkSubdivideQuadBrickEc* filter = static_cast<vtkSubdivideQuadBrickEc *>(caller);
 	if(filter->ShowProgress)
 	{
 		cout << filter->GetClassName() << " progress: " << std::fixed << std::setprecision(3) << filter->GetProgress() << endl;
 	}
 }
 
-void vtkSubdivideQuadBrick::PrintSelf(ostream &os, vtkIndent indent)
+void vtkSubdivideQuadBrickEc::PrintSelf(ostream &os, vtkIndent indent)
 {
 	this->Superclass::PrintSelf(os, indent);
 	os << indent << "Number of rows: " << this->Rows << "\n";

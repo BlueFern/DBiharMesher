@@ -20,7 +20,7 @@ vtkJoinSmcBrickMesh::vtkJoinSmcBrickMesh()
 	this->Flat = false;
 	this->AxialQuads = 0;
 	this->CircQuads = 0;
-	this->Branches = -1;
+	this->Branches = 0;
 	vtkSmartPointer<vtkCallbackCommand> progressCallback = vtkSmartPointer<vtkCallbackCommand>::New();
 	progressCallback->SetCallback(this->ProgressFunction);
 	this->AddObserver(vtkCommand::ProgressEvent, progressCallback);
@@ -31,6 +31,23 @@ int vtkJoinSmcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInf
 	// Get the input and output.
 	vtkPolyData* input = vtkPolyData::GetData(inputVector[0], 0);
 	vtkPolyData* output = vtkPolyData::GetData(outputVector, 0);
+
+	// Basic testing of input parameters.
+	if (this->Columns <= 0 || this->Rows <= 0)
+	{
+		vtkErrorMacro("Both Columns and Rows must be positive numbers.");
+		exit(EXIT_FAILURE);
+	}
+	if (this->AxialQuads <= 0 || this->CircQuads <= 0)
+	{
+		vtkErrorMacro("Both the number of circumferential and axial quads must be positive numbers.");
+		exit(EXIT_FAILURE);
+	}
+	if (this->Branches == 0)
+	{
+		vtkErrorMacro("Must specify the number of branches.");
+		exit(EXIT_FAILURE);
+	}
 
 	vtkSmartPointer<vtkIdList> cell1Points = vtkSmartPointer<vtkIdList>::New();
 	vtkSmartPointer<vtkIdList> cell2Points = vtkSmartPointer<vtkIdList>::New();
@@ -48,49 +65,45 @@ int vtkJoinSmcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInf
 		quadId = 0;
 
 		branchOffset = branchId * cellsInQuad * quadsInBranch;
-		fixes = this->Rows / 2; // Number of corrections required in a single quad.
+		fixes = this->Rows / 2; // Number of corrections/joins required in a single quad.
 
-		// First cell needed to be corrected in a quad, in each branch.
-		 startPos = branchOffset;
+		startPos = branchOffset;
 
 		cell1  = startPos + cellsInQuad;
 		cell2 = cell1 - cellsInQuad + this->Columns - 1;
 
-		// Do each branch individually, the last iteration is most of the saddle
 		while (quadId < quadsInBranch)
 		{
-
 			vtkIdType newPoint[6];
 			input->GetCellPoints(cell1, cell1Points);
 			input->GetCellPoints(cell2, cell2Points);
 
-			if (quadId % this->CircQuads < this->CircQuads / 2) // top half
-			{
+			// The quads in the top half for each branch have a different pattern to those in the bottom half.
+			// The connectivity if therefore different, and they must be done seperately.
 
-				newPoint[0] = cell2Points->GetId(5);
-				newPoint[1] = cell2Points->GetId(0);
-
-				newPoint[2] = cell2Points->GetId(1);
-				newPoint[3] = cell1Points->GetId(0);
-
-				newPoint[4] = cell1Points->GetId(5);
-				newPoint[5] = cell2Points->GetId(3);
-				input->ReplaceCell(cell2, 6, newPoint);
-
-
-			}
-			else if (quadId % this->CircQuads >= this->CircQuads / 2) // doc todo: reversed point order from mirror quads
+			if (quadId % this->CircQuads < this->CircQuads / 2) // Top half.
 			{
 				newPoint[0] = cell2Points->GetId(0);
-				newPoint[1] = cell2Points->GetId(5);
+				newPoint[1] = cell2Points->GetId(1);
 
-				newPoint[2] = cell1Points->GetId(3);
-				newPoint[3] = cell1Points->GetId(5);
+				newPoint[2] = cell1Points->GetId(0);
+				newPoint[3] = cell1Points->GetId(3);
+				newPoint[4] = cell2Points->GetId(3);
+				newPoint[5] = cell2Points->GetId(5);
 
-				newPoint[4] = cell1Points->GetId(0);
-				newPoint[5] = cell1Points->GetId(1);
+				input->ReplaceCell(cell2, 6, newPoint);
+
+			}
+			else if (quadId % this->CircQuads >= this->CircQuads / 2) // Bottom half.
+			{
+				newPoint[0] = cell2Points->GetId(1);
+				newPoint[1] = cell1Points->GetId(0);
+				newPoint[2] = cell1Points->GetId(2);
+				newPoint[3] = cell1Points->GetId(3);
+				newPoint[4] = cell1Points->GetId(4);
+				newPoint[5] = cell2Points->GetId(2);
+
 				input->ReplaceCell(cell1, 6, newPoint);
-
 			}
 
 			fixes--;
@@ -98,8 +111,11 @@ int vtkJoinSmcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInf
 			if (fixes == 0)
 			{
 				quadId++;
+				fixes = this->Rows / 2;
 
-				if  ((quadId + 1) % this->CircQuads == 0 ) //skip last row
+				// Nothing exists to be fixed on the last row (given fixing takes place for a quad with its neighbour
+				// above it). We skip it.
+				if  ((quadId + 1) % this->CircQuads == 0 )
 				{
 					quadId++;
 					cell1 += cellsInQuad + this->Columns;
@@ -112,36 +128,37 @@ int vtkJoinSmcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInf
 				}
 
 
-				fixes = this->Rows / 2;
-
+				// The bottom half of circumferential quads have a different pattern - the cells
+				// to be joined are in different positions.
 				if ((quadId + 1) % this->CircQuads >= this->CircQuads / 2)
 				{
 					cell1 += this->Columns;
 					cell2 += this->Columns;
 
 				}
+
+				// The existance of 'short' cells along this boundary makes no joining of cells necessary.
+				// We simply skip the middle row.
 				if ((quadId + 1) % this->CircQuads == this->CircQuads / 2)
 				{
 					quadId++;
 					cell1 += cellsInQuad;
 					cell2 += cellsInQuad;
 				}
-
 			}
 			else
 			{
 				cell1 += this->Columns * 2;
 				cell2 += this->Columns * 2;
 			}
-
-
 		}
 	}
 
-
-	// fix the joining if it's not flat
+	// If the mesh is not flat, the two different patterns in the top and bottom halves of each branch
+	// result in gaps. To correct this cells along the join are stretched.
 	if (!this->Flat)
 	{
+		vtkIdType newPoint[4];
 		quadId = 0;
 
 		for (int branchId = 0; branchId < this->Branches; branchId++)
@@ -160,34 +177,31 @@ int vtkJoinSmcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInf
 				input->GetCellPoints(cell1, cell1Points);
 				input->GetCellPoints(cell2, cell2Points);
 
-				if (quadId % 2 == 0)
+				// Along this join, every second cell from the upper quad needs to be streched down.
+				// Similarly, every second cell from the lower quad needs to be streched upwards, offset by 1
+				// from the cells beign streched down.
+
+				if (quadId % 2 == 0) // Stretched up.
 				{
 
-					newPoint[0] = cell2Points->GetId(0);
-					newPoint[1] = cell2Points->GetId(5);
-
-					newPoint[2] = cell1Points->GetId(0);
-					newPoint[3] = cell1Points->GetId(1);
-
-					newPoint[4] = cell1Points->GetId(3);
-					newPoint[5] = cell1Points->GetId(5);
-					input->ReplaceCell(cell1, 6, newPoint);
-				}
-				else
-				{
 					newPoint[0] = cell2Points->GetId(1);
-					newPoint[1] = cell2Points->GetId(3);
+					newPoint[1] = cell1Points->GetId(1);
+					newPoint[2] = cell1Points->GetId(2);
+					newPoint[3] = cell2Points->GetId(2);
 
-					newPoint[2] = cell2Points->GetId(5);
-					newPoint[3] = cell1Points->GetId(0);
+					input->ReplaceCell(cell1, 4, newPoint);
+				}
+				else // Stretched down.
+				{
+					newPoint[0] = cell2Points->GetId(0);
+					newPoint[1] = cell1Points->GetId(0);
+					newPoint[2] = cell1Points->GetId(3);
+					newPoint[3] = cell2Points->GetId(3);
 
-					newPoint[4] = cell1Points->GetId(5);
-					newPoint[5] = cell2Points->GetId(0);
-					input->ReplaceCell(cell2, 6, newPoint);
-
+					input->ReplaceCell(cell2, 4, newPoint);
 				}
 
-				quadId++; // every second one is different
+				quadId++;
 				fixes--;
 
 				if (fixes == 0)
@@ -203,10 +217,7 @@ int vtkJoinSmcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInf
 					cell1 += this->Columns;
 					cell2 += this->Columns;
 				}
-
 			}
-
-
 		}
 	}
 

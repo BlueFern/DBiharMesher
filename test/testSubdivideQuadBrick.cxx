@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
 
 	vtkDbiharStatic::ShowPolyData(subdivideQuadFilter->GetOutput());
 #if 1
-	vtkDbiharStatic::WritePolyData(subdivideQuadFilter->GetOutput(), "333.vtp");
+	vtkDbiharStatic::WritePolyData(subdivideQuadFilter->GetOutput(), "brick_output.vtp");
 #endif
 
 	std::cout << "Exiting " << __FILE__ << std::endl;

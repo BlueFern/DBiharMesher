@@ -2,10 +2,10 @@
 
 #include <vtkSmartPointer.h>
 #include <vtkPolyData.h>
+#include <vtkSubdivideQuadBrickEc.h>
 #include <vtkXMLPolyDataReader.h>
 #include <vtkIdList.h>
 
-#include "vtkReorderSubdivideQuad.h"
 #include "wrapDbiharConfig.h"
 #include "vtkDbiharStatic.h"
 
@@ -15,12 +15,12 @@ int main(int argc, char* argv[]) {
 	std::cout << "Starting " << __FILE__ << std::endl;
 
 	vtkSmartPointer<vtkXMLPolyDataReader> pointsReader = vtkSmartPointer<vtkXMLPolyDataReader>::New();
-	pointsReader->SetFileName((std::string(TEST_DATA_DIR) + "/test/quadMeshFullc216.vtp").c_str());
+	pointsReader->SetFileName((std::string(TEST_DATA_DIR) + "/test/testSubdivideQuadBrick.vtp").c_str());
 
 	pointsReader->Update();
 	vtkSmartPointer<vtkPolyData> pd = vtkSmartPointer<vtkPolyData>::New();
 	pd->DeepCopy(pointsReader->GetOutput());
-	vtkSmartPointer<vtkReorderSubdivideQuad> reorderSubdivideQuad = vtkSmartPointer<vtkReorderSubdivideQuad>::New();
+	vtkSmartPointer<vtkSubdivideQuadBrickEc> subdivideQuadFilter = vtkSmartPointer<vtkSubdivideQuadBrickEc>::New();
 	vtkSmartPointer<vtkPolyData> pointsData = vtkSmartPointer<vtkPolyData>::New();
 	vtkSmartPointer<vtkIdList> pointsList = vtkSmartPointer<vtkIdList>::New();
 
@@ -32,18 +32,15 @@ int main(int argc, char* argv[]) {
 	points->SetPoint(2,pd->GetPoint(pointsList->GetId(2)));
 	points->SetPoint(3,pd->GetPoint(pointsList->GetId(3)));
 	pointsData->SetPoints(points);
+	subdivideQuadFilter->SetInputData(pointsData);
+	subdivideQuadFilter->SetColumns(20);
+	subdivideQuadFilter->SetRows(4);
+	subdivideQuadFilter->SetRotated(false);
+	subdivideQuadFilter->Update();
 
-
-	reorderSubdivideQuad->SetInputData(pointsData);
-	reorderSubdivideQuad->SetRows(20);
-	reorderSubdivideQuad->SetColumns(4);
-
-	reorderSubdivideQuad->SetRotations(1); // CLOCKWISE rotations - TODO: write some doc pls
-	reorderSubdivideQuad->Update();
-
-	vtkDbiharStatic::ShowPolyData(reorderSubdivideQuad->GetOutput());
+	vtkDbiharStatic::ShowPolyData(subdivideQuadFilter->GetOutput());
 #if 1
-	vtkDbiharStatic::WritePolyData(reorderSubdivideQuad->GetOutput(), "reorder_out.vtp");
+	vtkDbiharStatic::WritePolyData(subdivideQuadFilter->GetOutput(), "ec_brick_output.vtp");
 #endif
 
 	std::cout << "Exiting " << __FILE__ << std::endl;
