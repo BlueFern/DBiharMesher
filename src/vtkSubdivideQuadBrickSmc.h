@@ -7,17 +7,19 @@
 class vtkIdList;
 
 /**
- * This filter subdivides a given quad into Columns x Rows smaller quads, where Columns and Rows are
- * parameters. It uses vtkParametricSpline to interpolate points between the quads edges, converts
+ * This filter subdivides a given quad into Columns x Rows smaller quads following a brick tessellation.
+ * It uses vtkParametricSpline to interpolate points between the quads edges, converts
  * the newly created points into a structured grid and a geometry filter to build a mesh.
  *
- * \param vtkPolydata A single quad - 4 points and one cell that is the quad itself.
+ * The filter is specific to SMCs, gaps that are later filled by cells in neighbouring quads (following
+ * the same subdivded pattern) are either on the top or the bottom of the input quad, depending on
+ * the set value of the parameter Rotated. On the opposite side are 'short cells' (half sized), which are later stretched
+ * into the gaps of the other circumferentially neighbouring quad.
  *
- * \param Columns Specifies the number of columns the original quad should be divided into.
- *
- * \param Rows Specifies the number of rows the original quad should be divided into.
- *
- * \return vtkPolyData containing Columns x Rows cells (as quads) and the new associated points.
+ * To later stretch the short cells across a second quad (relatively non-planar to the first) 6 points is required.
+ * So that the cell can be modified in place, it too needs 6 points (vtk requirement). For consistency between this and
+ * the similar filter for EC brick subdivision, two points of the short cell are duplicated and these points are on
+ * the temporary edge (to be stretched later) This is important to note when connecting cells later in the pipeline.
  */
 class vtkSubdivideQuadBrickSmc : public vtkPolyDataAlgorithm {
 public:

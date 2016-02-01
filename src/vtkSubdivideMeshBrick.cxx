@@ -126,7 +126,6 @@ int vtkSubdivideMeshBrick::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 
 		pointsData->SetPoints(points);
 
-
 		if (this->CellType == vtkDbiharStatic::EC)
 		{
 			vtkSmartPointer<vtkSubdivideQuadBrickEc> subdivideQuadEc = vtkSmartPointer<vtkSubdivideQuadBrickEc>::New();

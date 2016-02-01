@@ -7,20 +7,11 @@
 class vtkIdList;
 
 /**
- * This filter subdivides all quads in the input to cells roughly of Height x Length size.
- * For every quad in the input vtkSubdivideQuadFilter is used, where the number of columns
- * and rows are calculated depending on how many smaller cells can fit into each original
- * quad. This would mean, for example, at narrower sections of the vessel there will be fewer
- * new quads created because the original quads are smaller.
+ * This filter subdivides all quads in the input into ECs or SMCs depending on
+ * the CellType parameter. It then iterates over the generated mesh (that will exist
+ * with gaps due to the brick tessellation) and connect cells between quads.
  *
- * \param vtkPolyData A quad mesh. This filter will subdivide all existing cells
- * in this input.
- *
- * \param Height The circumferential length of the new quads.
- *
- * \param Length The axial length of the new quads.
- *
- * \return vtkPolyData with cells of roughly Height x Length size.
+ * The output is then either a full EC or SMC mesh.
  */
 class vtkSubdivideMeshBrick : public vtkPolyDataAlgorithm {
 public:

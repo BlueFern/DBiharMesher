@@ -114,7 +114,7 @@ int vtkJoinSmcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInf
 				fixes = this->Rows / 2;
 
 				// Nothing exists to be fixed on the last row (given fixing takes place for a quad with its neighbour
-				// above it). We skip it.
+				// above it). We move to the next quad.
 				if  ((quadId + 1) % this->CircQuads == 0 )
 				{
 					quadId++;
@@ -128,7 +128,7 @@ int vtkJoinSmcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInf
 				}
 
 
-				// The bottom half of circumferential quads have a different pattern - the cells
+				// The bottom half quads (circumferentially) have a different pattern - the cells
 				// to be joined are in different positions.
 				if ((quadId + 1) % this->CircQuads >= this->CircQuads / 2)
 				{
@@ -178,8 +178,7 @@ int vtkJoinSmcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInf
 				input->GetCellPoints(cell2, cell2Points);
 
 				// Along this join, every second cell from the upper quad needs to be streched down.
-				// Similarly, every second cell from the lower quad needs to be streched upwards, offset by 1
-				// from the cells beign streched down.
+				// Similarly, every other cell from the lower quad needs to be streched upwards.
 
 				if (quadId % 2 == 0) // Stretched up.
 				{
@@ -203,7 +202,7 @@ int vtkJoinSmcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInf
 
 				quadId++;
 				fixes--;
-
+				// Finished in this quad, move to next.
 				if (fixes == 0)
 				{
 					ringId++;

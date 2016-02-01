@@ -64,7 +64,6 @@ int vtkJoinEcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInfo
 		int branchOffset = branchId * cellsInQuad * quadsInBranch;
 		fixes = this->Columns / 2; // Number of corrections required in a single quad.
 
-
 		startPos = this->Columns * (this->Rows - 1) + branchOffset + 1;
 
 		// The second and third branches (for such a mesh) have a different cell pattern to allow for a
@@ -83,15 +82,16 @@ int vtkJoinEcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInfo
 		while (quadId < quadsInBranch)
 		{
 
-			// Don't do the sadle or the very ends of daughter branches (special cases).
+			// We do not correct cells around the sadle or at the very ends of daughter branches -
+			// they are special cases handled later.
 			if (quadId >= quadsInBranch - this->CircQuads)
 			{
 				break;
 			}
+
 			vtkIdType newPoint[6];
 			input->GetCellPoints(cell1, cell1Points);
 			input->GetCellPoints(cell2, cell2Points);
-
 
 
 			if (branchId > 0) // Daughter branches.
@@ -140,69 +140,7 @@ int vtkJoinEcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInfo
 			}
 		}
 	}
-#if 0
-	// Fix the remaining part of the saddle by stretching cells across.
-	// Work from both sides at once.
 
-	vtkIdType baseQuad1 = this->CircQuads * this->AxialQuads + this->CircQuads / 2;
-	vtkIdType baseQuad2 = this->CircQuads * this->AxialQuads * 2 + this->CircQuads / 2 - 1;
-
-	vtkIdType baseCell1 = baseQuad1 * cellsInQuad;
-	vtkIdType baseCell2 = baseQuad2 * cellsInQuad + this->Columns - 1;
-
-	cell1 = baseCell1;
-	cell2 = baseCell2;
-
-	fixes = this->Columns;
-	quadId = 0;
-
-	while (quadId < this->CircQuads / 2)
-	{
-		vtkIdType newCell[6];
-
-		input->GetCellPoints(cell1, cell1Points);
-		input->GetCellPoints(cell2, cell2Points);
-
-		if (fixes % 2 == 0)
-		{
-			newCell[0] = cell2Points->GetId(5);
-			newCell[1] = cell1Points->GetId(0);
-			newCell[2] = cell1Points->GetId(1);
-			newCell[3] = cell1Points->GetId(3);
-			newCell[4] = cell1Points->GetId(5);
-			newCell[5] = cell2Points->GetId(0);
-
-			input->ReplaceCell(cell1, 6, newCell);
-		}
-		else
-		{
-			newCell[0] = cell2Points->GetId(3);
-			newCell[1] = cell2Points->GetId(5);
-			newCell[2] = cell1Points->GetId(0);
-			newCell[3] = cell1Points->GetId(5);
-			newCell[4] = cell2Points->GetId(0);
-			newCell[5] = cell2Points->GetId(1);
-
-			input->ReplaceCell(cell2, 6, newCell);
-		}
-
-		fixes--;
-		// Finished in this quad, move to next.
-		if (fixes == 0)
-		{
-			quadId++;
-			cell1 = baseCell1 + (cellsInQuad * quadId);
-			cell2 = baseCell2 - (cellsInQuad * quadId);
-			fixes = this->Columns;
-		}
-		else
-		{
-			cell1 += 1;
-			cell2 -= 1;
-		}
-
-	}
-#endif
 	output->ShallowCopy(input);
 	return 1;
 }

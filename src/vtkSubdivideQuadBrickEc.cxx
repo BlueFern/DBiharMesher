@@ -158,11 +158,15 @@ int vtkSubdivideQuadBrickEc::RequestData(vtkInformation *vtkNotUsed(request),
 
 	appendPoints->Update();
 
+	// Using the newly created grid of points we create cells with a brick tessellation pattern.
+	// If the quad should be rotated or not is handled in two different sections.
+
 	vtkSmartPointer<vtkPolyData> pd = vtkSmartPointer<vtkPolyData>::New();
 	vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
 	int baseId;
 	int id;
 
+	// No rotation (0 degrees).
 	if (!this->Rotated)
 	{
 		baseId = this->Columns;
@@ -183,8 +187,8 @@ int vtkSubdivideQuadBrickEc::RequestData(vtkInformation *vtkNotUsed(request),
 					id += (this->Columns + 2);
 				}
 
-
-				if ((i + 1) == this->Rows / 2 && j % 2 != 0) // Last iteration, do not extend cells beyond quad.
+				// The last cell in every second row is a short cell.
+				if ((i + 1) == this->Rows / 2 && j % 2 != 0)
 				{
 					// Requires 6 points so that the later call to ReplaceCell is successful.
 					newCell->InsertNextId(id);
@@ -210,6 +214,8 @@ int vtkSubdivideQuadBrickEc::RequestData(vtkInformation *vtkNotUsed(request),
 			id = baseId;
 		}
 	}
+
+	// 90 degree clockwise rotation.
 	else
 	{
 		baseId = -1;
@@ -236,7 +242,8 @@ int vtkSubdivideQuadBrickEc::RequestData(vtkInformation *vtkNotUsed(request),
 					}
 				}
 
-				if (i == 0 && j % 2 == 0) // first iteration (small cells)
+				// The first cell in every second row is a short cell.
+				if (i == 0 && j % 2 == 0)
 				{
 					newCell->InsertNextId(id);
 					newCell->InsertNextId(id);

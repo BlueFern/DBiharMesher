@@ -9,17 +9,18 @@
  * It acts as a 'second pass' after each quad was subdivided with a brick tessellation
  * (which leaves holes at one end).
  *
- * For a correct tessellation, the first of three branches (for such a mesh) uses a rotation value of 0
- * (no rotation), while the other two use 2 (180 degrees clockwise) in the vtkReorderSubdivdeQuad filter.
+ * For a correct tessellation, the quads in the second and third branches (for a mesh with a bifurcation)
+ * where subdivded differently to those in the parent branch. In the filter vtkSubdivideQuadBrickEc the
+ * parameter Rotated was set to true for the daughter branches, and false for the parent.
  * The input mesh for this filter is assumed to have followed this restriction.
  *
  * Viewing the output from this filter directly will show some irregularities - cells that have been joined
  * so that they are non-plannar and have concave properties are not rendered correctly. OpenGL alone can't
- * handle non-convex polygons. For future considerations, this is not addressed in this filter. At a later point
- * this mesh will be put through a triangle filter which solves this issue.
+ * handle non-convex polygons. This can be corrected by converting such polygons into two quads for example,
+ * but should be done at a later stage and not in this filter as it would incorrectly increase the number of cells.
  *
  * The filter takes the number of axial and circumferential quads, the number of rows and columns each quad
- * was divided into, the number of branches, if the mesh is flat, and the mesh itself as parameters.
+ * was divided into, the number of branches, and the mesh itself as parameters.
  *
  * The output is a fully joined mesh.
  *
