@@ -161,6 +161,10 @@ add_library(vtkRescaleUnits src/vtkRescaleUnits.cxx)
 target_link_libraries(vtkRescaleUnits
 	vtkFiltersHybrid)
 	
+add_library(vtkPolygonsToQuads src/vtkPolygonsToQuads.cxx)
+target_link_libraries(vtkPolygonsToQuads
+	vtkFiltersHybrid)
+	
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/test)
 
@@ -389,6 +393,15 @@ target_link_libraries(testSubdivideMeshBrick
 	vtkSubdivideMeshBrick
 	vtkSubdivideQuadBrickEc
 	vtkSubdivideQuadBrickSmc
+	vtkFiltersGeometry
+	${testLibs})
+	
+add_executable(testPolygonsToQuads
+	src/vtkPolygonsToQuads.cxx
+	test/testPolygonsToQuads.cxx)
+target_link_libraries(testPolygonsToQuads
+	vtkDbiharStatic
+	vtkPolygonsToQuads
 	vtkFiltersGeometry
 	${testLibs})
 	
