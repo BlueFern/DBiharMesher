@@ -228,6 +228,7 @@ int main(int argc, char* argv[]) {
 	subdivideSMCMesh->SetCellType(vtkDbiharStatic::SMC);
 	subdivideSMCMesh->SetAxialQuads(34);
 	subdivideSMCMesh->SetCircQuads(40);
+	subdivideSMCMesh->SetFlat(false);
 	subdivideSMCMesh->Update();
 
 	vtkDbiharStatic::WritePolyData(subdivideSMCMesh->GetOutput(), "quadMeshFullSMCc4080.vtp");
