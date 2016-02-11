@@ -133,6 +133,10 @@ add_library(vtkRescaleUnits src/vtkRescaleUnits.cxx)
 target_link_libraries(vtkRescaleUnits
 	vtkFiltersHybrid)
 	
+add_library(vtkDbiharPatchSmooth src/vtkDbiharPatchSmooth.cxx)
+target_link_libraries(vtkDbiharPatchSmooth
+	vtkFiltersHybrid)
+	
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/test)
 
@@ -191,21 +195,56 @@ target_link_libraries(testWrapDbihar6
 add_executable(testWrapDbihar7
 	test/testWrapDbihar7.cxx)
 target_link_libraries(testWrapDbihar7
-    vtkDbiharStatic
+    	vtkDbiharStatic
 	vtkDbiharPatchFilter
 	${testLibs})
 	
 add_executable(testWrapDbihar8
 	test/testWrapDbihar8.cxx)
 target_link_libraries(testWrapDbihar8
-    vtkDbiharStatic
+    	vtkDbiharStatic
 	vtkDbiharPatchFilter
 	${testLibs})
 	
 add_executable(testWrapDbihar9
 	test/testWrapDbihar9.cxx)
 target_link_libraries(testWrapDbihar9
-    vtkDbiharStatic
+    	vtkDbiharStatic
+	vtkDbiharPatchFilter
+	${testLibs})
+
+add_executable(testWrapDbihar10
+	test/testWrapDbihar10.cxx)
+target_link_libraries(testWrapDbihar10
+    	vtkDbiharStatic
+	vtkDbiharPatchFilter
+	${testLibs})
+
+add_executable(testWrapDbihar11
+	test/testWrapDbihar11.cxx)
+target_link_libraries(testWrapDbihar11
+    	vtkDbiharStatic
+	vtkDbiharPatchFilter
+	${testLibs})
+
+add_executable(testWrapDbihar12
+	test/testWrapDbihar12.cxx)
+target_link_libraries(testWrapDbihar12
+    	vtkDbiharStatic
+	vtkDbiharPatchFilter
+	${testLibs})
+
+add_executable(testWrapDbihar13
+	test/testWrapDbihar13.cxx)
+target_link_libraries(testWrapDbihar13
+    	vtkDbiharStatic
+	vtkDbiharPatchFilter
+	${testLibs})
+
+add_executable(testWrapDbihar14
+	test/testWrapDbihar14.cxx)
+target_link_libraries(testWrapDbihar14
+    	vtkDbiharStatic
 	vtkDbiharPatchFilter
 	${testLibs})
 
@@ -310,6 +349,19 @@ add_executable(testRescaleUnits
 target_link_libraries(testRescaleUnits
 	vtkDbiharStatic
 	vtkRescaleUnits
+	${testLibs})
+	
+add_executable(testDbiharPatchSmooth
+	src/vtkDbiharPatchSmooth.cxx
+	test/testDbiharPatchSmooth.cxx)
+target_link_libraries(testDbiharPatchSmooth
+	vtkDbiharStatic
+	vtkScalarRadiiToVectorsFilter
+	vtkFiltersGeometry
+	vtkDbiharPatchFilter
+	vtkRescaleUnits
+	vtkDbiharPatchSmooth
+	vtksys
 	${testLibs})
 	
 add_executable(testPipelineBifurcation1
