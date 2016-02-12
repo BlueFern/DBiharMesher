@@ -30,13 +30,12 @@ int main(int argc, char* argv[]) {
 
 	vtkIdType pIds = (cQuads + xQuads) * 2;
 
-	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
-	vtkSmartPointer<vtkPolyLine> boundary = vtkSmartPointer<vtkPolyLine>::New();
-
 	// Insert boundary points. The boundary has four segments.
 	// The coordinates of the points are calculated specific to the current boundary segment.
 	double point[3] = {0.0};
 
+	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+	vtkSmartPointer<vtkPolyLine> boundary = vtkSmartPointer<vtkPolyLine>::New();
 	vtkSmartPointer<vtkDoubleArray> derivatives = vtkSmartPointer<vtkDoubleArray>::New();
 	derivatives->SetName(vtkDbiharPatchFilter::DERIV_ARR_NAME);
 	derivatives->SetNumberOfComponents(3);
@@ -129,7 +128,6 @@ int main(int argc, char* argv[]) {
 	vtkSmartPointer<vtkPolyData> inputPatch = vtkSmartPointer<vtkPolyData>::New();
 	inputPatch->SetPoints(points);
 	inputPatch->SetLines(boundaries);
-
 	inputPatch->GetPointData()->SetVectors(derivatives);
 
 	vtkDbiharStatic::ShowPolyData(inputPatch);
@@ -166,7 +164,7 @@ int main(int argc, char* argv[]) {
 	gridGeometryFilter->SetInputData(structuredGrid);
 	gridGeometryFilter->Update();
 
-	vtkDbiharStatic::WritePolyData(gridGeometryFilter->GetOutput(), std::string(argv[0]) + "_outputSurface.vtp");
+	vtkDbiharStatic::WritePolyData(gridGeometryFilter->GetOutput(), std::string(argv[0]) + "_outputSurface1.vtp");
 
 	std::cout << "Exiting " << __FILE__ << std::endl;
 

@@ -1,5 +1,5 @@
 /*
- * Patch filter for cylinder fractions
+ * Patch filter for one branch (cylinder). Boundary condition on side of branch (outside)
  */
 
 #include <stdlib.h>
@@ -24,20 +24,23 @@ int main(int argc, char* argv[]) {
 	std::cout << "Starting " << __FILE__ << std::endl;
 
 	//Defining the parameters
-	double frac		= .75;					//Fraction of cylinder [0...1]
-	double L 		= 8800;					//Set length
-	double R 		= 1273.24;					//Set radius
-	int    uQuads 	= 40;					//Must be even! Number of quads along the length
-	int    vQuads 	= 34;					//Must be even! Number of quads along the arch
+	double L 		= 40;					//Set length
+	double R 		= 10;					//Set radius
+	int    uQuads 	= 24;					//Must be even! Number of quads along the length
+	int    vQuads 	= 36;					//Must be even! Number of quads along the arch
+	double angleBif	= 80;					//Angle of the bifurcation (in degrees)
+	double deg2rad	= (vtkMath::Pi()/180);	//Degree to radiant converter
 
-	double circle 	= frac*2*(vtkMath::Pi());	//Set angle of arch
-	double derivL 	= (frac+0.25)*R;		//Set magnitude of derivatives along the length
+	double circle 	= 2*(vtkMath::Pi());	//Circle for the tube
+	double derivL 	= 1.25*R;				//Set magnitude of derivatives along the length
 	double derivA 	= L;					//Set magnitude of derivatives along the arch
+	double alpha	= (angleBif/2)*deg2rad;			//Angle 1 for
+	double beta		= ((360-angleBif)/4)*deg2rad;	//
 
 	//define all further variables
 	double point[3] = {0.0};
 	double deriv[3] = {0.0};
-	double alpha	= 0.0;
+	double gamma	= 0.0;
 	double x = 0.0;
 	double y = 0.0;
 	double z = 0.0;
@@ -62,7 +65,7 @@ int main(int argc, char* argv[]) {
 		//Starting at x=0, y=-R, z=0)
 		if(pId < uQuads)
 		{
-			x = L*((double)pId/uQuads);
+			x = (L-R/tan(beta))*((double)pId/uQuads);
 			y = -R;
 			z = 0;
 			if(pId != 0)
@@ -72,13 +75,23 @@ int main(int argc, char* argv[]) {
 				dz = -derivL;
 			}
 		}
-		//Set coordinates and derivatives for points on second segment (arch at x=L)
+		//Set coordinates and derivatives for points on second segment (arch at bifurcation)
 		else if(pId < (vQuads + uQuads))
 		{
-			alpha = circle*(((double)pId-uQuads)/vQuads);
-			x = L;
-			y = -R*cos(alpha);
-			z = R*sin(alpha);
+			gamma = circle*(((double)pId-uQuads)/vQuads);
+
+			y = -R*cos(gamma);
+			z = R*sin(gamma);
+
+				if(gamma < (circle/4) || gamma > (3*circle/4))
+				{
+					x = L - (fabs(y)/tan(beta));
+				}
+				else
+				{
+					x = L - (fabs(y)/tan(alpha));
+				}
+
 			if(pId != uQuads)
 			{
 				dx = derivA;
@@ -89,23 +102,24 @@ int main(int argc, char* argv[]) {
 		//Set coordinates and derivatives for points on third segment (straight line)
 		else if(pId < (2*uQuads + vQuads))
 		{
-			x = L*(1-((double)pId-(uQuads+vQuads))/uQuads);
+			x = (L-R/tan(beta))*(1-((double)pId-(uQuads+vQuads))/uQuads);
 			y = -R*cos(circle);
 			z = R*sin(circle);
+
 			if(pId != (vQuads + uQuads))
 			{
 				dx = 0.0;
-				dy = derivL*sin(circle);
-				dz = derivL*cos(circle);
+				dy = 0.0;
+				dz = derivL;
 			}
 		}
 		//Set coordinates and derivatives for points on fourth segment (arch at x=0)
 		else
 		{
-			alpha = circle*(1-(((double)pId-(2*uQuads+vQuads))/(double)vQuads));
+			gamma = circle*(1-(((double)pId-(2*uQuads+vQuads))/(double)vQuads));
 			x = 0;
-			y = -R*cos(alpha);
-			z = R*sin(alpha);
+			y = -R*cos(gamma);
+			z = R*sin(gamma);
 			if(pId != (2*uQuads + vQuads))
 			{
 				dx = -derivA;
@@ -113,6 +127,7 @@ int main(int argc, char* argv[]) {
 				dz = 0.0;
 			}
 		}
+
 		point[0] = x;
 		point[1] = y;
 		point[2] = z;
@@ -137,7 +152,7 @@ int main(int argc, char* argv[]) {
 	inputPatch->SetLines(boundaries);
 	inputPatch->GetPointData()->SetVectors(derivatives);
 
-	vtkDbiharStatic::ShowPolyData(inputPatch);
+	// vtkDbiharStatic::ShowPolyData(inputPatch);
 	vtkDbiharStatic::WritePolyData(inputPatch, std::string(argv[0]) + "_inputPatch.vtp");
 
 	vtkSmartPointer<vtkDbiharPatchFilter> patchFilter = vtkSmartPointer<vtkDbiharPatchFilter>::New();

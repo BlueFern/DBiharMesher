@@ -9,47 +9,10 @@
 #include <vtkStructuredGridGeometryFilter.h>
 #include <vtkCellData.h>
 #include <vtkObjectFactory.h>
-#include <vtkGenericDataObjectReader.h>
-
 
 #include "vtkDbiharPatchFilter.h"
 #include "vtkDbiharPatchSmooth.h"
 #include "vtkDbiharStatic.h"
-
-
-#include <vtkSmartPointer.h>
-#include <vtkPolyData.h>
-#include <vtkGenericDataObjectReader.h>
-#include <vtkDoubleArray.h>
-#include <vtkUnsignedIntArray.h>
-#include <vtkCell.h>
-#include <vtkGenericCell.h>
-#include <vtkPoints.h>
-#include <vtkPointData.h>
-#include <vtkAppendPoints.h>
-#include <vtkAppendPolyData.h>
-#include <vtkTriangleFilter.h>
-#include <vtkCellArray.h>
-#include <vtksys/SystemTools.hxx>
-
-#include <vtkPolyLine.h>
-#include "vtkDbiharPatchFilter.h"
-#include <vtkMath.h>
-#include <vtkStructuredGrid.h>
-#include <vtkStructuredGridGeometryFilter.h>
-
-#include "vtkDbiharStatic.h"
-#include "vtkRescaleUnits.h"
-#include "vtkCentrelinePartitioner.h"
-#include "vtkScalarRadiiToVectorsFilter.h"
-#include "vtkCentrelineToDbiharPatch.h"
-#include "vtkPointsToMeshFilter.h"
-#include "vtkSubdivideMesh.h"
-#include "vtkSkipSegmentFilter.h"
-#include "vtkEndCapFilter.h"
-#include "vtkCentrelineResampler.h"
-#include "wrapDbiharConfig.h"
-
 
 
 vtkStandardNewMacro(vtkDbiharPatchSmooth);
@@ -61,12 +24,9 @@ vtkDbiharPatchSmooth::vtkDbiharPatchSmooth()
 	this->NumRadialQuads = 0;
 }
 
-
 int vtkDbiharPatchSmooth::RequestData(vtkInformation *vtkNotUsed(request),
 		vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
-	//TODO: branch id???
-
 	// Get the input and output.
 	vtkPolyData* input = vtkPolyData::GetData(inputVector[0], 0);
 	vtkPolyData* output = vtkPolyData::GetData(outputVector, 0);
@@ -87,7 +47,7 @@ int vtkDbiharPatchSmooth::RequestData(vtkInformation *vtkNotUsed(request),
 	 * -> specific order of points must be given !?
 	 */
 
-
+	// Variables to get important points from the model
 	int numPoints = input->GetNumberOfPoints() ;
 	double *controlPoint;
 	double xBif = 0.0;
@@ -103,20 +63,19 @@ int vtkDbiharPatchSmooth::RequestData(vtkInformation *vtkNotUsed(request),
 	int xStep = 0;					// Size of step in x-direction, daughter branch 1
 	int step = 0;					// Actual size of step in x-direction, daughter branch 1
 	int c = 0;						// Control variable
-	int CPID = 0;					// Centreline point ID
+	int pidRing = 0;				// Point ID (step = full ring)
 
-	for (CPID = 0; c < 2; CPID = CPID + 2*this->NumRadialQuads)
+	for (pidRing = 0; c < 2; pidRing = pidRing + 2*this->NumRadialQuads)
 	{
-		controlPoint = input->GetPoint(CPID);
+		controlPoint = input->GetPoint(pidRing);
 		xControl = controlPoint[0];
 		yControl = controlPoint[1];
 		zControl = controlPoint[2];
 
-
 		if (yControl != 0.0 && c == 0)
 		{
-			xBif = input->GetPoint(CPID - 2*this->NumRadialQuads)[0];
-			endPoint2X = input->GetPoint(numPoints - 2*this->NumRadialQuads)[0];
+			xBif = input->GetPoint(pidRing - 2*this->NumRadialQuads)[0];
+			endPoint2X = input->GetPoint(numPoints - 2*this->NumRadialQuads)[0];	// Get point coordinates for the last point of daughter branch 2
 			endPoint2Y = input->GetPoint(numPoints - 2*this->NumRadialQuads)[1];
 			endPoint2Z = input->GetPoint(numPoints - 2*this->NumRadialQuads)[2];
 			xStep = round(xControl - xBif);
@@ -124,12 +83,12 @@ int vtkDbiharPatchSmooth::RequestData(vtkInformation *vtkNotUsed(request),
 		}
 		if (c == 1)
 		{
-			controlPoint = input->GetPoint(CPID + 2*this->NumRadialQuads);
+			controlPoint = input->GetPoint(pidRing + 2*this->NumRadialQuads);
 			step = round(controlPoint[0] - xControl);
 
 			if (step != xStep)
 			{
-				endPoint1X = xControl;
+				endPoint1X = xControl;	// Get point coordinates for the last point of daughter branch 1
 				endPoint1Y = yControl;
 				endPoint1Z = zControl;
 				c = 2;
@@ -137,15 +96,17 @@ int vtkDbiharPatchSmooth::RequestData(vtkInformation *vtkNotUsed(request),
 		}
 	}
 
+	// Calculating characteristic properties
 	double Length0 = xBif;													// Length of parent branch
 	double Length1 = sqrt(pow(endPoint1X - xBif, 2) + pow(endPoint1Y, 2));	// Length of daughter branch 1
 	double Length2 = sqrt(pow(endPoint2X-xBif, 2) + pow(endPoint2Y, 2));	// Length of daughter branch 2
-	double Radius1 = sqrt(pow(endPoint1Z, 2));								// Radius of daughter branch 1
-	double Radius2 = sqrt(pow(endPoint2Z, 2));								// Radius of daughter branch 2
+	double Radius1 = sqrt(pow(endPoint1Z, 2));								// Radius of daughter branch 1 (calculated at end of daughter branch 1)
+	double Radius2 = sqrt(pow(endPoint2Z, 2));								// Radius of daughter branch 2 (calculated at end of daughter branch 2)
 	double Alpha = atan((endPoint1Y)/(endPoint1X-xBif));					// Calculating angle between X-axis and daughter branch 1
 	double Beta = atan((-endPoint2Y)/(endPoint2X-xBif));					// Calculating angle between X-axis and daughter branch 2
 	double Gamma = (Alpha + Beta)/2 - Beta;									// Calculating angle between X-axis and daughter-daughter-boundary
 
+	// Calculating number of axial quads per branch
 	vtkIdType pid = 0;
 	int numAxialQuads0 = round(Length0/(vtkDbiharStatic::EC_AXIAL * 4));	// Number of ECs per quad length!
 	int numAxialQuads1 = round(Length1/(vtkDbiharStatic::EC_AXIAL * 4));	// Number of ECs per quad length!
@@ -164,6 +125,7 @@ int vtkDbiharPatchSmooth::RequestData(vtkInformation *vtkNotUsed(request),
 		numAxialQuads2 = numAxialQuads2 - 1;
 	}
 
+	// Calculating number of points/cells per branch
 	int numPointsBranch0 = 2*this->NumRadialQuads * numAxialQuads0 + 2*this->NumRadialQuads;	// Number of points parent branch
 	int numPointsBranch1 = 2*this->NumRadialQuads * numAxialQuads1 + 2*this->NumRadialQuads;	// Number of points daughter branch 1
 	int numPointsBranch2 = 2*this->NumRadialQuads * numAxialQuads2 + 2*this->NumRadialQuads;	// Number of points daughter branch 2
@@ -171,6 +133,7 @@ int vtkDbiharPatchSmooth::RequestData(vtkInformation *vtkNotUsed(request),
 	int numCellsBranch1 = 2*this->NumRadialQuads * numAxialQuads1;								// Number of cells daughter 1
 	int numCellsBranch2 = 2*this->NumRadialQuads * numAxialQuads2;								// Number of cells daughter 2
 
+	// Derivatives for the DbiharPatchFilter
 	double dGROUND;					// Derivatives between daughter and parent
 	double dBIF;					// Derivatives between daughter and daughter
 	double dPEAK;					// Derivatives on peak (point of bifurcation)
@@ -187,12 +150,13 @@ int vtkDbiharPatchSmooth::RequestData(vtkInformation *vtkNotUsed(request),
 	derivatives->SetName(vtkDbiharPatchFilter::DERIV_ARR_NAME);
 	derivatives->SetNumberOfComponents(3);
 
-	vtkSmartPointer<vtkAppendPolyData> appendPolyData = vtkSmartPointer<vtkAppendPolyData>::New();
+	vtkSmartPointer<vtkAppendPolyData> appendPolyData = vtkSmartPointer<vtkAppendPolyData>::New(); // Adding the three branches to one model
 
 	vtkSmartPointer<vtkPolyData> trunk = vtkSmartPointer<vtkPolyData>::New();
 	vtkSmartPointer<vtkCellArray> newCellArray = vtkSmartPointer<vtkCellArray>::New();
 	vtkSmartPointer<vtkPoints> newPoints = vtkSmartPointer<vtkPoints>::New();
 
+	// Keeping the parent branch
 	for (int i = 0; i < numPointsBranch0; i++)
 	{
 		newPoints->InsertNextPoint(input->GetPoint(i));
@@ -201,26 +165,23 @@ int vtkDbiharPatchSmooth::RequestData(vtkInformation *vtkNotUsed(request),
 	{
 		newCellArray->InsertNextCell(input->GetCell(i));
 	}
-
 	trunk->SetPoints(newPoints);
 	trunk->SetPolys(newCellArray);
-
-
-
 	appendPolyData->AddInputData(trunk);
 
+	// Processing each daughter branch at a time
 	for (int k = 0; k < 2; k++)
 	{
 		// Get points for boundary 1
 		if(k == 0)
 		{
 			// Setting parameter for derivatives (daughter branch 1)
-			dGROUND	= Length1;			//Length 8800				// Derivatives between daughter1 and parent
-			dBIF	= 0.25*Length1;		//0.25*Length 2200			// Derivatives between daughter1 and daughter2
-			dPEAK	= 1.70*Length1;		//1.70*Length 14960			// Derivatives in point of bifurcation
-			dUP		= 2*Radius1; 		//2*Radius 2200				// Derivatives on straight boundaries
-			dTOP	= Length1;			//Length 8800				// Derivatives on end of daughter branch
-			Angle	= Alpha;			//							// Angle between parent and daughter1 axis
+			dGROUND	= Length1;			// Derivatives between daughter1 and parent
+			dBIF	= 0.25*Length1;		// Derivatives between daughter1 and daughter2
+			dPEAK	= 1.70*Length1;		// Derivatives in point of bifurcation
+			dUP		= 2*Radius1; 		// Derivatives on straight boundaries
+			dTOP	= Length1;			// Derivatives on end of daughter branch
+			Angle	= Alpha;			// Angle between parent and daughter1 axis
 
 			// Get points for first boundary segment (circle at bifurcation)
 			for(pid = numPointsBranch0 + this->NumRadialQuads/2; pid < numPointsBranch0 + 2*this->NumRadialQuads; pid++)
@@ -257,7 +218,7 @@ int vtkDbiharPatchSmooth::RequestData(vtkInformation *vtkNotUsed(request),
 				boundary->GetPointIds()->InsertNextId(points->InsertNextPoint(exPoint));
 			}
 
-		// Setting derivatives
+			// Setting derivatives for daughter branch 1
 			for (int counter = 0; counter < points->GetNumberOfPoints(); counter++)
 			{
 				// Derivatives = 0 for corners
@@ -377,8 +338,7 @@ int vtkDbiharPatchSmooth::RequestData(vtkInformation *vtkNotUsed(request),
 				boundary->GetPointIds()->InsertNextId(points->InsertNextPoint(exPoint));
 			}
 
-
-			// Setting derivatives
+			// Setting derivatives for daughter branch 2
 			for (int counter = 0; counter < points->GetNumberOfPoints(); counter++)
 			{
 				// Derivatives = 0 for corners
@@ -525,11 +485,7 @@ int vtkDbiharPatchSmooth::RequestData(vtkInformation *vtkNotUsed(request),
 		derivatives->Initialize();
 	}
 
-
-
 	appendPolyData->Update();
-
-
 
 	vtkSmartPointer<vtkIntArray> branchIdCellData = vtkSmartPointer<vtkIntArray>::New();
 	int branchId = 0;
@@ -545,9 +501,7 @@ int vtkDbiharPatchSmooth::RequestData(vtkInformation *vtkNotUsed(request),
 		{
 			branchId = 2;
 		}
-
 		branchIdCellData->InsertNextValue(branchId);
-
 	}
 
 	appendPolyData->GetOutput()->GetCellData()->SetScalars(branchIdCellData);

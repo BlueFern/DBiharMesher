@@ -13,15 +13,34 @@ The input to vtkDbiharPatchFilter is a vtkPolyData object which contains a vtkPo
 
 ## Output
 
-The output from the vtkDbiharPatchFilter filter is a set of nodes for a structured grid representing the patch surface. The set of nodes is converted to vtkStructuredGrid for visualisation.
+The output from the vtkDbiharPatchFilter is a set of nodes for a structured grid representing the patch surface. The set of nodes is converted to vtkStructuredGrid for visualisation.
 
 
-#DbiharPatchSmooth
+# Generation of a Bifurcation Model
+
+*The examples in this chapter are from a model with 4080 quads*
 
 
-vtkDbiharPatchSmooth is a filter, generated to smooth the arrangement of quads of an simplyfied coronary artery bifurcation model (such as quadMeshFullc4080.vtp). To do so the algorithm must be supplied with the original model as input. It then generates two new daugther branches, appends them to the existing trunk and gives that new model as output. It creates new daughter branches by taking their contours and applying the DbiharPatchFilter on each of them. 
-To be able to calculate the necessary data from the original model, the number of radial quads ('numRadialQuads', halved) must be set to the same value as it is in the pipeline that creates the input data (i.e. meshGen4080.cxx). With the aim of this parameter the algorithm is able to calculate all the necessary data by itself. First it gets important coordinates (point in the centre of bifurcation and endpoints of daughter branches) and calculates the models properties (lengths, radii, angles). Knowing that there are four endothelial cells per quad in axial direction and the lengths of the branches, the number of axial quads per branch ('numAxialQuads0', 'numAxialQuads1', 'numAxialQuads2') can be determined. In order to define the contour of a single daugther branch, consecutive points are appended into an array. This happens by applying specific functions on the original point array (the original model
+## Centreline
+
+The centreline for the bifurcation model is created by the Python program 'Generate4080Centreline.py'. It contains the branches lengths, angles and radius as input data and passes them to 'CentrelineGenerator.py'. **TODO: difference consistent/decreasing radii (Murray's Law)** The output centreline is two dimensional and the radii in every point are set as scalars. The resulting vtkPolyData is then saved in a file.
+ 
+![Centreline](https://raw.github.com/bluefern/dbiharmesher/master/doc/images/centreline_4080.png "Centreline")
+ 
+## Mesh Generation
+
+The mesh generator program 'meshGen4080.cxx' starts by reading in the centreline file ('c4080Centreline.vtk') and setting the number of radial quads. It prepares the data for the filter that actually generates the surface points, the 'dbiharPatchFilter' (*vtkCentrelineToDbiharPatch*?). The points are then used to form the quads.
+This pipeline is a series of scripts and its input can be altered to get different sized and shaped bifurcation models. 
+
+![Old_Mesh](https://raw.github.com/bluefern/dbiharmesher/master/doc/images/old_Mesh.png "Example for a first solution mesh")
 
 
+## Mesh Smoothing
 
-![Image name/tag goes here](https://raw.github.com/bluefern/dbiharmesher/master/doc/images/boundaryWithDerivatives_numbered.png)
+The solution from the mesh generator can be improved with the optional filter 'vtkDbiharPatchSmooth'. It has been developed after undesired distortions appeared in simulations run on the bifurcation model. Some of the joined quads form sharp angles along the daughter branches towards the centre of the bifurcation and the aim of this filter is to smoothen them. To do so it reads in the vtkPolyData solution (i.e. 'quadMeshFullc4080.vtp'), generates two new daughter branches on the basis of this input, attaches them to the existing parent branch and gives the new model as output. The lines of the mesh are more consitent due to the way the boundaries for each branch is defined before the 'vtkDbiharPatchFilter' is applied. The boundary line itself is defined as a consecutive collection of points from the temporary solution (output of meshGenerator) and surrounds one single branch (see following image "Boundary"). Each point is then equipped with a derivative. The magnitude and direction of these vectors are functions and dependent on the properties of the input model. They affect the propagations of the generated lines as well as the shape of the solution. 
+
+![consecutiveOrderOfPoints](https://raw.github.com/bluefern/dbiharmesher/master/doc/images/boundaryWithDerivatives_numbered.png "Boundary")
+
+![New_Mesh](https://raw.github.com/bluefern/dbiharmesher/master/doc/images/new_Mesh.png "Example for improved mesh")
+
+**TODO: Other Meshes (SMCs, ECs) and (rectangular, brick lay)!?**
