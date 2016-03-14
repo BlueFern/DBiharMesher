@@ -58,6 +58,7 @@ int vtkSubdivideMeshBrick::RequestData(vtkInformation *vtkNotUsed(request), vtkI
 
 	int numberOfQuads = input->GetNumberOfCells();
 
+
 	vtkSmartPointer<vtkIntArray> branchIdArray = vtkIntArray::SafeDownCast(input->GetCellData()->GetArray(vtkDbiharStatic::BRANCH_ID_ARR_NAME));
 	vtkSmartPointer<vtkIntArray> gridCoordsArray = vtkIntArray::SafeDownCast(input->GetCellData()->GetArray(vtkDbiharStatic::GRID_COORDS_ARR_NAME));
 

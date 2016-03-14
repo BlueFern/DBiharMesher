@@ -48,6 +48,7 @@ int vtkJoinSmcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInf
 		vtkErrorMacro("Must specify the number of branches.");
 		exit(EXIT_FAILURE);
 	}
+	output->DeepCopy(input);
 
 	vtkSmartPointer<vtkIdList> cell1Points = vtkSmartPointer<vtkIdList>::New();
 	vtkSmartPointer<vtkIdList> cell2Points = vtkSmartPointer<vtkIdList>::New();
@@ -75,8 +76,8 @@ int vtkJoinSmcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInf
 		while (quadId < quadsInBranch)
 		{
 			vtkIdType newPoint[6];
-			input->GetCellPoints(cell1, cell1Points);
-			input->GetCellPoints(cell2, cell2Points);
+			output->GetCellPoints(cell1, cell1Points);
+			output->GetCellPoints(cell2, cell2Points);
 
 			// The quads in the top half for each branch have a different pattern to those in the bottom half.
 			// The connectivity if therefore different, and they must be done seperately.
@@ -91,7 +92,7 @@ int vtkJoinSmcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInf
 				newPoint[4] = cell2Points->GetId(3);
 				newPoint[5] = cell2Points->GetId(5);
 
-				input->ReplaceCell(cell2, 6, newPoint);
+				output->ReplaceCell(cell2, 6, newPoint);
 
 			}
 			else if (quadId % this->CircQuads >= this->CircQuads / 2) // Bottom half.
@@ -103,7 +104,7 @@ int vtkJoinSmcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInf
 				newPoint[4] = cell1Points->GetId(4);
 				newPoint[5] = cell2Points->GetId(2);
 
-				input->ReplaceCell(cell1, 6, newPoint);
+				output->ReplaceCell(cell1, 6, newPoint);
 			}
 
 			fixes--;
@@ -154,10 +155,11 @@ int vtkJoinSmcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInf
 		}
 	}
 
-	// If the mesh is not flat, the two different patterns in the top and bottom halves of each branch
-	// result in gaps. To correct this cells along the join are stretched.
-	if (!this->Flat)
+	if (! this->Flat)
 	{
+		// The two different patterns in the top and bottom halves of each branch
+		// result in gaps. To correct this cells along the join are stretched.
+
 		vtkIdType newPoint[4];
 		quadId = 0;
 
@@ -174,8 +176,8 @@ int vtkJoinSmcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInf
 			while (ringId < this->AxialQuads)
 			{
 				vtkIdType newPoint[6];
-				input->GetCellPoints(cell1, cell1Points);
-				input->GetCellPoints(cell2, cell2Points);
+				output->GetCellPoints(cell1, cell1Points);
+				output->GetCellPoints(cell2, cell2Points);
 
 				// Along this join, every second cell from the upper quad needs to be streched down.
 				// Similarly, every other cell from the lower quad needs to be streched upwards.
@@ -188,7 +190,7 @@ int vtkJoinSmcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInf
 					newPoint[2] = cell1Points->GetId(2);
 					newPoint[3] = cell2Points->GetId(2);
 
-					input->ReplaceCell(cell1, 4, newPoint);
+					output->ReplaceCell(cell1, 4, newPoint);
 				}
 				else // Stretched down.
 				{
@@ -197,7 +199,7 @@ int vtkJoinSmcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInf
 					newPoint[2] = cell1Points->GetId(3);
 					newPoint[3] = cell2Points->GetId(3);
 
-					input->ReplaceCell(cell2, 4, newPoint);
+					output->ReplaceCell(cell2, 4, newPoint);
 				}
 
 				quadId++;
@@ -220,7 +222,6 @@ int vtkJoinSmcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInf
 		}
 	}
 
-	output->ShallowCopy(input);
 	return 1;
 }
 

@@ -48,6 +48,8 @@ int vtkJoinEcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInfo
 		exit(EXIT_FAILURE);
 	}
 
+	output->DeepCopy(input);
+
 	vtkSmartPointer<vtkIdList> cell1Points = vtkSmartPointer<vtkIdList>::New();
 	vtkSmartPointer<vtkIdList> cell2Points = vtkSmartPointer<vtkIdList>::New();
 
@@ -90,8 +92,8 @@ int vtkJoinEcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInfo
 			}
 
 			vtkIdType newPoint[6];
-			input->GetCellPoints(cell1, cell1Points);
-			input->GetCellPoints(cell2, cell2Points);
+			output->GetCellPoints(cell1, cell1Points);
+			output->GetCellPoints(cell2, cell2Points);
 
 
 			if (branchId > 0) // Daughter branches.
@@ -104,7 +106,7 @@ int vtkJoinEcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInfo
 
 				newPoint[4] = cell2Points->GetId(5);
 				newPoint[5] = cell2Points->GetId(0);
-				input->ReplaceCell(cell2, 6, newPoint);
+				output->ReplaceCell(cell2, 6, newPoint);
 			}
 			else // Trunk.
 			{
@@ -116,7 +118,7 @@ int vtkJoinEcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInfo
 
 				newPoint[4] = cell2Points->GetId(0);
 				newPoint[5] = cell1Points->GetId(5);
-				input->ReplaceCell(cell1, 6, newPoint);
+				output->ReplaceCell(cell1, 6, newPoint);
 			}
 
 			fixes--;
@@ -141,7 +143,6 @@ int vtkJoinEcBrickMesh::RequestData(vtkInformation *vtkNotUsed(request), vtkInfo
 		}
 	}
 
-	output->ShallowCopy(input);
 	return 1;
 }
 
