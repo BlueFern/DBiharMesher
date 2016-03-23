@@ -55,7 +55,7 @@ def buildATPMesh():
 
     # Put the ecMesh through centroids filter.
     centroidFilter = vtk.vtkCellCenters()
-    centroidFilter.SetInput(ecMesh)
+    centroidFilter.SetInputData(ecMesh)
     centroidFilter.Update()
 
     centroids = centroidFilter.GetOutput()
@@ -94,12 +94,12 @@ def buildATPMesh():
     # Save the debug ATP mesh.
     debugAtpMapWriter = vtk.vtkXMLPolyDataWriter()
     debugAtpMapWriter.SetFileName(debugAtpFile)
-    debugAtpMapWriter.SetInput(debugAtpDataset)
+    debugAtpMapWriter.SetInputData(debugAtpDataset)
     debugAtpMapWriter.Update()
 
     # Prepare the ATP mesh by converting all points to vercices.
     pointsToVerticesFilter = vtk.vtkVertexGlyphFilter()
-    pointsToVerticesFilter.SetInput(centroids)
+    pointsToVerticesFilter.SetInputData(centroids)
     pointsToVerticesFilter.Update()
     atpDataset = pointsToVerticesFilter.GetOutput()
     atpDataset.GetCellData().AddArray(atpArray)
@@ -109,7 +109,7 @@ def buildATPMesh():
 
     atpMapWriter = vtk.vtkXMLPolyDataWriter()
     atpMapWriter.SetFileName(atpFile)
-    atpMapWriter.SetInput(atpDataset)
+    atpMapWriter.SetInputData(atpDataset)
     atpMapWriter.Update()
     
     # Provide a quick visualisation of the ATP profile for validation.
