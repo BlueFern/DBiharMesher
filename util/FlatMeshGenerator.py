@@ -19,7 +19,7 @@ def buildATPMesh(polydata, filename):
     
     centroidFilter = vtk.vtkCellCenters()
     centroidFilter.VertexCellsOn()
-    centroidFilter.SetInput(polydata)
+    centroidFilter.SetInputData(polydata)
     
     newPolydata = vtk.vtkPolyData()
     newPolydata = centroidFilter.GetOutput()
@@ -40,7 +40,7 @@ def buildATPMesh(polydata, filename):
     
     polyDataWriter = vtk.vtkXMLPolyDataWriter()
     polyDataWriter.SetFileName(filename)
-    polyDataWriter.SetInput(newPolydata)    
+    polyDataWriter.SetInputData(newPolydata)    
     polyDataWriter.Write()
 
 
@@ -121,7 +121,7 @@ def buildMesh(xNumCells, yNumCells, filename):
     
     polyDataWriter = vtk.vtkXMLPolyDataWriter()
     polyDataWriter.SetFileName(filename)
-    polyDataWriter.SetInput(polydata)    
+    polyDataWriter.SetInputData(polydata)    
     polyDataWriter.Write()
 
     return polydata    

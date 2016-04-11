@@ -140,7 +140,7 @@ target_link_libraries(vtkDbiharPatchSmooth
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/test)
 
-set(testLibs vtkIOXML vtkIOLegacy vtkIOImage vtkRenderingAnnotation vtkRenderingOpenGL vtkInteractionStyle vtkFiltersSources vtkFiltersGeometry)
+set(testLibs vtkIOXML vtkIOLegacy vtkIOImage vtkRenderingAnnotation vtkRenderingFreeTypeOpenGL vtkInteractionStyle vtkFiltersSources vtkFiltersGeometry)
 
 add_executable(testWrapDbihar0
 	test/testWrapDbihar0.cxx)
@@ -457,6 +457,24 @@ target_link_libraries(meshGen120
 add_executable(meshGen216
 	src/meshGen216.cxx)
 target_link_libraries(meshGen216
+	vtkDbiharStatic
+	vtkScalarRadiiToVectorsFilter
+	vtkFiltersGeometry
+	vtkSubdivideMesh
+	vtkSubdivideQuadFilter
+	vtkCentrelineToDbiharPatch
+	vtkDbiharPatchFilter
+	vtkCentrelinePartitioner
+	vtkPointsToMeshFilter
+	vtkSkipSegmentFilter
+	vtkEndCapFilter
+	vtkRescaleUnits
+	vtkCentrelineResampler
+	${testLibs})
+	
+add_executable(meshGen512
+	src/meshGen512.cxx)
+target_link_libraries(meshGen512
 	vtkDbiharStatic
 	vtkScalarRadiiToVectorsFilter
 	vtkFiltersGeometry

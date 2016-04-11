@@ -76,7 +76,7 @@ def writeATPLegacyVTK():
         
         # Use this filter to extract the cells for a given label value.
         branchSelector = vtk.vtkThreshold()
-        branchSelector.SetInput(taskMesh)
+        branchSelector.SetInputData(taskMesh)
         branchSelector.ThresholdBetween(label,label);
         branchSelector.Update()
 
@@ -125,8 +125,8 @@ def writeATPLegacyVTK():
 
         # Use vtkSelection filter.
         selectionExtractor = vtk.vtkExtractSelection()
-        selectionExtractor.SetInput(0, atpMesh)
-        selectionExtractor.SetInput(1, selection)
+        selectionExtractor.SetInputData(0, atpMesh)
+        selectionExtractor.SetInputData(1, selection)
         selectionExtractor.Update()
 
         extractedCells = selectionExtractor.GetOutput()
@@ -138,12 +138,6 @@ def writeATPLegacyVTK():
         # Number of ECs rows is the number of ECs per quad.
         rowIds = range(0, numECsPerCol)
         rowIds.reverse()
-
-        # New vtkPoints for storing reordered points.
-        reorderedPoints = vtk.vtkPoints()
-
-        # New vtkCellArray for storing reordeced cells.
-        reorderedCellArray = vtk.vtkCellArray()
         
         reorderedATPArray = vtk.vtkDoubleArray()
         reorderedATPArray.SetName("initialATP")
@@ -174,17 +168,8 @@ def writeATPLegacyVTK():
                     for cellNum in range(0, numECsPerRow):
                         # Calculate the 'real' ec cell id and get the corresponding cell.
                         realId = quadId * numECsPerQuad + rowNum * numECsPerRow + cellNum
-                        # Get the corresponding cell from the ecMesh.
-                        cell = ecMesh.GetCell(label * numECsPerLabel + realId)
-                        cellPoints = cell.GetPoints()
                         
-                        # This is for writing out the surface files for visualisation.
-                        newCell = vtk.vtkQuad()
-                        for ptId in range(0, cellPoints.GetNumberOfPoints()):
-                            newCell.GetPointIds().SetId(ptId, reorderedPoints.InsertNextPoint(cellPoints.GetPoint(ptId)))
-                        
-                        reorderedCellArray.InsertNextCell(newCell)
-                        
+
                         atpVal = extractedCells.GetCellData().GetArray("initialATP").GetValue(realId)
                         
                         reorderedATPArray.InsertNextValue(atpVal)
@@ -192,26 +177,7 @@ def writeATPLegacyVTK():
                         # Write the value to the txt file.
                         pointsOf.write(format(atpVal, '.6f') + '\n')
                         
-        # Create new vtkPolyData object for the new reordered mesh.
-        reorderedATPBranch = vtk.vtkPolyData()
-
-        # Insert our new points.
-        reorderedATPBranch.SetPoints(reorderedPoints)
-
-        # Set the reordered cells to the reordered ATP mesh.
-        reorderedATPBranch.SetPolys(reorderedCellArray)
-        
-        # Set the reordered ATP values to the reordered ATP mesh.
-        reorderedATPBranch.GetCellData().AddArray(reorderedATPArray)
-
-        print "There are", reorderedATPBranch.GetNumberOfPoints(), "ATP points for label", label, "..."
-        print "There are", reorderedATPBranch.GetNumberOfCells(), "ATP cells for label", label, "..."
-
-        # Write the VTK EC mesh file.
-        reorderedMeshWriter = vtk.vtkXMLPolyDataWriter()
-        reorderedMeshWriter.SetInput(reorderedATPBranch)
-        reorderedMeshWriter.SetFileName(atpVTKFiles[label])
-        reorderedMeshWriter.Update()
+    
 
     parentFile.close()
     leftBranchFile.close()

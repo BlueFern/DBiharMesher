@@ -136,7 +136,7 @@ def writeLegacyVTK():
     for label in labelRange:
         # Use this filter to extract the cells for a given label value.
         branchSelector = vtk.vtkThreshold()
-        branchSelector.SetInput(taskMesh)
+        branchSelector.SetInputData(taskMesh)
         branchSelector.ThresholdBetween(label,label);
         branchSelector.Update()
 
@@ -285,7 +285,7 @@ def writeLegacyVTK():
 
         # Write the VTK file.
         reorderedMeshWriter = vtk.vtkXMLPolyDataWriter()
-        reorderedMeshWriter.SetInput(reorderedTaskMeshBranch)
+        reorderedMeshWriter.SetInputData(reorderedTaskMeshBranch)
         reorderedMeshWriter.SetFileName(taskVTKFiles[label])
         reorderedMeshWriter.Update()
 
@@ -357,8 +357,8 @@ def writeLegacyVTK():
 
         # Use vtkSelection filter.
         selectionExtractor = vtk.vtkExtractSelection()
-        selectionExtractor.SetInput(0, ecMesh)
-        selectionExtractor.SetInput(1, selection)
+        selectionExtractor.SetInputData(0, ecMesh)
+        selectionExtractor.SetInputData(1, selection)
         selectionExtractor.Update()
 
         extractedECs = selectionExtractor.GetOutput()
@@ -549,26 +549,26 @@ def writeLegacyVTK():
 
         # Write the VTK EC mesh file.
         reorderedMeshWriter = vtk.vtkXMLPolyDataWriter()
-        reorderedMeshWriter.SetInput(reorderedECs)
+        reorderedMeshWriter.SetInputData(reorderedECs)
         reorderedMeshWriter.SetFileName(ecVTKFiles[label])
         reorderedMeshWriter.Update()
 
         # Use VTK centroid filter to get the centroids in the right order
         # from the reorderedECMeshBranch.
         centroidFilter = vtk.vtkCellCenters()
-        centroidFilter.SetInput(reorderedECs)
+        centroidFilter.SetInputData(reorderedECs)
         centroidFilter.Update()
 
         # Create a vertex cell for each point.
         pointsToVerticesFilter = vtk.vtkVertexGlyphFilter()
-        pointsToVerticesFilter.SetInput(centroidFilter.GetOutput())
+        pointsToVerticesFilter.SetInputData(centroidFilter.GetOutput())
         pointsToVerticesFilter.Update()
 
         reorderedCentroidBranch = pointsToVerticesFilter.GetOutput()
 
         # Write the VTK EC centrouid file.
         centroidWriter = vtk.vtkXMLPolyDataWriter()
-        centroidWriter.SetInput(reorderedCentroidBranch)
+        centroidWriter.SetInputData(reorderedCentroidBranch)
         centroidWriter.SetFileName(ecCentroidVTKFiles[label])
         centroidWriter.Update()
 
@@ -650,8 +650,8 @@ def writeLegacyVTK():
 
         # Use vtkSelection filter.
         selectionExtractor = vtk.vtkExtractSelection()
-        selectionExtractor.SetInput(0, smcMesh)
-        selectionExtractor.SetInput(1, selection)
+        selectionExtractor.SetInputData(0, smcMesh)
+        selectionExtractor.SetInputData(1, selection)
         selectionExtractor.Update()
 
         extractedSMCs = selectionExtractor.GetOutput()
@@ -833,7 +833,7 @@ def writeLegacyVTK():
 
         # Write the VTK SMC mesh file.
         reorderedMeshWriter = vtk.vtkXMLPolyDataWriter()
-        reorderedMeshWriter.SetInput(reorderedSMCs)
+        reorderedMeshWriter.SetInputData(reorderedSMCs)
         reorderedMeshWriter.SetFileName(smcVTKFiles[label])
         reorderedMeshWriter.Update()
 

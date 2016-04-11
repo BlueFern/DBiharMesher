@@ -285,7 +285,7 @@ def GenerateCentreline(radiiBuilderFunction = None):
         transform = vtk.vtkTransform()
         transform.Translate(-origin[0],-origin[1],-origin[2])
         transformFilter = vtk.vtkTransformPolyDataFilter()
-        transformFilter.SetInput(centreline)
+        transformFilter.SetInputData(centreline)
         transformFilter.SetTransform(transform)
         
         transformFilter.Update()
@@ -293,13 +293,13 @@ def GenerateCentreline(radiiBuilderFunction = None):
 
     print 'Writing output as', os.path.abspath(outputFileName)    
     writer = vtk.vtkPolyDataWriter()
-    writer.SetInput(centreline)
+    writer.SetInputData(centreline)
     writer.SetFileName(outputFileName)
     writer.SetFileTypeToASCII()
     writer.Write()
     
     mapper = vtk.vtkDataSetMapper()
-    mapper.SetInput(centreline)
+    mapper.SetInputData(centreline)
     
     actor = vtk.vtkActor()
     actor.SetMapper(mapper)
