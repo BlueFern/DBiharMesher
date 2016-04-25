@@ -304,33 +304,40 @@ int vtkDbiharPatchSmooth::RequestData(vtkInformation *vtkNotUsed(request),
 			Angle = Beta;				//							// Angle between parent and daughter2 axis
 
 			// Get points for first boundary segment (circle at bifurcation)
-			for(pid = numPointsBranch0 + numPointsBranch1 + 1.5*this->NumRadialQuads; pid >= numPointsBranch0 + numPointsBranch1; --pid)
+			for(pid = numPointsBranch0 + numPointsBranch1 + 1.5*this->NumRadialQuads; pid < numPointsBranch0 + numPointsBranch1 + 2*this->NumRadialQuads; pid++)
 			{
 				exPoint = input->GetPoint(pid);
 				boundary->GetPointIds()->InsertNextId(points->InsertNextPoint(exPoint));
 			}
-			for(pid = numPointsBranch0 + numPointsBranch1 + 2*this->NumRadialQuads - 1; pid > numPointsBranch0 + numPointsBranch1 + 1.5*this->NumRadialQuads; --pid)
+			for(pid = numPointsBranch0 + numPointsBranch1; pid < numPointsBranch0 + numPointsBranch1 + 1.5*this->NumRadialQuads; pid++)
 			{
 				exPoint = input->GetPoint(pid);
 				boundary->GetPointIds()->InsertNextId(points->InsertNextPoint(exPoint));
 			}
+
+
 			// Get points for second boundary segment (straight line towards end of daughter branch)
 			for(pid = numPointsBranch0 + numPointsBranch1 + 1.5*this->NumRadialQuads; pid < numPoints - this->NumRadialQuads/2; pid = pid + 2*this->NumRadialQuads)
 			{
 				exPoint = input->GetPoint(pid);
 				boundary->GetPointIds()->InsertNextId(points->InsertNextPoint(exPoint));
 			}
+
+			int checko = 0;
 			// Get points for third boundary segment (circle at end of daughter branch)
-			for(pid = numPoints - this->NumRadialQuads/2; pid < numPoints; pid++)
+			for(pid = numPoints - this->NumRadialQuads/2; pid >= numPoints - 2 * this->NumRadialQuads; pid--)
+			{
+				checko++;
+				exPoint = input->GetPoint(pid);
+				boundary->GetPointIds()->InsertNextId(points->InsertNextPoint(exPoint));
+			}
+
+			for(pid = numPoints - 1; pid > numPoints - this->NumRadialQuads/2 ; pid--)
 			{
 				exPoint = input->GetPoint(pid);
 				boundary->GetPointIds()->InsertNextId(points->InsertNextPoint(exPoint));
 			}
-			for(pid = numPoints - 2*this->NumRadialQuads; pid < numPoints - this->NumRadialQuads/2; pid++)
-			{
-				exPoint = input->GetPoint(pid);
-				boundary->GetPointIds()->InsertNextId(points->InsertNextPoint(exPoint));
-			}
+
 			// Get points for fourth boundary segment (straight line towards parent branch)
 			for(pid = numPoints - this->NumRadialQuads/2; pid > numPointsBranch0 + numPointsBranch1 + 1.5*this->NumRadialQuads; pid = pid - 2*this->NumRadialQuads)
 			{
@@ -357,6 +364,7 @@ int vtkDbiharPatchSmooth::RequestData(vtkInformation *vtkNotUsed(request),
 					deriv[2] = 0.0;
 					derivatives->InsertNextTuple(deriv);
 				}
+
 				else if (counter > 1.5*this->NumRadialQuads && counter < 2*this->NumRadialQuads)
 				{
 					deriv[0] = -cos(Angle - (Angle*(counter-1.5*this->NumRadialQuads)/this->NumRadialQuads)) * dGROUND;
@@ -402,7 +410,7 @@ int vtkDbiharPatchSmooth::RequestData(vtkInformation *vtkNotUsed(request),
 				{
 					deriv [0] = 0.0;
 					deriv [1] = 0.0;
-					deriv [2] = -dUP;
+					deriv [2] = dUP;
 					if (counter < 4*this->NumRadialQuads + numAxialQuads2)
 					{
 						deriv [2] = -deriv [2];
@@ -414,6 +422,7 @@ int vtkDbiharPatchSmooth::RequestData(vtkInformation *vtkNotUsed(request),
 
 		vtkSmartPointer<vtkCellArray> boundaries = vtkSmartPointer<vtkCellArray>::New();
 		boundaries->InsertNextCell(boundary);
+
 		vtkSmartPointer<vtkPolyData> inputPatch = vtkSmartPointer<vtkPolyData>::New();
 		inputPatch->SetPoints(points);
 		inputPatch->SetLines(boundaries);
@@ -444,7 +453,7 @@ int vtkDbiharPatchSmooth::RequestData(vtkInformation *vtkNotUsed(request),
 
 		//  patchFilter->Print(std::cout);
 
-		vtkPolyData *outputPatch = patchFilter->GetOutput();
+		vtkSmartPointer<vtkPolyData> outputPatch = patchFilter->GetOutput();
 
 		vtkSmartPointer<vtkStructuredGrid> structuredGrid = vtkSmartPointer<vtkStructuredGrid>::New();
 		if (k == 0)
@@ -463,7 +472,45 @@ int vtkDbiharPatchSmooth::RequestData(vtkInformation *vtkNotUsed(request),
 		gridGeometryFilter->SetInputData(structuredGrid);
 		gridGeometryFilter->Update();
 
-		appendPolyData->AddInputData(gridGeometryFilter->GetOutput());
+		vtkSmartPointer<vtkPolyData> reoderedPatch = vtkSmartPointer<vtkPolyData>::New();
+		vtkSmartPointer<vtkCellArray> reorderedCells = vtkSmartPointer<vtkCellArray>::New();
+
+		// This section reorders the cells to match the input.
+		// TODO: Create different shaped boundaries so we don't need to reorder here.
+		int rings;
+		if (k == 0)
+		{
+			rings = numAxialQuads0;
+		}
+		else if (k == 1)
+		{
+			rings = numAxialQuads1;
+		}
+		else if (k == 2)
+		{
+			rings = numAxialQuads2;
+		}
+
+		for (int i = 0; i < rings; i++)
+		{
+			int cellId = 1.5 * this->NumRadialQuads + (2 * this->NumRadialQuads * i);
+
+			for (int j = 0; j < 2 * this->NumRadialQuads; j++)
+			{
+				reorderedCells->InsertNextCell(gridGeometryFilter->GetOutput()->GetCell(cellId));
+				cellId++;
+
+				if (j + 1 == 0.5 * this->NumRadialQuads)
+				{
+					cellId -= 2 * this->NumRadialQuads;
+				}
+			}
+		}
+
+		reoderedPatch->SetPolys(reorderedCells);
+		reoderedPatch->SetPoints(gridGeometryFilter->GetOutput()->GetPoints());
+
+		appendPolyData->AddInputData(reoderedPatch);
 
 #if 0
 		// Write each branches boundary line and solution in separate files
@@ -488,23 +535,30 @@ int vtkDbiharPatchSmooth::RequestData(vtkInformation *vtkNotUsed(request),
 	appendPolyData->Update();
 
 	vtkSmartPointer<vtkIntArray> branchIdCellData = vtkSmartPointer<vtkIntArray>::New();
-	int branchId = 0;
 	branchIdCellData->SetName(vtkDbiharStatic::BRANCH_ID_ARR_NAME);
 
-	for (int cellId = 0; cellId < input->GetNumberOfCells(); cellId++)
-	{
-		if (cellId >= numCellsBranch0 && cellId < numCellsBranch0 + numCellsBranch1)
-		{
-			branchId = 1;
-		}
-		if (cellId >= numCellsBranch0 + numCellsBranch1)
-		{
-			branchId = 2;
-		}
-		branchIdCellData->InsertNextValue(branchId);
-	}
+	vtkSmartPointer<vtkIntArray> gridCoordinatesCellData = vtkSmartPointer<vtkIntArray>::New();
+	gridCoordinatesCellData->SetName(vtkDbiharStatic::GRID_COORDS_ARR_NAME);
+	gridCoordinatesCellData->SetNumberOfComponents(2);
+	double gridCoords[2] = {0, 0};
 
+	// Looping over the number of branches (once if straight segment).
+	for (int branchId = 0; branchId < 3; branchId++)
+	{
+		for (int i = 0; i < numAxialQuads0; i++) // TODO: branches of different lengths?
+		{
+			for (int j = 0; j < this->NumRadialQuads * 2; j++)
+			{
+				branchIdCellData->InsertNextValue(branchId);
+				gridCoords[0] = i;
+				gridCoords[1] = j;
+				gridCoordinatesCellData->InsertNextTuple(gridCoords);
+			}
+		}
+	}
 	appendPolyData->GetOutput()->GetCellData()->SetScalars(branchIdCellData);
+	appendPolyData->GetOutput()->GetCellData()->AddArray(gridCoordinatesCellData);
+
 	output->DeepCopy(appendPolyData->GetOutput());
 	return 1;
 }

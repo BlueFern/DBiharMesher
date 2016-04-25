@@ -140,7 +140,7 @@ target_link_libraries(vtkDbiharPatchSmooth
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/test)
 
-set(testLibs vtkIOXML vtkIOLegacy vtkIOImage vtkRenderingAnnotation vtkRenderingFreeTypeOpenGL vtkInteractionStyle vtkFiltersSources vtkFiltersGeometry)
+set(testLibs vtkIOXML vtkIOLegacy vtkIOImage vtkRenderingAnnotation vtkRenderingOpenGL2 vtkInteractionStyle vtkFiltersSources vtkFiltersGeometry)
 
 add_executable(testWrapDbihar0
 	test/testWrapDbihar0.cxx)
@@ -580,6 +580,26 @@ target_link_libraries(meshGen4080
 	vtkCentrelineResampler
 	vtksys
 	${testLibs})
+	
+add_executable(meshGenSmooth4080
+	src/meshGenSmooth4080.cxx)
+target_link_libraries(meshGenSmooth4080
+	vtkDbiharStatic
+	vtkScalarRadiiToVectorsFilter
+	vtkFiltersGeometry
+	vtkSubdivideMesh
+	vtkSubdivideQuadFilter
+	vtkCentrelineToDbiharPatch
+	vtkDbiharPatchFilter
+	vtkCentrelinePartitioner
+	vtkPointsToMeshFilter
+	vtkSkipSegmentFilter
+	vtkEndCapFilter
+	vtkRescaleUnits
+	vtkCentrelineResampler
+	vtksys
+	vtkDbiharPatchSmooth
+	${testLibs})
 
 add_executable(meshGen8000
 	src/meshGen8000.cxx)
@@ -615,6 +635,26 @@ target_link_libraries(meshGen8064
 	vtkEndCapFilter
 	vtkRescaleUnits
 	vtkCentrelineResampler
+	${testLibs})
+	
+add_executable(meshGenSmooth8064
+	src/meshGenSmooth8064.cxx)
+target_link_libraries(meshGenSmooth8064
+	vtkDbiharStatic
+	vtkScalarRadiiToVectorsFilter
+	vtkFiltersGeometry
+	vtkSubdivideMesh
+	vtkSubdivideQuadFilter
+	vtkCentrelineToDbiharPatch
+	vtkDbiharPatchFilter
+	vtkCentrelinePartitioner
+	vtkPointsToMeshFilter
+	vtkSkipSegmentFilter
+	vtkEndCapFilter
+	vtkRescaleUnits
+	vtkCentrelineResampler
+	vtksys
+	vtkDbiharPatchSmooth
 	${testLibs})
 
 add_executable(meshGen16128
