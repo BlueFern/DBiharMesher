@@ -493,17 +493,38 @@ int vtkDbiharPatchSmooth::RequestData(vtkInformation *vtkNotUsed(request),
 
 		for (int i = 0; i < rings; i++)
 		{
-			int cellId = 1.5 * this->NumRadialQuads + (2 * this->NumRadialQuads * i);
+			int cellId;
+			if (k == 1)
+			{
+				cellId = 0.5 * this->NumRadialQuads + (2 * this->NumRadialQuads * i);
+			}
+			else if (k == 2 || k == 0)
+			{
+				cellId = 1.5 * this->NumRadialQuads + (2 * this->NumRadialQuads * i);
+
+			}
+
 
 			for (int j = 0; j < 2 * this->NumRadialQuads; j++)
 			{
 				reorderedCells->InsertNextCell(gridGeometryFilter->GetOutput()->GetCell(cellId));
 				cellId++;
 
-				if (j + 1 == 0.5 * this->NumRadialQuads)
+				if (k == 1)
 				{
-					cellId -= 2 * this->NumRadialQuads;
+					if (j + 1 == 1.5 * this->NumRadialQuads)
+					{
+						cellId -= 2 * this->NumRadialQuads;
+					}
 				}
+				else if (k == 2 || k == 0)
+				{
+					if (j + 1 == 0.5 * this->NumRadialQuads)
+					{
+						cellId -= 2 * this->NumRadialQuads;
+					}
+				}
+
 			}
 		}
 
