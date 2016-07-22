@@ -29,15 +29,6 @@ def writeHdf5():
     
     numQuadsPerRing = circQuads / 2
     
-    # Sanity checking
-    if quadScaleCirc > numQuadsPerRing or quadScaleAxial > axialQuads:
-        exit("Error: Quad scale/s too large for mesh.")
-        
-    if axialQuads % quadScaleAxial != 0 or circQuads % numQuadsPerRing != 0:
-        exit("Error: Quad scale/s inappropriate for task mesh dimensions.")
-        
-
-    
     numECsPerQuad = numECsPerRow * numECsPerCol
     numSMCsPerQuad = numSMCsPerCol * numSMCsPerRow
     
@@ -141,6 +132,7 @@ def writeHdf5():
         rowIds = range(0, numECsPerCol)
         rowIds.reverse()
         
+        # TODO write out vtp file of new atp values, using ec mesh.
         reorderedATPArray = vtk.vtkDoubleArray()
         reorderedATPArray.SetName("initialATP")
 
@@ -159,68 +151,28 @@ def writeHdf5():
         
         dset = pointsOf.create_dataset("/atp", (numECsPerLabel,), 'f')
         
-        # Include cell dimensions for only parent file.
-        if label == 0:
-            dset.attrs['numSMCsPerRow'] = numSMCsPerRow * quadScaleCirc
-            dset.attrs['numSMCsPerCol'] = numSMCsPerCol * quadScaleAxial
-            
-            dset.attrs['numECsPerCol'] = numECsPerCol * quadScaleAxial
-            dset.attrs['numECsPerRow'] = numECsPerRow * quadScaleCirc
-
-        # Calculate which rows (circumferentially) required to be iterated over
-        # given the quad scalling.
-        ringsPerRow = circQuads / numQuadsPerRing
-        requiredRings = []
-        row = -1
-        for ringId in range(len(ringIds)):
-            if ringId % ringsPerRow == 0:
-                row += 1
-            if row % quadScaleAxial == 0:
-                requiredRings.append(ringIds[ringId])
-                
-        for i in range(0, len(requiredRings), 2):
-            j = i + 1
-            requiredRings[i], requiredRings[j] = requiredRings[j], requiredRings[i]
-            
         i = 0
         # Iterate over the rings in reverse order.
-        for ringNum in requiredRings:
-
+        for ringNum in ringIds:
             # Iterate over the 'imaginary' quads of cells in normal order.
             for quadNum in range(0, numQuadsPerRing):
-                    
-                # Skip this quad, it was included in the
-                # previous iteration according the the quad scaling.
-                if quadNum % quadScaleCirc != 0:
-                    continue
-                
                 # Iterate over the rows of cells in reverse order.
                 # Calculate the 'real' id for the 'imaginary' quad.
                 quadId = ringNum * numQuadsPerRing + quadNum
-
                 # Iterate over rows of cells in reverse order.
-                # Loop through extra rows based on quad scale.
-                for extraAxial in range(0, quadScaleAxial): 
-                
-                    rowOffset = - extraAxial * numECsPerQuad * circQuads
-
+                for rowNum in rowIds:
                     # Iterate over the rows of cells in normal order.
-                    for rowNum in rowIds:
-                        # Loop through extra columns based on quad scale.
-                        for extraCirc in range(0, quadScaleCirc):
-                            quadOffset = extraCirc * (numECsPerQuad)
-                            
-                            for cellNum in range(0, numECsPerRow):
+                    for cellNum in range(0, numECsPerRow):
+                        # Calculate the 'real' ec cell id and get the corresponding cell.
+                        realId = quadId * numECsPerQuad + rowNum * numECsPerRow + cellNum
+                        
+                        atpVal = extractedCells.GetCellData().GetArray("initialATP").GetValue(realId)
+                        
+                        reorderedATPArray.InsertNextValue(atpVal)
                                 
-                                # Calculate the 'real' ec cell id and get the corresponding cell.
-                                realId = quadId * numECsPerQuad + rowNum * numECsPerRow + cellNum + quadOffset + rowOffset
-                                
-                                atpVal = extractedCells.GetCellData().GetArray("initialATP").GetValue(realId)
-                                reorderedATPArray.InsertNextValue(atpVal)
-                                
-                                # Write the value to the hdf5 file.
-                                dset[i] = atpVal
-                                i += 1            
+                        # Write the value to the hdf5 file.
+                        dset[i] = atpVal
+                        i += 1            
                         
     parentFile.close()
     leftBranchFile.close()
