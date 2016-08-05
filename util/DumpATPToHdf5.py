@@ -1,22 +1,32 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Mar 31 17:09:57 2015
+
+This script read an ECs mesh produced by WrapDbihar code and converts it to
+a ATP profile map for the legacy Coupled Cells code.
+
+The code reorders cells and produces the required files in TXT format.
+VTK files are written out for visual verification.
+"""
+import h5py
 import os
 import vtk
-import h5py
 
-quadScaleCirc = 1
-quadScaleAxial = 1
-ecMeshIn = ""
-atpMeshIn = ""
-taskMeshIn = ""
-numECsPerCol = 4
-numSMCsPerRow = 4
-numECsPerRow = 20
-numSMCsPerCol = 52
 
+taskMeshIn = ''
+ecMeshIn = ''
+atpMeshIn = ''
 axialQuads = 0
 circQuads = 0
+numECsPerCol = 4
+numSMCsPerRow = 4
 
+numECsPerRow = numSMCsPerRow * 5
+numSMCsPerCol = numECsPerCol * 13
 
-# hdf5 files to write.
+numECsPerQuad = numECsPerRow * numECsPerCol
+numSMCsPerQuad = numSMCsPerCol * numSMCsPerRow
+
 atpHdf5Files = [
 "files/parent_atp.h5",
 "files/left_daughter_atp.h5",
@@ -26,15 +36,11 @@ atpHdf5Files = [
 def writeHdf5():
     # This is where the data is for testing purposes.
     print "Current working directory:", os.getcwd()
+    print taskMeshIn
     
-    numQuadsPerRing = circQuads / 2
-    
-    numECsPerQuad = numECsPerRow * numECsPerCol
-    numSMCsPerQuad = numSMCsPerCol * numSMCsPerRow
-    
-    print numECsPerQuad
-    print numSMCsPerQuad
+    numQuadsPerRing = circQuads
 
+    # Working with the task mesh junt to figure out the quads and rows numbers.
     taskMeshReader = vtk.vtkXMLPolyDataReader()
     taskMeshReader.SetFileName(taskMeshIn)
     taskMeshReader.Update()
@@ -59,7 +65,6 @@ def writeHdf5():
 
     # Store the number of rings for each label. 
     numRingsPerLabel = {}   
-    print "Num quads per ring:",numQuadsPerRing
 
     # For every label in the range of labels we want to extract all cells/quads.
     for label in labelRange:
@@ -74,9 +79,7 @@ def writeHdf5():
 
         numQuadRowsPerBranch = taskMeshBranch.GetNumberOfCells() / numQuadsPerRing;
         numRingsPerLabel[label] = numQuadRowsPerBranch
-        
-        
-    print numRingsPerLabel
+
     # Working with EC mesh only
     atpMeshReader = vtk.vtkXMLPolyDataReader()
     atpMeshReader.SetFileName(atpMeshIn)
@@ -86,12 +89,10 @@ def writeHdf5():
     atpMesh = atpMeshReader.GetOutput()
     print "There are", atpMesh.GetNumberOfCells(), "ATP values in total ..."
 
-    # Prepare h5 files  
     parentFile = h5py.File(atpHdf5Files[0], 'w')
     leftBranchFile = h5py.File(atpHdf5Files[1], 'w')
     rightBranchFile = h5py.File(atpHdf5Files[2], 'w')
 
-    
     # For every label in the range of labels we want to extract all ECs.
     for label in labelRange:
 
@@ -132,11 +133,10 @@ def writeHdf5():
         rowIds = range(0, numECsPerCol)
         rowIds.reverse()
         
-        # TODO write out vtp file of new atp values, using ec mesh.
         reorderedATPArray = vtk.vtkDoubleArray()
         reorderedATPArray.SetName("initialATP")
 
-        # Decide which hdf5 files to write to.
+        # Decide which TXT files to write to.
         pointsOf = ''
         
         if label == 0:
@@ -146,12 +146,12 @@ def writeHdf5():
         elif label == 2:
             pointsOf = rightBranchFile
 
-        print "Writing H5 file for ECs ATP:"
+        print "Writing TXT file for ECs ATP:"
         print pointsOf
-        
         dset = pointsOf.create_dataset("/atp", (numECsPerLabel,), 'f')
         
         i = 0
+
         # Iterate over the rings in reverse order.
         for ringNum in ringIds:
             # Iterate over the 'imaginary' quads of cells in normal order.
@@ -169,11 +169,13 @@ def writeHdf5():
                         atpVal = extractedCells.GetCellData().GetArray("initialATP").GetValue(realId)
                         
                         reorderedATPArray.InsertNextValue(atpVal)
-                                
-                        # Write the value to the hdf5 file.
-                        dset[i] = atpVal
-                        i += 1            
                         
+
+                        # Write the value to the txt file.
+                        dset[i] = atpVal
+                        i += 1
+                        
+
     parentFile.close()
     leftBranchFile.close()
     rightBranchFile.close()
@@ -187,4 +189,3 @@ if __name__ == '__main__':
     print "Starting", os.path.basename(__file__)
     main()
     print "Exiting", os.path.basename(__file__)
-
