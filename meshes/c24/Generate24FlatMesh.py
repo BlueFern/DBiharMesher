@@ -15,8 +15,8 @@ import FlatMeshGenerator
 def main():
         
     FlatMeshGenerator.buildMesh(1, 1, "quadMeshFullc24.vtp")
-    polydata = FlatMeshGenerator.buildMesh(40, 8, "quadMeshFullECc24.vtp")
-    FlatMeshGenerator.buildMesh(8, 104, "quadMeshFullSMCc24.vtp")
+    polydata = FlatMeshGenerator.buildMesh(20, 4, "quadMeshFullECc24.vtp")
+    FlatMeshGenerator.buildMesh(4, 52, "quadMeshFullSMCc24.vtp")
     FlatMeshGenerator.buildATPMesh(polydata, "quadMeshFullATPc24.vtp")
     
 
