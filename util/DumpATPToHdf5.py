@@ -33,6 +33,13 @@ atpHdf5Files = [
 "files/right_daughter_atp.h5",
 ]
 
+# EC VTP files used for their geometry in visual verification of ATP mesh.
+ecVTPFiles = [
+"vtk/ec_mesh_parent.vtp",
+"vtk/ec_mesh_left_daughter.vtp",
+"vtk/ec_mesh_right_daughter.vtp",
+]
+
 def writeHdf5():
     # This is where the data is for testing purposes.
     print "Current working directory:", os.getcwd()
@@ -92,9 +99,16 @@ def writeHdf5():
     parentFile = h5py.File(atpHdf5Files[0], 'w')
     leftBranchFile = h5py.File(atpHdf5Files[1], 'w')
     rightBranchFile = h5py.File(atpHdf5Files[2], 'w')
+    
+    appendPolyData = vtk.vtkAppendPolyData();
 
     # For every label in the range of labels we want to extract all ECs.
     for label in labelRange:
+        
+        ecMeshReader = vtk.vtkXMLPolyDataReader()
+        ecMeshReader.SetFileName(ecVTPFiles[label])
+        ecMeshReader.Update()
+        tmpPolyData = ecMeshReader.GetOutput()
 
         # Keep track of how many branches we need to skip.
         numECsPerLabel = numQuadsPerRing * numRingsPerLabel[label] * numECsPerQuad
@@ -146,7 +160,7 @@ def writeHdf5():
         elif label == 2:
             pointsOf = rightBranchFile
 
-        print "Writing TXT file for ECs ATP:"
+        print "Writing H5 file for ECs ATP:"
         print pointsOf
         dset = pointsOf.create_dataset("/atp", (numECsPerLabel,), 'f')
         
@@ -174,11 +188,22 @@ def writeHdf5():
                         # Write the value to the txt file.
                         dset[i] = atpVal
                         i += 1
+        
+        tmpPolyData.GetCellData().SetScalars(reorderedATPArray)
+        appendPolyData.AddInputData(tmpPolyData)
                         
 
     parentFile.close()
     leftBranchFile.close()
     rightBranchFile.close()
+    
+    print "Writing reorderd ATP map for verification..."
+    appendPolyData.Update()
+    reorderedATPWriter = vtk.vtkXMLPolyDataWriter()
+    reorderedATPWriter.SetInputData(appendPolyData.GetOutput())
+    reorderedATPWriter.SetFileName("vtk/reordered_atp.vtp")
+    reorderedATPWriter.Update()
+    
 
     print "All done ..."
     
