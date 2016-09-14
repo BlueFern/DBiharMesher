@@ -52,43 +52,6 @@ smcVTKFiles = [
 "vtk/smc_mesh_right_daughter.vtp"
 ]
 
-# TXT files to write.
-taskTXTFiles = [
-"files/parent_points.txt",
-"files/parent_cells.txt",
-"files/left_daughter_points.txt",
-"files/left_daughter_cells.txt",
-"files/right_daughter_points.txt",
-"files/right_daughter_cells.txt"
-]
-
-ecCentroidTXTFiles = [
-"files/parent_ec_centeroid_points.txt",
-"files/parent_ec_centeroid_cells.txt",
-"files/left_daughter_ec_centeroid_points.txt",
-"files/left_daughter_ec_centeroid_cells.txt",
-"files/right_daughter_ec_centeroid_points.txt",
-"files/right_daughter_ec_centeroid_cells.txt"
-]
-
-ecTXTFiles = [
-"files/parent_ec_mesh_points.txt",
-"files/parent_ec_mesh_cells.txt",
-"files/left_daughter_ec_mesh_points.txt",
-"files/left_daughter_ec_mesh_cells.txt",
-"files/right_daughter_ec_mesh_points.txt",
-"files/right_daughter_ec_mesh_cells.txt"
-]
-
-smcTXTFiles = [
-"files/parent_smc_mesh_points.txt",
-"files/parent_smc_mesh_cells.txt",
-"files/left_daughter_smc_mesh_points.txt",
-"files/left_daughter_smc_mesh_cells.txt",
-"files/right_daughter_smc_mesh_points.txt",
-"files/right_daughter_smc_mesh_cells.txt"
-]
-
 def writeLegacyVTK():
     # This is where the data is for testing purposes.
     print "Current working directory:", os.getcwd()
@@ -102,8 +65,6 @@ def writeLegacyVTK():
         print "Created files ouptut directory..."
         
 
-    # Working with the task mesh.
-    # Working with the task mesh.
     # Working with the task mesh.
     taskMeshReader = vtk.vtkXMLPolyDataReader()
     taskMeshReader.SetFileName(meshSet[0])
@@ -119,15 +80,6 @@ def writeLegacyVTK():
     labelRange = range(int(labelRange[0]), int(labelRange[1]) + 1)
     print "Labels found in task mesh:", labelRange
 
-    # Prepare the stupid TXT files for output.
-    parentPointsFile = open(taskTXTFiles[0], 'w')
-    parentCellsFile = open(taskTXTFiles[1], 'w')
-
-    leftPointsFile = open(taskTXTFiles[2], 'w')
-    leftCellsFile = open(taskTXTFiles[3], 'w')
-
-    rightPointsFile = open(taskTXTFiles[4], 'w')
-    rightCellsFile = open(taskTXTFiles[5], 'w')
 
     # Store the number of rings for each label. 
     numRingsPerLabel = {}
@@ -154,22 +106,6 @@ def writeLegacyVTK():
         # Working with rows in reverse order: UPSTREAM.
         ringIds.reverse()
 
-        # Decide which TXT files to write to.
-        pointsOf = ''
-        cellsOf = ''
-        if label == 0:
-            pointsOf = parentPointsFile
-            cellsOf = parentCellsFile
-        elif label == 1:
-            pointsOf = leftPointsFile
-            cellsOf = leftCellsFile
-        elif label == 2:
-            pointsOf = rightPointsFile
-            cellsOf = rightCellsFile
-
-        print "Writing TXT files for task mesh:"
-        print pointsOf
-        print cellsOf
 
         rowBase = 0
         # Iterate over the rings in reverse order.
@@ -206,10 +142,6 @@ def writeLegacyVTK():
                         # ... with a new id.
                         newId = reorderedPoints.InsertNextPoint(point)
                         pointIdList.append(newId)
-
-                        # Write out the point.
-                        pointStr = ' '.join(format(i , '.6f') for i in point)
-                        pointsOf.write(pointStr + '\n')
 
                         # To make it easier for remembering the number of points instered in a row.
                         if cellNum == 0 and pPos == 0:
@@ -267,9 +199,6 @@ def writeLegacyVTK():
                     newCell.GetPointIds().InsertNextId(id)
                 reorderedCellArray.InsertNextCell(newCell)
 
-                # Write the ids to the TXT file.
-                pointIdListStr = ' '.join(str(i) for i in pointIdList)
-                cellsOf.write(pointIdListStr + '\n')
             rowBase = rowBasePrev
 
         # print '\n'
@@ -289,15 +218,6 @@ def writeLegacyVTK():
         reorderedMeshWriter.SetFileName(taskVTKFiles[label])
         reorderedMeshWriter.Update()
 
-    parentPointsFile.close()
-    parentCellsFile.close()
-
-    leftPointsFile.close()
-    leftCellsFile.close()
-
-    rightPointsFile.close()
-    rightCellsFile.close()
-
     print "Rings per label:", numRingsPerLabel, "..."
     ringsPerLabelVals = numRingsPerLabel.values()
 
@@ -305,8 +225,7 @@ def writeLegacyVTK():
     assert ringsPerLabelVals[1:] == ringsPerLabelVals[:-1], "All values of rings per label must be identical. Generated output is invalid ..."
 
     # Working with EC mesh.
-    # Working with EC mesh.
-    # Working with EC mesh.
+
     ecMeshReader = vtk.vtkXMLPolyDataReader()
     ecMeshReader.SetFileName(meshSet[1])
     ecMeshReader.Update()
@@ -314,22 +233,6 @@ def writeLegacyVTK():
     # Original ECs mesh to work with.
     ecMesh = ecMeshReader.GetOutput()
     print "There are", ecMesh.GetNumberOfCells(), "ECs in total ..."
-
-    # Prepare the stupid TXT files for output.    
-    parentPointsFile = open(ecTXTFiles[0], 'w')
-    parentCellsFile = open(ecTXTFiles[1], 'w')
-    parentCentroidPointsFile = open(ecCentroidTXTFiles[0], 'w')
-    parentCentroidCellsFile = open(ecCentroidTXTFiles[1], 'w')
-
-    leftPointsFile = open(ecTXTFiles[2], 'w')
-    leftCellsFile = open(ecTXTFiles[3], 'w')
-    leftCentroidPointsFile = open(ecCentroidTXTFiles[2], 'w')
-    leftCentroidCellsFile = open(ecCentroidTXTFiles[3], 'w')
-
-    rightPointsFile = open(ecTXTFiles[4], 'w')
-    rightCellsFile = open(ecTXTFiles[5], 'w')
-    rightCentroidPointsFile = open(ecCentroidTXTFiles[4], 'w')
-    rightCentroidCellsFile = open(ecCentroidTXTFiles[5], 'w')
 
     # For every label in the range of labels we want to extract all ECs.
     for label in labelRange:
@@ -400,34 +303,6 @@ def writeLegacyVTK():
         # Set the reordered cells to the reordered ECs mesh.
         reorderedECMeshBranch.SetPolys(reorderedCellArray)
 
-        # Decide which TXT files to write to.
-        pointsOf = ''
-        cellsOf = ''
-        centPointsOf = ''
-        centCellsOf = ''
-
-        if label == 0:
-            pointsOf = parentPointsFile
-            cellsOf = parentCellsFile
-            centPointsOf = parentCentroidPointsFile
-            centCellsOf = parentCentroidCellsFile
-        elif label == 1:
-            pointsOf = leftPointsFile
-            cellsOf = leftCellsFile
-            centPointsOf = leftCentroidPointsFile
-            centCellsOf = leftCentroidCellsFile
-        elif label == 2:
-            pointsOf = rightPointsFile
-            cellsOf = rightCellsFile
-            centPointsOf = rightCentroidPointsFile
-            centCellsOf = rightCentroidCellsFile
-
-        print "Writing TXT files for ECs:"
-        print pointsOf
-        print cellsOf
-        print centPointsOf
-        print centCellsOf
-
         # New vtkPoints for storing reordered points.
         reorderedPoints = vtk.vtkPoints()
 
@@ -472,9 +347,6 @@ def writeLegacyVTK():
                             newId = reorderedPoints.InsertNextPoint(point)
                             pointIdList.append(newId)
 
-                            # Write out the point.
-                            pointStr = ' '.join(format(i , '.6f') for i in point)
-                            pointsOf.write(pointStr + '\n')
 
                             if ecNum == 0 and pPos == 0:
                                 rowBasePrev = newId
@@ -531,9 +403,6 @@ def writeLegacyVTK():
                         newCell.GetPointIds().InsertNextId(id)
                     reorderedCellArray.InsertNextCell(newCell)
 
-                    # Write the ids to the TXT file.
-                    pointIdListStr = ' '.join(str(i) for i in pointIdList)
-                    cellsOf.write(pointIdListStr + '\n')
                 rowBase = rowBasePrev
 
         # print '\n'
@@ -580,28 +449,12 @@ def writeLegacyVTK():
             # Write centroid ids.
             ptId = centCell.GetPointId(0)
             centIds.append(ptId)
-            centIdsStr = ' '.join(str(i) for i in centIds)
-            centCellsOf.write(centIdsStr + '\n')
 
             # Write centroid points.
             point = reorderedCentroidBranch.GetPoint(ptId)
-            pointStr = ' '.join(format(i , '.6f') for i in point)
-            centPointsOf.write(pointStr + '\n')
 
-    parentPointsFile.close()
-    parentCellsFile.close()
-    parentCentroidPointsFile.close()
-    parentCentroidCellsFile.close()
 
-    leftPointsFile.close()
-    leftCellsFile.close()
-    leftCentroidPointsFile.close()
-    leftCentroidCellsFile.close()
 
-    rightPointsFile.close()
-    rightCellsFile.close()
-    rightCentroidPointsFile.close()
-    rightCentroidCellsFile.close()
 
     # Working with SMC mesh.
     # Working with SMC mesh.
@@ -613,16 +466,6 @@ def writeLegacyVTK():
     # Original SMCs mesh to work with.
     smcMesh = smcMeshReader.GetOutput()
     print "There are", smcMesh.GetNumberOfCells(), "SMCs in total ..."
-
-    # Prepare the stupid TXT files for output.
-    parentPointsFile = open(smcTXTFiles[0], 'w')
-    parentCellsFile = open(smcTXTFiles[1], 'w')
-
-    leftPointsFile = open(smcTXTFiles[2], 'w')
-    leftCellsFile = open(smcTXTFiles[3], 'w')
-
-    rightPointsFile = open(smcTXTFiles[4], 'w')
-    rightCellsFile = open(smcTXTFiles[5], 'w')
 
     # For every label in the range of labels we want to extract all SMCs.
     for label in labelRange:
@@ -693,26 +536,6 @@ def writeLegacyVTK():
         # Set the reordered cells to the reordered SMCs mesh.
         reorderedSMCMeshBranch.SetPolys(reorderedCellArray)
 
-        # Decide which TXT files to write to.
-        pointsOf = ''
-        cellsOf = ''
-        centPointsOf = ''
-        centCellsOf = ''
-
-        if label == 0:
-            pointsOf = parentPointsFile
-            cellsOf = parentCellsFile
-        elif label == 1:
-            pointsOf = leftPointsFile
-            cellsOf = leftCellsFile
-        elif label == 2:
-            pointsOf = rightPointsFile
-            cellsOf = rightCellsFile
-
-        print "Writing TXT files for SMCs:"
-        print pointsOf
-        print cellsOf
-
         # New vtkPoints for storing reordered points.
         reorderedPoints = vtk.vtkPoints()
 
@@ -755,10 +578,6 @@ def writeLegacyVTK():
                             # with a new id.
                             newId = reorderedPoints.InsertNextPoint(point)
                             pointIdList.append(newId)
-
-                            # Write the point.
-                            pointStr = ' '.join(format(i , '.6f') for i in point)
-                            pointsOf.write(pointStr + '\n')
 
                             if smcNum == 0 and pPos == 0:
                                 rowBasePrev = newId
@@ -815,9 +634,6 @@ def writeLegacyVTK():
                         newCell.GetPointIds().InsertNextId(id)
                     reorderedCellArray.InsertNextCell(newCell)
 
-                    # Write the ids to the TXT file.
-                    pointIdListStr = ' '.join(str(i) for i in pointIdList)
-                    cellsOf.write(pointIdListStr + '\n')
                 rowBase = rowBasePrev
 
         # print '\n'
@@ -836,15 +652,6 @@ def writeLegacyVTK():
         reorderedMeshWriter.SetInputData(reorderedSMCs)
         reorderedMeshWriter.SetFileName(smcVTKFiles[label])
         reorderedMeshWriter.Update()
-
-    parentPointsFile.close()
-    parentCellsFile.close()
-
-    leftPointsFile.close()
-    leftCellsFile.close()
-
-    rightPointsFile.close()
-    rightCellsFile.close()
 
     print "All done ..."
     print "... Except the last configuration_info.txt file ..."
