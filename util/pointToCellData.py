@@ -13,6 +13,7 @@ def pointToCellData():
     
     print "Using angle: " + str(angle)
     atpFiles = glob.glob(str(angle) + '/*.vtp')
+    
     if not atpFiles:
         exit("No atp files found")
         
@@ -25,7 +26,7 @@ def pointToCellData():
         atpReader = vtk.vtkXMLPolyDataReader()
         atpReader.SetFileName(inputFile)
         atpReader.Update()
-    
+
         atpDataset = atpReader.GetOutput()
         
         pointToCell = vtk.vtkPointDataToCellData()
@@ -47,7 +48,7 @@ def pointToCellData():
 
 
 def usage():
-    print 'This script is to be run with global parameters (input ATP, angle) set in the calling script.'
+    print 'This script is to be run with global parameters (angle) set in the calling script.'
 
 if __name__ == '__main__':
     print "Starting", os.path.basename(__file__)
