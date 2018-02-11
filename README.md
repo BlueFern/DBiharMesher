@@ -7,6 +7,9 @@ vtkDbiharPatchFilter is a [VTK](http://vtk.org) filter/wrapper for biharmonic eq
 
 The filer is intended to simplify the use of Dbihar library in the in the process of generating quadrilateral meshes.
 
+## Dependencies
+The usual compilers, including a Fortran compiler, VTK compiled with Python (3) Wrapping, Python's h5py, numpy and matplotlib, what else?
+
 ## Input
 
 The input to vtkDbiharPatchFilter is a vtkPolyData object which contains a vtkPolyLine over a set of points contained within the vtkPolyData object. In addition to the vtkPolyLine boundary the shape of the output patch also depends on the spatial derivatives associated with the vtkPolyData points.
@@ -15,11 +18,28 @@ The input to vtkDbiharPatchFilter is a vtkPolyData object which contains a vtkPo
 
 The output from the vtkDbiharPatchFilter is a set of nodes for a structured grid representing the patch surface. The set of nodes is converted to vtkStructuredGrid for visualisation.
 
+# Generation of a Mesh
+
+Generate centreline.
+python3 Generate216Centreline.py
+
+Build the C++ executables for running specific generating the spepicic size/shape meshes. The executables look for the generated centrelines as input to generate quads/SMCs/ECs.
+DBiharMesher-x86/meshGen216
+
+Create an empty directory "vtk" and run script to generate VTK mesh files which will be later used for ATP map generation and visual verification.
+python3 Dump216MeshLegacyFormat.py
+
+Run script to generate ATP files from the previously generated vtk files.
+python3 Generate216ATPMesh.py
+
+Run script to write HDF5 files.
+python3 Write216ATPMeshHdf5.py
+
+EVERYTHING BELOW THIS POINT IS KINDA IRRELEVANT OR OUTDATED... REMOVE?
 
 # Generation of a Bifurcation Model
 
-*The examples in this chapter are from a model with 4080 quads*
-
+The examples below are for a model with 4080 quads.
 
 ## Centreline
 

@@ -41,7 +41,7 @@ radii.SetName("radiiScalars")
 centreline = vtk.vtkPolyData()
 
 def BuildCentreline(segmentList, firstId = 0, firstPt = (0.0,0.0,0.0), direction = 0.0):
-    print 'Processing centreline:', segmentList
+    print("Processing centreline:", segmentList)
     
     domain = None
 
@@ -54,7 +54,7 @@ def BuildCentreline(segmentList, firstId = 0, firstPt = (0.0,0.0,0.0), direction
         domainLength = domain[0]
         angle = math.radians(domain[1])
     else:    
-        if not isinstance(domain, (int, float, long)):
+        if not isinstance(domain, (int, float)):
             sys.exit("Domain length should be a number, not a(an) " + str(type(domainLength)) + ".")
         angle = branchAngle
         domainLength = domain
@@ -161,7 +161,7 @@ def TreeTraversal(startingCell):
                 
 def BuildDecreasingRadiiScalars():
 
-    print 'Generating decreasing vessel radii...'    
+    print("Generating decreasing vessel radii...")
     
     radii.SetNumberOfValues(points.GetNumberOfPoints())
     radii.InsertValue(0, radiusBase)
@@ -217,7 +217,7 @@ def BuildDecreasingRadiiScalars():
             distanceCovered += int(ids.GetNumberOfPoints() - 1)
 
 def BuildMurraysLawRadii(decreaseLength = 3):
-    print 'Generating vessel radii as per Murry\'s Law...'
+    print("Generating vessel radii as per Murry\'s Law...")
     
     radii.SetNumberOfValues(points.GetNumberOfPoints())
 
@@ -265,14 +265,14 @@ def GenerateCentreline(radiiBuilderFunction = None):
     
     BuildCentreline(segmentList)
     
-    print "Number of points in the centreline:", points.GetNumberOfPoints()
+    print("Number of points in the centreline:", points.GetNumberOfPoints())
     centreline.SetPoints(points)    
     centreline.SetLines(lines)
     
     if radiiBuilderFunction != None:
         radiiBuilderFunction()
     else:
-        print 'Generating constant radii for all points...'
+        print("Generating constant radii for all points...")
         rIdx = 0
         while rIdx < points.GetNumberOfPoints():
             radii.InsertNextValue(radiusBase)
@@ -291,7 +291,7 @@ def GenerateCentreline(radiiBuilderFunction = None):
         transformFilter.Update()
         centreline = transformFilter.GetOutput()
 
-    print 'Writing output as', os.path.abspath(outputFileName)    
+    print("Writing output as", os.path.abspath(outputFileName))
     writer = vtk.vtkPolyDataWriter()
     writer.SetInputData(centreline)
     writer.SetFileName(outputFileName)
@@ -323,9 +323,9 @@ def GenerateCentreline(radiiBuilderFunction = None):
     interactor.TerminateApp()
 
 def Usage():
-    print "This script is to be run with global parameters (segment list, output file name, etc.) set in the calling script."
+    print("This script is to be run with global parameters (segment list, output file name, etc.) set in the calling script.")
 
 if __name__ == '__main__':
-    print "Starting", os.path.basename(__file__)
+    print("Starting", os.path.basename(__file__))
     Usage()
-    print "Exiting", os.path.basename(__file__)
+    print("Exiting", os.path.basename(__file__))

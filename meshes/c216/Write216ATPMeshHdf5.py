@@ -17,7 +17,7 @@ del importPath
 
 import DumpATPToHdf5
 
-# This is for the flat c24 mesh.
+# This is for the c216 mesh.
 
 DumpATPToHdf5.axialQuads = 6
 DumpATPToHdf5.circQuads = 12
@@ -32,8 +32,8 @@ def main():
     DumpATPToHdf5.writeHdf5()
 
 if __name__ == '__main__':
-    print "Starting", os.path.basename(__file__)
+    print("Starting", os.path.basename(__file__))
     main()
-    print "Exiting", os.path.basename(__file__)
+    print("Exiting", os.path.basename(__file__))
 else:
-    print __file__, "is to be run as main script."
+    print(__file__, "is to be run as main script.")

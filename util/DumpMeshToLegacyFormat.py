@@ -54,15 +54,15 @@ smcVTKFiles = [
 
 def writeLegacyVTK():
     # This is where the data is for testing purposes.
-    print "Current working directory:", os.getcwd()
+    print("Current working directory:", os.getcwd())
     
     if os.path.isdir("vtk") == False:
         os.makedirs("vtk")
-        print "Cretated vtk output directory..."
+        print("Cretated vtk output directory...")
     
     if os.path.isdir("files") == False:
         os.makedirs("files")
-        print "Created files ouptut directory..."
+        print("Created files ouptut directory...")
         
 
     # Working with the task mesh.
@@ -78,7 +78,7 @@ def writeLegacyVTK():
 
     # Convert label range to a list of labels.
     labelRange = range(int(labelRange[0]), int(labelRange[1]) + 1)
-    print "Labels found in task mesh:", labelRange
+    print("Labels found in task mesh:", labelRange)
 
 
     # Store the number of rings for each label. 
@@ -101,19 +101,24 @@ def writeLegacyVTK():
         reorderedCellArray = vtk.vtkCellArray()
         numQuadRowsPerBranch = taskMeshBranch.GetNumberOfCells() / numQuadsPerRing;
         numRingsPerLabel[label] = numQuadRowsPerBranch
-        ringIds = range(0, numQuadRowsPerBranch);
-
         # Working with rows in reverse order: UPSTREAM.
+        ringIds = range(0, int(numQuadRowsPerBranch))
+        ringIds = list(ringIds)
         ringIds.reverse()
 
+        print("~~~", ringIds)
+        print("+++", numQuadsPerRing)
 
+        print(ringIds)
         rowBase = 0
         # Iterate over the rings in reverse order.
         for ringNum in ringIds:
+            print("ringNum", ringNum)
             # Iterate over the cells in normal order.
-            for cellNum in range(0, numQuadsPerRing):
+            for cellNum in range(0, int(numQuadsPerRing)):
                 # Calculate the 'real' cell id and get the corresponding cell.
                 cellId = ringNum * numQuadsPerRing + cellNum
+                print("***", cellId)
                 cell = taskMeshBranch.GetCell(cellId)
 
                 # The ids to be written to the TXT file.
@@ -152,45 +157,45 @@ def writeLegacyVTK():
                         if ringNum == ringIds[0]:
                             if cellNum == 1:
                                 if pPos == 0:
-                                    pointIdList.append(1L)
+                                    pointIdList.append(1)
                                 elif pPos == 3:
-                                    pointIdList.append(2L)
+                                    pointIdList.append(2)
                             else:
                                 if pPos == 0:
-                                    pointIdList.append(long(reorderedPoints.GetNumberOfPoints() - 2))
+                                    pointIdList.append(int(reorderedPoints.GetNumberOfPoints() - 2))
                                 elif pPos == 3:
-                                    pointIdList.append(long(reorderedPoints.GetNumberOfPoints() - 3))
+                                    pointIdList.append(int(reorderedPoints.GetNumberOfPoints() - 3))
                         elif ringNum == ringIds[1]:
                             if cellNum == 0:
                                 if pPos == 2:
-                                    pointIdList.append(1L)
+                                    pointIdList.append(1)
                                 elif pPos == 3:
-                                    pointIdList.append(0L)
+                                    pointIdList.append(0)
                             else:
                                 if pPos == 0:
-                                    pointIdList.append(long(reorderedPoints.GetNumberOfPoints() - 1))
+                                    pointIdList.append(int(reorderedPoints.GetNumberOfPoints() - 1))
                                 elif pPos == 2:
-                                    pointIdList.append(long(cellNum * 2 + 2))
+                                    pointIdList.append(int(cellNum * 2 + 2))
                                 elif pPos == 3:
                                     if cellNum == 1:
-                                        pointIdList.append(1L)
+                                        pointIdList.append(1)
                                     else:
-                                        pointIdList.append(long(cellNum * 2))
+                                        pointIdList.append(int(cellNum * 2))
                         else:
                             if cellNum == 0:
                                 if pPos == 2:
-                                    pointIdList.append(long(rowBase + 1))
+                                    pointIdList.append(int(rowBase + 1))
                                 elif pPos == 3:
-                                    pointIdList.append(long(rowBase))
+                                    pointIdList.append(int(rowBase))
                             else:
                                 if pPos == 0:
-                                    pointIdList.append(long(reorderedPoints.GetNumberOfPoints() - 1))
+                                    pointIdList.append(int(reorderedPoints.GetNumberOfPoints() - 1))
                                 elif pPos == 2:
-                                    pointIdList.append(long(rowBase + cellNum + 1))
+                                    pointIdList.append(int(rowBase + cellNum + 1))
                                 elif pPos == 3:
-                                    pointIdList.append(long(rowBase + cellNum))
+                                    pointIdList.append(int(rowBase + cellNum))
 
-                # print pointIdList, rowBase
+                # print(pointIdList, rowBase)
 
                 # Insert the ids into the cell array.
                 newCell = vtk.vtkQuad()
@@ -201,9 +206,9 @@ def writeLegacyVTK():
 
             rowBase = rowBasePrev
 
-        # print '\n'
-        print "Inserted", reorderedPoints.GetNumberOfPoints(), "task mesh points for label", label, "..."
-        print "Inserted", reorderedCellArray.GetNumberOfCells(), "task mesh cells for label", label, "..."
+        # print('\n')
+        print("Inserted", reorderedPoints.GetNumberOfPoints(), "task mesh points for label", label, "...")
+        print("Inserted", reorderedCellArray.GetNumberOfCells(), "task mesh cells for label", label, "...")
 
         # Create new vtkPolyData object for the new reordered mesh.
         reorderedTaskMeshBranch = vtk.vtkPolyData()
@@ -218,11 +223,12 @@ def writeLegacyVTK():
         reorderedMeshWriter.SetFileName(taskVTKFiles[label])
         reorderedMeshWriter.Update()
 
-    print "Rings per label:", numRingsPerLabel, "..."
+    print("Rings per label:", numRingsPerLabel, "...")
     ringsPerLabelVals = numRingsPerLabel.values()
 
     # Check all rings per label values are the same.
-    assert ringsPerLabelVals[1:] == ringsPerLabelVals[:-1], "All values of rings per label must be identical. Generated output is invalid ..."
+    # assert ringsPerLabelVals[1:] == ringsPerLabelVals[:-1], "All values of rings per label must be identical. Generated output is invalid ..."
+    print(ringsPerLabelVals)
 
     # Working with EC mesh.
 
@@ -232,7 +238,7 @@ def writeLegacyVTK():
 
     # Original ECs mesh to work with.
     ecMesh = ecMeshReader.GetOutput()
-    print "There are", ecMesh.GetNumberOfCells(), "ECs in total ..."
+    print("There are", ecMesh.GetNumberOfCells(), "ECs in total ...")
 
     # For every label in the range of labels we want to extract all ECs.
     for label in labelRange:
@@ -241,12 +247,12 @@ def writeLegacyVTK():
         numECsPerLabel = numQuadsPerRing * numRingsPerLabel[label] * numECsPerQuad
         ecCellOffset = label * numECsPerLabel
 
-        print "ecCellOffset", ecCellOffset
+        print("ecCellOffset", ecCellOffset)
 
         # Collect cell ids to select.
         selectionIds = vtk.vtkIdTypeArray()
-        for sId in range(0, numECsPerLabel):
-            selectionIds.InsertNextValue(ecCellOffset + sId)
+        for sId in range(0, int(numECsPerLabel)):
+            selectionIds.InsertNextValue(int(ecCellOffset) + sId)
 
         # Create selecion node.
         selectionNode = vtk.vtkSelectionNode()
@@ -267,11 +273,13 @@ def writeLegacyVTK():
         extractedECs = selectionExtractor.GetOutput()
 
         # Ring ids list for traversal.
-        ringIds = range(0, numRingsPerLabel[label])
+        ringIds = range(0, int(numRingsPerLabel[label]))
+        ringIds = list(ringIds)
         ringIds.reverse()
 
         # Number of ECs rows is the number of ECs per quad.
         rowIds = range(0, numECsPerCol)
+        rowIds = list(rowIds)
         rowIds.reverse()
 
         # The ECs are organised in rings of blocks of cells.
@@ -302,6 +310,7 @@ def writeLegacyVTK():
 
         # Set the reordered cells to the reordered ECs mesh.
         reorderedECMeshBranch.SetPolys(reorderedCellArray)
+        print(reorderedCellArray)
 
         # New vtkPoints for storing reordered points.
         reorderedPoints = vtk.vtkPoints()
@@ -311,7 +320,7 @@ def writeLegacyVTK():
 
         rowBase = 0
         # Iterate over quads in normal order because they have been reordered.
-        for quadNum in range(0, numRingsPerLabel[label] * numQuadsPerRing):
+        for quadNum in range(0, int(numRingsPerLabel[label]) * numQuadsPerRing):
             # Iterate over rows in normal order because they have been reordered.
             for rowNum in range(0, numECsPerCol):
                 # Iterate over the ECs in the row in normal order.
@@ -319,7 +328,6 @@ def writeLegacyVTK():
                     # Calculate the 'real' ec cell id and get the corresponding cell.
                     ecId = quadNum * numECsPerQuad + rowNum * numECsPerRow + ecNum
                     ecCell = reorderedECMeshBranch.GetCell(ecId)
-
                     # The ids to be written to the TXT file.
                     pointIdList = [ecCell.GetNumberOfPoints()]
 
@@ -356,45 +364,45 @@ def writeLegacyVTK():
                             if rowNum == 0:
                                 if ecNum == 1:
                                     if pPos == 0:
-                                        pointIdList.append(long(reorderedPoints.GetNumberOfPoints() - 3))
+                                        pointIdList.append(int(reorderedPoints.GetNumberOfPoints() - 3))
                                     elif pPos == 3:
-                                        pointIdList.append(long(reorderedPoints.GetNumberOfPoints() - 4))
+                                        pointIdList.append(int(reorderedPoints.GetNumberOfPoints() - 4))
                                 else:
                                     if pPos == 0:
-                                        pointIdList.append(long(reorderedPoints.GetNumberOfPoints() - 2))
+                                        pointIdList.append(int(reorderedPoints.GetNumberOfPoints() - 2))
                                     elif pPos == 3:
-                                        pointIdList.append(long(reorderedPoints.GetNumberOfPoints() - 3))
+                                        pointIdList.append(int(reorderedPoints.GetNumberOfPoints() - 3))
                             elif rowNum == 1:
                                 if ecNum == 0:
                                     if pPos == 2:
-                                        pointIdList.append(long(rowBase + 1))
+                                        pointIdList.append(int(rowBase + 1))
                                     elif pPos == 3:
-                                        pointIdList.append(long(rowBase))
+                                        pointIdList.append(int(rowBase))
                                 else:
                                     if pPos == 0:
-                                        pointIdList.append(long(reorderedPoints.GetNumberOfPoints() - 1))
+                                        pointIdList.append(int(reorderedPoints.GetNumberOfPoints() - 1))
                                     elif pPos == 2:
-                                        pointIdList.append(long(rowBase + ecNum * 2 + 2))
+                                        pointIdList.append(int(rowBase + ecNum * 2 + 2))
                                     elif pPos == 3:
                                         if ecNum == 1:
-                                            pointIdList.append(long(rowBase + 1))
+                                            pointIdList.append(int(rowBase + 1))
                                         else:
-                                            pointIdList.append(long(rowBase + ecNum * 2))
+                                            pointIdList.append(int(rowBase + ecNum * 2))
                             else:
                                 if ecNum == 0:
                                     if pPos == 2:
-                                        pointIdList.append(long(rowBase + 1))
+                                        pointIdList.append(int(rowBase + 1))
                                     elif pPos == 3:
-                                        pointIdList.append(long(rowBase))
+                                        pointIdList.append(int(rowBase))
                                 else:
                                     if pPos == 0:
-                                        pointIdList.append(long(reorderedPoints.GetNumberOfPoints() - 1))
+                                        pointIdList.append(int(reorderedPoints.GetNumberOfPoints() - 1))
                                     elif pPos == 2:
-                                        pointIdList.append(long(rowBase + ecNum + 1))
+                                        pointIdList.append(int(rowBase + ecNum + 1))
                                     elif pPos == 3:
-                                        pointIdList.append(long(rowBase + ecNum))
+                                        pointIdList.append(int(rowBase + ecNum))
 
-                    # print pointIdList, rowBase
+                    # print(pointIdList, rowBase)
 
                     # Insert the ids into the cell array.
                     newCell = vtk.vtkQuad()
@@ -405,9 +413,9 @@ def writeLegacyVTK():
 
                 rowBase = rowBasePrev
 
-        # print '\n'
-        print "There are", reorderedPoints.GetNumberOfPoints(), "ECs points for label", label, "..."
-        print "There are", reorderedCellArray.GetNumberOfCells(), "ECs cells for label", label, "..."
+        # print('\n')
+        print("There are", reorderedPoints.GetNumberOfPoints(), "ECs points for label", label, "...")
+        print("There are", reorderedCellArray.GetNumberOfCells(), "ECs cells for label", label, "...")
 
         # Create new vtkPolyData object for the new reordered mesh.
         reorderedECs = vtk.vtkPolyData()
@@ -465,7 +473,7 @@ def writeLegacyVTK():
 
     # Original SMCs mesh to work with.
     smcMesh = smcMeshReader.GetOutput()
-    print "There are", smcMesh.GetNumberOfCells(), "SMCs in total ..."
+    print("There are", smcMesh.GetNumberOfCells(), "SMCs in total ...")
 
     # For every label in the range of labels we want to extract all SMCs.
     for label in labelRange:
@@ -474,12 +482,12 @@ def writeLegacyVTK():
         numSMCsPerLabel = numQuadsPerRing * numRingsPerLabel[label] * numSMCsPerQuad
         smcCellOffset = label * numSMCsPerLabel
 
-        print "smcCellOffset", smcCellOffset
+        print("smcCellOffset", smcCellOffset)
 
         # Collect cell ids to select.
         selectionIds = vtk.vtkIdTypeArray()
-        for sId in range(0, numSMCsPerLabel):
-            selectionIds.InsertNextValue(smcCellOffset + sId)
+        for sId in range(0, int(numSMCsPerLabel)):
+            selectionIds.InsertNextValue(int(smcCellOffset) + sId)
 
         # Create selecion node.
         selectionNode = vtk.vtkSelectionNode()
@@ -500,11 +508,13 @@ def writeLegacyVTK():
         extractedSMCs = selectionExtractor.GetOutput()
 
         # Ring ids list for traversal.
-        ringIds = range(0, numRingsPerLabel[label])
+        ringIds = range(0, int(numRingsPerLabel[label]))
+        ringIds = list(ringIds)
         ringIds.reverse()
 
         # Number of SMCs rows is the number of ECs per quad times 13.
         rowIds = range(0, numSMCsPerCol)
+        rowIds = list(rowIds)
         rowIds.reverse()
 
         # The SMCs are organised in rings of blocks of cells.
@@ -544,7 +554,7 @@ def writeLegacyVTK():
 
         rowBase = 0
         # Iterate over quads in normal order because they have been reordered.
-        for quadNum in range(0, numRingsPerLabel[label] * numQuadsPerRing):
+        for quadNum in range(0, int(numRingsPerLabel[label]) * numQuadsPerRing):
             # Iterate over rows in normal order because they have been reordered.
             for rowNum in range(0, numSMCsPerCol):
                 # Iterate over the SMCs in the row in normal order.
@@ -587,45 +597,45 @@ def writeLegacyVTK():
                             if rowNum == 0:
                                 if smcNum == 1:
                                     if pPos == 0:
-                                        pointIdList.append(long(reorderedPoints.GetNumberOfPoints() - 3))
+                                        pointIdList.append(int(reorderedPoints.GetNumberOfPoints() - 3))
                                     elif pPos == 3:
-                                        pointIdList.append(long(reorderedPoints.GetNumberOfPoints() - 4))
+                                        pointIdList.append(int(reorderedPoints.GetNumberOfPoints() - 4))
                                 else:
                                     if pPos == 0:
-                                        pointIdList.append(long(reorderedPoints.GetNumberOfPoints() - 2))
+                                        pointIdList.append(int(reorderedPoints.GetNumberOfPoints() - 2))
                                     elif pPos == 3:
-                                        pointIdList.append(long(reorderedPoints.GetNumberOfPoints() - 3))
+                                        pointIdList.append(int(reorderedPoints.GetNumberOfPoints() - 3))
                             elif rowNum == 1:
                                 if smcNum == 0:
                                     if pPos == 2:
-                                        pointIdList.append(long(rowBase + 1))
+                                        pointIdList.append(int(rowBase + 1))
                                     elif pPos == 3:
-                                        pointIdList.append(long(rowBase))
+                                        pointIdList.append(int(rowBase))
                                 else:
                                     if pPos == 0:
-                                        pointIdList.append(long(reorderedPoints.GetNumberOfPoints() - 1))
+                                        pointIdList.append(int(reorderedPoints.GetNumberOfPoints() - 1))
                                     elif pPos == 2:
-                                        pointIdList.append(long(rowBase + smcNum * 2 + 2))
+                                        pointIdList.append(int(rowBase + smcNum * 2 + 2))
                                     elif pPos == 3:
                                         if smcNum == 1:
-                                            pointIdList.append(long(rowBase + 1))
+                                            pointIdList.append(int(rowBase + 1))
                                         else:
-                                            pointIdList.append(long(rowBase + smcNum * 2))
+                                            pointIdList.append(int(rowBase + smcNum * 2))
                             else:
                                 if smcNum == 0:
                                     if pPos == 2:
-                                        pointIdList.append(long(rowBase + 1))
+                                        pointIdList.append(int(rowBase + 1))
                                     elif pPos == 3:
-                                        pointIdList.append(long(rowBase))
+                                        pointIdList.append(int(rowBase))
                                 else:
                                     if pPos == 0:
-                                        pointIdList.append(long(reorderedPoints.GetNumberOfPoints() - 1))
+                                        pointIdList.append(int(reorderedPoints.GetNumberOfPoints() - 1))
                                     elif pPos == 2:
-                                        pointIdList.append(long(rowBase + smcNum + 1))
+                                        pointIdList.append(int(rowBase + smcNum + 1))
                                     elif pPos == 3:
-                                        pointIdList.append(long(rowBase + smcNum))
+                                        pointIdList.append(int(rowBase + smcNum))
 
-                    # print pointIdList, rowBase
+                    # print(pointIdList, rowBase)
 
                     # Insert the ids into the cell array.
                     newCell = vtk.vtkQuad()
@@ -636,9 +646,9 @@ def writeLegacyVTK():
 
                 rowBase = rowBasePrev
 
-        # print '\n'
-        print "There are", reorderedPoints.GetNumberOfPoints(), "SMCs points for label", label, "..."
-        print "There are", reorderedCellArray.GetNumberOfCells(), "SMCs cells for label", label, "..."
+        # print('\n')
+        print("There are", reorderedPoints.GetNumberOfPoints(), "SMCs points for label", label, "...")
+        print("There are", reorderedCellArray.GetNumberOfCells(), "SMCs cells for label", label, "...")
 
         # Create new vtkPolyData object for the new reordered mesh.
         reorderedSMCs = vtk.vtkPolyData()
@@ -653,8 +663,8 @@ def writeLegacyVTK():
         reorderedMeshWriter.SetFileName(smcVTKFiles[label])
         reorderedMeshWriter.Update()
 
-    print "All done ..."
-    print "... Except the last configuration_info.txt file ..."
+    print("All done ...")
+    print("... Except the last configuration_info.txt file ...")
 
     configFile = open("files/configuration_info.txt", 'w')
     configFile.write("Processors information\n")
@@ -677,13 +687,13 @@ def writeLegacyVTK():
 
     configFile.close()
 
-    print "Now it is all done for real ..."
+    print("Now it is all done for real ...")
 
 def main():
-    print "This script is to be run with global parameters (input, output files, etc.) set in the calling script."
+    print("This script is to be run with global parameters (input, output files, etc.) set in the calling script.")
 
 if __name__ == '__main__':
-    print "Starting", os.path.basename(__file__)
+    print("Starting", os.path.basename(__file__))
     main()
-    print "Exiting", os.path.basename(__file__)
+    print("Exiting", os.path.basename(__file__))
 

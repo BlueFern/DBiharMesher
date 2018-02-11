@@ -33,10 +33,10 @@ def sigmoidATP(x):
 
 def buildATPMesh():
     # Report our CWD just for testing purposes.
-    print "CWD:", os.getcwd()
+    print("CWD:", os.getcwd())
 
     # Read in the mesh.
-    print 'Reading', meshFile
+    print("Reading", meshFile)
     meshReader = vtk.vtkXMLPolyDataReader()
     meshReader.SetFileName(meshFile)
     meshReader.Update()
@@ -44,14 +44,14 @@ def buildATPMesh():
     ecMesh = meshReader.GetOutput()
 
     # Read in the centreline.
-    print 'Reading', centrelineFile
+    print("Reading", centrelineFile)
     centrelineReader = vtk.vtkPolyDataReader()
     centrelineReader.SetFileName(centrelineFile)
     centrelineReader.Update()
 
     centreline = centrelineReader.GetOutput()
     origin = centreline.GetPoint(0)
-    print 'origin:', origin
+    print("Origin:", origin)
 
     # Put the ecMesh through centroids filter.
     centroidFilter = vtk.vtkCellCenters()
@@ -122,9 +122,10 @@ def buildATPMesh():
     pyplot.show()
 
 def usage():
-    print 'This script is to be run with global parameters (input centrelin, EC mesh, etc.) set in the calling script.'
+    print("This script is to be run with global parameters (input centrelin, EC mesh, etc.) set in the calling script.")
 
 if __name__ == '__main__':
-    print 'Starting', os.path.basename(__file__)
+    print("Starting", os.path.basename(__file__))
     usage()
-    print 'Exiting', os.path.basename(__file__)
+    print("Exiting", os.path.basename(__file__))
+

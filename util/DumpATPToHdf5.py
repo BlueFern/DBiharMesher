@@ -42,8 +42,8 @@ ecVTPFiles = [
 
 def writeHdf5():
     # This is where the data is for testing purposes.
-    print "Current working directory:", os.getcwd()
-    print taskMeshIn
+    print("Current working directory:", os.getcwd())
+    print(taskMeshIn)
     
     numQuadsPerRing = circQuads
 
@@ -53,14 +53,14 @@ def writeHdf5():
     taskMeshReader.Update()
 
     taskMesh = taskMeshReader.GetOutput()
-    print taskMesh.GetNumberOfPoints()
+    print(taskMesh.GetNumberOfPoints())
     
     ecMeshReader = vtk.vtkXMLPolyDataReader()
     ecMeshReader.SetFileName(ecMeshIn)
     ecMeshReader.Update()
     
     ecMesh = ecMeshReader.GetOutput()
-    print ecMesh.GetNumberOfPoints()
+    print(ecMesh.GetNumberOfPoints())
     
     # Get the range of branch labels.
     labelRange = [0, 0]
@@ -68,7 +68,7 @@ def writeHdf5():
 
     # Convert label range to a list of labels.
     labelRange = range(int(labelRange[0]), int(labelRange[1]) + 1)
-    print "Labels found in task mesh:", labelRange
+    print("Labels found in task mesh:", labelRange)
 
     # Store the number of rings for each label. 
     numRingsPerLabel = {}   
@@ -94,7 +94,7 @@ def writeHdf5():
 
     # Original ECs mesh to work with.
     atpMesh = atpMeshReader.GetOutput()
-    print "There are", atpMesh.GetNumberOfCells(), "ATP values in total ..."
+    print("There are", atpMesh.GetNumberOfCells(), "ATP values in total ...")
 
     parentFile = h5py.File(atpHdf5Files[0], 'w')
     leftBranchFile = h5py.File(atpHdf5Files[1], 'w')
@@ -114,12 +114,12 @@ def writeHdf5():
         numECsPerLabel = numQuadsPerRing * numRingsPerLabel[label] * numECsPerQuad
         atpCellOffset = label * numECsPerLabel
 
-        print "atpCellOffset", atpCellOffset
+        print("atpCellOffset", atpCellOffset)
 
         # Collect cell ids to select.
         selectionIds = vtk.vtkIdTypeArray()
-        for sId in range(0, numECsPerLabel):
-            selectionIds.InsertNextValue(atpCellOffset + sId)
+        for sId in range(0, int(numECsPerLabel)):
+            selectionIds.InsertNextValue(int(atpCellOffset) + sId)
 
         # Create selecion node.
         selectionNode = vtk.vtkSelectionNode()
@@ -140,11 +140,13 @@ def writeHdf5():
         extractedCells = selectionExtractor.GetOutput()
 
         # Ring ids list for traversal.
-        ringIds = range(0, numRingsPerLabel[label])
+        ringIds = range(0, int(numRingsPerLabel[label]))
+        ringIds = list(ringIds)
         ringIds.reverse()
 
         # Number of ECs rows is the number of ECs per quad.
         rowIds = range(0, numECsPerCol)
+        rowIds = list(rowIds)
         rowIds.reverse()
         
         reorderedATPArray = vtk.vtkDoubleArray()
@@ -160,8 +162,8 @@ def writeHdf5():
         elif label == 2:
             pointsOf = rightBranchFile
 
-        print "Writing H5 file for ECs ATP:"
-        print pointsOf
+        print("Writing H5 file for ECs ATP:")
+        print(pointsOf)
         dset = pointsOf.create_dataset("/atp", (numECsPerLabel,), 'f')
         
         i = 0
@@ -197,7 +199,7 @@ def writeHdf5():
     leftBranchFile.close()
     rightBranchFile.close()
     
-    print "Writing reorderd ATP map for verification..."
+    print("Writing reorderd ATP map for verification...")
     appendPolyData.Update()
     reorderedATPWriter = vtk.vtkXMLPolyDataWriter()
     reorderedATPWriter.SetInputData(appendPolyData.GetOutput())
@@ -205,12 +207,12 @@ def writeHdf5():
     reorderedATPWriter.Update()
     
 
-    print "All done ..."
+    print("All done ...")
     
 def main():
-    print "This script is to be run with global parameters (input, output files, etc.) set in the calling script."
+    print("This script is to be run with global parameters (input, output files, etc.) set in the calling script.")
 
 if __name__ == '__main__':
-    print "Starting", os.path.basename(__file__)
+    print("Starting", os.path.basename(__file__))
     main()
-    print "Exiting", os.path.basename(__file__)
+    print("Exiting", os.path.basename(__file__))
