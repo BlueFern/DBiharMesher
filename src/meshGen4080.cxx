@@ -211,27 +211,27 @@ int main(int argc, char* argv[])
 
 	fullMeshJoiner->Update();
 
-//	vtkDbiharStatic::ShowPolyData(fullMeshJoiner->GetOutput());
+	// vtkDbiharStatic::ShowPolyData(fullMeshJoiner->GetOutput());
 	vtkDbiharStatic::WritePolyData(fullMeshJoiner->GetOutput(), "quadMeshFullc4080.vtp");
 
-//	int numECs = 4;
-//	int numSMCs = 4;
-//	vtkSmartPointer<vtkSubdivideMesh> subdivideECMesh = vtkSmartPointer<vtkSubdivideMesh>::New();
-//	subdivideECMesh->SetInputData(fullMeshJoiner->GetOutput());
-//	subdivideECMesh->SetRows(numECs);
-//	subdivideECMesh->SetColumns((vtkDbiharStatic::SMC_CIRC / vtkDbiharStatic::EC_CIRC) * numSMCs);
-//	subdivideECMesh->Update();
-//
-//	vtkDbiharStatic::WritePolyData(subdivideECMesh->GetOutput(), "quadMeshFullECc4080.vtp");
-//
-//	vtkSmartPointer<vtkSubdivideMesh> subdivideSMCMesh = vtkSmartPointer<vtkSubdivideMesh>::New();
-//	subdivideSMCMesh->SetInputData(fullMeshJoiner->GetOutput());
-//	subdivideSMCMesh->SetRows((vtkDbiharStatic::EC_AXIAL / vtkDbiharStatic::SMC_AXIAL) * numECs);
-//	subdivideSMCMesh->SetColumns(numSMCs);
-//	subdivideSMCMesh->Update();
-//
-//	vtkDbiharStatic::WritePolyData(subdivideSMCMesh->GetOutput(), "quadMeshFullSMCc4080.vtp");
-//
+	int numECs = 4;
+	int numSMCs = 4;
+	vtkSmartPointer<vtkSubdivideMesh> subdivideECMesh = vtkSmartPointer<vtkSubdivideMesh>::New();
+	subdivideECMesh->SetInputData(fullMeshJoiner->GetOutput());
+	subdivideECMesh->SetRows(numECs);
+	subdivideECMesh->SetColumns((vtkDbiharStatic::SMC_CIRC / vtkDbiharStatic::EC_CIRC) * numSMCs);
+	subdivideECMesh->Update();
+
+	vtkDbiharStatic::WritePolyData(subdivideECMesh->GetOutput(), "quadMeshFullECc4080.vtp");
+
+	vtkSmartPointer<vtkSubdivideMesh> subdivideSMCMesh = vtkSmartPointer<vtkSubdivideMesh>::New();
+	subdivideSMCMesh->SetInputData(fullMeshJoiner->GetOutput());
+	subdivideSMCMesh->SetRows((vtkDbiharStatic::EC_AXIAL / vtkDbiharStatic::SMC_AXIAL) * numECs);
+	subdivideSMCMesh->SetColumns(numSMCs);
+	subdivideSMCMesh->Update();
+
+	vtkDbiharStatic::WritePolyData(subdivideSMCMesh->GetOutput(), "quadMeshFullSMCc4080.vtp");
+
 //	int skipLength = 16;
 //	for (int i = 0; i < endPointIds->GetNumberOfIds(); i++)
 //	{

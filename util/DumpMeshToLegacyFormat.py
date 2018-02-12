@@ -106,19 +106,14 @@ def writeLegacyVTK():
         ringIds = list(ringIds)
         ringIds.reverse()
 
-        print("~~~", ringIds)
-        print("+++", numQuadsPerRing)
-
-        print(ringIds)
         rowBase = 0
         # Iterate over the rings in reverse order.
         for ringNum in ringIds:
-            print("ringNum", ringNum)
+            # print("ringNum", ringNum)
             # Iterate over the cells in normal order.
             for cellNum in range(0, int(numQuadsPerRing)):
                 # Calculate the 'real' cell id and get the corresponding cell.
                 cellId = ringNum * numQuadsPerRing + cellNum
-                print("***", cellId)
                 cell = taskMeshBranch.GetCell(cellId)
 
                 # The ids to be written to the TXT file.
