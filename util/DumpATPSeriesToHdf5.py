@@ -35,9 +35,8 @@ def writeHdf5():
         exit("Timestep is too small, choose 0.01 or larger")
     
     # This is where the data is for testing purposes.
-    print "Current working directory:", os.getcwd()
-    print taskMeshIn
-    
+    print("Current working directory:", os.getcwd())
+
     numQuadsPerRing = circQuads
 
     # Working with the task mesh junt to figure out the quads and rows numbers.
@@ -46,16 +45,14 @@ def writeHdf5():
     taskMeshReader.Update()
 
     taskMesh = taskMeshReader.GetOutput()
-    print taskMesh.GetNumberOfPoints()
 
-    
     # Get the range of branch labels.
     labelRange = [0, 0]
     taskMesh.GetCellData().GetScalars().GetRange(labelRange, 0)
 
     # Convert label range to a list of labels.
     labelRange = range(int(labelRange[0]), int(labelRange[1]) + 1)
-    print "Labels found in task mesh:", labelRange
+    print("Labels found in task mesh:", labelRange)
 
     # Store the number of rings for each label. 
     numRingsPerLabel = {}   
@@ -74,16 +71,15 @@ def writeHdf5():
         numQuadRowsPerBranch = taskMeshBranch.GetNumberOfCells() / numQuadsPerRing;
         numRingsPerLabel[label] = numQuadRowsPerBranch
         
-        
-    atpFiles = glob.glob(atpMeshPattern)
-    
+    atpFiles = sorted(glob.glob(atpMeshPattern))
+
     parentFile = h5py.File(atpHdf5Files[0], 'w')
     leftBranchFile = h5py.File(atpHdf5Files[1], 'w')
     rightBranchFile = h5py.File(atpHdf5Files[2], 'w')
     
     for atpIndex in range(0, len(atpFiles), int(timeStep / originalTimeStep)):
-        print "Time step " + str(atpIndex * timeStep )
-        
+        print("Time step" + str(atpIndex * timeStep))
+        print("Reading", atpFiles[atpIndex], "at index", atpIndex)
 
         atpMeshReader = vtk.vtkXMLPolyDataReader()
         atpMeshReader.SetFileName(atpFiles[atpIndex])
@@ -93,17 +89,15 @@ def writeHdf5():
 
         # For every label in the range of labels we want to extract all ECs.
         for label in labelRange:
-            
     
             # Keep track of how many branches we need to skip.
             numECsPerLabel = numQuadsPerRing * numRingsPerLabel[label] * numECsPerQuad
             atpCellOffset = label * numECsPerLabel
     
-    
             # Collect cell ids to select.
             selectionIds = vtk.vtkIdTypeArray()
-            for sId in range(0, numECsPerLabel):
-                selectionIds.InsertNextValue(atpCellOffset + sId)
+            for sId in range(0, int(numECsPerLabel)):
+                selectionIds.InsertNextValue(int(atpCellOffset) + sId)
     
             # Create selecion node.
             selectionNode = vtk.vtkSelectionNode()
@@ -122,15 +116,17 @@ def writeHdf5():
             selectionExtractor.Update()
     
             extractedCells = selectionExtractor.GetOutput()
-    
+
             # Ring ids list for traversal.
-            ringIds = range(0, numRingsPerLabel[label])
+            ringIds = range(0, int(numRingsPerLabel[label]))
+            ringIds = list(ringIds)
             ringIds.reverse()
-    
+
             # Number of ECs rows is the number of ECs per quad.
             rowIds = range(0, numECsPerCol)
+            rowIds = list(rowIds)
             rowIds.reverse()
-    
+
             # Decide which h5 files to write to.
             pointsOf = ''
             
@@ -140,10 +136,8 @@ def writeHdf5():
                 pointsOf = leftBranchFile
             elif label == 2:
                 pointsOf = rightBranchFile
-    
-                
+
             dset = pointsOf.create_dataset("/" + str(atpIndex), (numECsPerLabel,), 'f')
-                
             i = 0
     
             # Iterate over the rings in reverse order.
@@ -159,25 +153,22 @@ def writeHdf5():
                         for cellNum in range(0, numECsPerRow):
                             # Calculate the 'real' ec cell id and get the corresponding cell.
                             realId = quadId * numECsPerQuad + rowNum * numECsPerRow + cellNum
-                            
+
                             atpVal = extractedCells.GetCellData().GetArray("ATP").GetValue(realId)
-    
-                            # Write the value to the txt file.
+
+                            # Insert the value into the dataset.
                             dset[i] = atpVal
                             i += 1
-                        
-
     parentFile.close()
     leftBranchFile.close()
     rightBranchFile.close()
-    
 
-    print "All done ..."
+    print("All done ...")
     
 def main():
-    print "This script is to be run with global parameters (input, output files, etc.) set in the calling script."
+    print("This script is to be run with global parameters (input, output files, etc.) set in the calling script.")
 
 if __name__ == '__main__':
-    print "Starting", os.path.basename(__file__)
+    print("Starting", os.path.basename(__file__))
     main()
-    print "Exiting", os.path.basename(__file__)
+    print("Exiting", os.path.basename(__file__))

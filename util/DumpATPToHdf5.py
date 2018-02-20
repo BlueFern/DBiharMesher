@@ -12,7 +12,6 @@ import h5py
 import os
 import vtk
 
-
 taskMeshIn = ''
 ecMeshIn = ''
 atpMeshIn = ''

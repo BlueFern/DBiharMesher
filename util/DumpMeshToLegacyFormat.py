@@ -74,6 +74,7 @@ def writeLegacyVTK():
 
     # Get the range of branch labels.
     labelRange = [0, 0]
+
     taskMesh.GetCellData().GetScalars().GetRange(labelRange, 0)
 
     # Convert label range to a list of labels.
@@ -305,7 +306,6 @@ def writeLegacyVTK():
 
         # Set the reordered cells to the reordered ECs mesh.
         reorderedECMeshBranch.SetPolys(reorderedCellArray)
-        print(reorderedCellArray)
 
         # New vtkPoints for storing reordered points.
         reorderedPoints = vtk.vtkPoints()

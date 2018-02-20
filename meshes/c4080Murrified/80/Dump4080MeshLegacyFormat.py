@@ -29,8 +29,8 @@ def main():
     DumpMeshToLegacyFormat.writeLegacyVTK()
 
 if __name__ == '__main__':
-    print "Starting", os.path.basename(__file__)
+    print("Starting", os.path.basename(__file__))
     main()
-    print "Exiting", os.path.basename(__file__)
+    print("Exiting", os.path.basename(__file__))
 else:
-    print __file__, "is to be run as main script."
+    print(__file__, "is to be run as main script.")
