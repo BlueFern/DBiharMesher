@@ -19,10 +19,10 @@ public:
 	static const char *BRANCH_ID_ARR_NAME;
 	static const char *GRID_COORDS_ARR_NAME;
 
-	static const int SMC_CIRC;
-	static const int SMC_AXIAL;
-	static const int EC_CIRC;
-	static const int EC_AXIAL;
+	static const double SMC_CIRC;
+	static const double SMC_AXIAL;
+	static const double EC_CIRC;
+	static const double EC_AXIAL;
 
 	/**
 	 * Get formatted date/time stamp as string.

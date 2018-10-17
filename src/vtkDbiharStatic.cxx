@@ -42,10 +42,10 @@ const char *vtkDbiharStatic::BRANCH_ID_ARR_NAME = {"branchId"};
 const char *vtkDbiharStatic::GRID_COORDS_ARR_NAME = {"gridCoords"};
 
 // The following constants are in micrometres.
-const int vtkDbiharStatic::SMC_CIRC = 50;
-const int vtkDbiharStatic::SMC_AXIAL = 5;
-const int vtkDbiharStatic::EC_CIRC = 10;
-const int vtkDbiharStatic::EC_AXIAL = 65;
+const double vtkDbiharStatic::SMC_CIRC = 50 / 2.0;
+const double vtkDbiharStatic::SMC_AXIAL = 5 / 2.0;
+const double vtkDbiharStatic::EC_CIRC = 10 / 2.0;
+const double vtkDbiharStatic::EC_AXIAL = 65 / 2.0;
 
 void KeypressCallbackFunction(vtkObject* caller, long unsigned int vtkNotUsed(eventId), void *clientData, void* vtkNotUsed(callData))
 {

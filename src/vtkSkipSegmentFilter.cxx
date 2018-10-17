@@ -152,7 +152,6 @@ int vtkSkipSegmentFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 		transformPoints->SetTransform(translateTransform);
 		transformPoints->Update();
 
-
 		appendPoints->AddInputData(transformPoints->GetOutput());
 
 	}
@@ -183,7 +182,6 @@ int vtkSkipSegmentFilter::RequestData(vtkInformation *vtkNotUsed(request), vtkIn
 	output->ShallowCopy(triangleFilter->GetOutput());
 
 	// Build a line around the last ring so a cap can be built later.
-
 	int lastRingStart = (2 * this->NumberOfRadialQuads + 1) * (this->SkipSize - 1);
 	vtkSmartPointer<vtkCellArray> line = vtkSmartPointer<vtkCellArray>::New();
 
